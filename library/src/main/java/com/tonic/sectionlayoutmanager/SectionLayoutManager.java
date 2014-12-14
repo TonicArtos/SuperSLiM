@@ -1,7 +1,6 @@
 package com.tonic.sectionlayoutmanager;
 
 import android.support.v7.widget.RecyclerView;
-import android.util.SparseArray;
 import android.view.View;
 
 public abstract class SectionLayoutManager {
@@ -38,5 +37,5 @@ public abstract class SectionLayoutManager {
      * @param state        State for coordinating the overall layout.
      * @param section      The current section being laid out.
      */
-    public abstract int fill(LayoutManager.LayoutState state, int section);
+    public abstract int fill(LayoutState state, int section);
 }

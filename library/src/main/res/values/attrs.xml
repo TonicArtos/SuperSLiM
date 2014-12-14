@@ -12,7 +12,11 @@
         <attr name="slm_isSticky" format="boolean"/>
         <attr name="slm_sectionFirstPosition" format="integer"/>
         <attr name="slm_section" format="integer"/>
-        <attr name="slm_headerStartMargin" format="dimension"/>
-        <attr name="slm_headerEndMargin" format="dimension"/>
+        <attr name="slm_headerStartMargin" format="enum|dimension">
+            <enum name="auto" value="-1"/>
+        </attr>
+        <attr name="slm_headerEndMargin" format="enum|dimension">
+            <enum name="auto" value="-1"/>
+        </attr>
     </declare-styleable>
 </resources>
