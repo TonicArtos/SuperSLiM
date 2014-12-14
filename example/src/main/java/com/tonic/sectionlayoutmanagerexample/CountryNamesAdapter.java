@@ -23,12 +23,14 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private final Context mContext;
 
-    private final String[] mCountryNames;
-
     private final ArrayList<LineItem> mItems;
 
-    public CountryNamesAdapter(Context context) {
-        mCountryNames = context.getResources().getStringArray(R.array.country_names);
+    private int mHeaderMode;
+
+    public CountryNamesAdapter(Context context, int headerMode) {
+        final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
+        mHeaderMode = headerMode;
+
         mItems = new ArrayList<LineItem>();
 
         //Insert headers into list of items.
@@ -36,8 +38,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         int sectionCount = 0;
         int headerCount = 0;
         int sectionFirstPosition = 0;
-        for (int i = 0; i < mCountryNames.length; i++) {
-            String header = mCountryNames[i].substring(0, 1);
+        for (int i = 0; i < countryNames.length; i++) {
+            String header = countryNames[i].substring(0, 1);
             if (!TextUtils.equals(lastHeader, header)) {
                 sectionCount += 1;
                 sectionFirstPosition = i + headerCount;
@@ -45,7 +47,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 headerCount += 1;
                 mItems.add(new LineItem(header, true, sectionCount, sectionFirstPosition));
             }
-            mItems.add(new LineItem(mCountryNames[i], false, sectionCount, sectionFirstPosition));
+            mItems.add(new LineItem(countryNames[i], false, sectionCount, sectionFirstPosition));
         }
         mContext = context;
     }
@@ -82,9 +84,22 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         final LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) itemView
                 .getLayoutParams();
+        if (item.isHeader) {
+            lp.headerAlignment = mHeaderMode;
+        }
         lp.section = item.section;
         lp.sectionFirstPosition = item.sectionFirstPosition;
         itemView.setLayoutParams(lp);
+    }
+
+    public void setHeaderMode(int mode) {
+        mHeaderMode = mode;
+        for (int i = 0; i < mItems.size(); i++) {
+            LineItem item = mItems.get(i);
+            if (item.isHeader) {
+                notifyItemChanged(i);
+            }
+        }
     }
 
     private static class LineItem {

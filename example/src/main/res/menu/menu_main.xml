@@ -18,16 +18,16 @@
                         android:id="@+id/action_header_inline"
                         android:title="@string/action_header_inline"/>
                 <item
-                        android:id="@+id/action_header_left"
+                        android:id="@+id/action_header_start"
                         android:title="@string/action_header_left"/>
                 <item
-                        android:id="@+id/action_header_right"
+                        android:id="@+id/action_header_end"
                         android:title="@string/action_header_right"/>
                 <item
-                        android:id="@+id/action_header_overlay_left"
+                        android:id="@+id/action_header_overlay_start"
                         android:title="@string/action_header_overlay_left"/>
                 <item
-                        android:id="@+id/action_header_overlay_right"
+                        android:id="@+id/action_header_overlay_end"
                         android:title="@string/action_header_overlay_right"/>
             </group>
         </menu>

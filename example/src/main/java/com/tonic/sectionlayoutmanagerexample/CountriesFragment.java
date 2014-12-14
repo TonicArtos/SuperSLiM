@@ -17,22 +17,51 @@ import com.tonic.sectionlayoutmanager.SectionLayoutManager;
  */
 public class CountriesFragment extends Fragment {
 
+    private static final java.lang.String KEY_HEADER_MODE = "key_header_mode";
+
     private ViewHolder mViews;
+
+    private CountryNamesAdapter mAdapter;
+
+    private int mHeaderMode;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        return rootView;
+        return inflater.inflate(R.layout.fragment_main, container, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (savedInstanceState != null) {
+            mHeaderMode = savedInstanceState.getInt(KEY_HEADER_MODE, LayoutManager.HEADER_INLINE);
+        } else {
+            mHeaderMode = LayoutManager.HEADER_INLINE;
+        }
+
+
         mViews = new ViewHolder(view);
         mViews.initViews(getActivity());
-        mViews.setAdapter(new CountryNamesAdapter(getActivity()));
+        mAdapter = new CountryNamesAdapter(getActivity(), mHeaderMode);
+        mViews.setAdapter(mAdapter);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt(KEY_HEADER_MODE, mHeaderMode);
+    }
+
+    public void setHeaderMode(int mode) {
+        mHeaderMode = mode;
+        mAdapter.setHeaderMode(mode);
+    }
+
+    public int getHeaderMode() {
+        return mHeaderMode;
     }
 
     private static class ViewHolder {
