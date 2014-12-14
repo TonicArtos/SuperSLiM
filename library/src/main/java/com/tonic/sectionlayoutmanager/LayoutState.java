@@ -1,6 +1,7 @@
 package com.tonic.sectionlayoutmanager;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseArray;
 
 /**
@@ -68,6 +69,8 @@ public class LayoutState {
         for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
             final android.view.View child = mLayoutManager.getChildAt(i);
             final int childPosition = mLayoutManager.getPosition(child);
+            Log.d("Cache views", "Child " + i);
+            Log.d("Cache views", "Position " + childPosition);
             cacheView(childPosition, child);
         }
     }

@@ -7,7 +7,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.View;
 import android.view.ViewGroup;
+
+import java.util.List;
 
 /**
  * A LayoutManager that lays out section headers with optional stickiness and uses a map of
@@ -190,6 +193,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
 
+        state.detachAndCacheAllViews();
+
         Log.d("Fill", "Fill called");
         Log.d("Fill", "Direction " + (state.isDirectionEnd() ? "end" : "start"));
         Log.d("Fill", "Anchor position " + anchorPosition);
@@ -204,12 +209,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sectionManager.setLayoutManager(this);
             state.setSectionData(sectionManager);
 
-            Log.d("Fill Section" + state.section,
+            Log.d("Fill Section " + state.section,
                     "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-            Log.d("Fill Section" + state.section, "From Position " + currentPosition);
-            Log.d("Fill Section" + state.section, "Marker position " + state.markerLine);
-            Log.d("Fill Section" + state.section, "Header start margin " + state.headerStartMargin);
-            Log.d("Fill Section" + state.section, "Marker end margin " + state.headerEndMargin);
+            Log.d("Fill Section " + state.section, "From Position " + currentPosition);
+            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
+            Log.d("Fill Section " + state.section, "Header start margin " + state.headerStartMargin);
+            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
             state.updateSectionData(sectionHeader);
@@ -229,7 +234,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             int count = sectionManager.fill(state, currentPosition);
             currentPosition += state.isDirectionStart() ? -count : count;
 
-            Log.d("Fill Section" + state.section, "Count " + count);
+            Log.d("Fill Section " + state.section, "Count " + count);
 
             if (state.isDirectionStart()) {
                 layoutHeader(state, sectionHeader);
@@ -244,9 +249,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 final LayoutState.View floatingHeader = mPendingFloatingHeaders.get(state.section);
                 if (floatingHeader != null) {
                     if (floatingHeader.wasCached) {
+                        mPendingFloatingHeaders.remove(state.section);
                         attachView(floatingHeader.view, floatingPosition);
                         state.decacheView(state.sectionFirstPosition);
                     } else {
+                        mPendingFloatingHeaders.remove(state.section);
                         addView(floatingHeader.view, floatingPosition);
                     }
                 }
@@ -277,6 +284,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
+        Log.d("onLayout", "Child count " + getChildCount());
         state.recycleCache();
     }
 
@@ -410,6 +418,21 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 // Align marker line to align with bottom of header.
                 state.markerLine = bottom;
             }
+        }
+    }
+
+    @Override
+    public void onItemsUpdated(RecyclerView recyclerView, int positionStart, int itemCount) {
+        super.onItemsUpdated(recyclerView, positionStart, itemCount);
+
+        View first = getChildAt(0);
+        View last = getChildAt(getChildCount() - 1);
+        if (positionStart + itemCount <= getPosition(first)) {
+            return;
+        }
+
+        if (positionStart <= getPosition(last)) {
+            requestLayout();
         }
     }
 
