@@ -13,7 +13,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-        int left = state.headerStartMargin;
+        int left = state.contentStartMargin;
         int right = left + width;
         int top;
         int bottom;
@@ -39,7 +39,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
         mLayoutManager
                 .measureChildWithMargins(child.view,
-                        state.headerStartMargin + state.headerEndMargin, 0);
+                        state.contentStartMargin + state.contentEndMargin, 0);
     }
 
     @Override

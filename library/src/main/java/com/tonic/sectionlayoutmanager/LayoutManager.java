@@ -139,7 +139,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (dy > 0) {
             // Scrolling to bottom.
             if (lastItemReached) {
-                int offset = getHeight() - getDecoratedBottom(bottomView) + getPaddingBottom();
+                int offset = getHeight() - getDecoratedBottom(bottomView) - getPaddingBottom();
                 delta = Math.max(-dy, offset);
             } else {
                 delta = -dy;
@@ -355,7 +355,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int borderline;
         final android.view.View marker = state.getCachedView(anchorPosition);
         if (marker == null) {
-            borderline = 0;
+            borderline = getPaddingTop();
         } else if (state.isDirectionStart()) {
             LayoutParams lp = (LayoutParams) marker.getLayoutParams();
             if (lp.isHeader && lp.headerAlignment != HEADER_INLINE) {
@@ -452,33 +452,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int right;
         int left;
         if (lp.headerAlignment == HEADER_OVERLAY_START) {
-            left = 0;
-            right = width;
+            left = getPaddingLeft();
+            right = left + width;
         } else if (lp.headerAlignment == HEADER_OVERLAY_END) {
-            right = getWidth();
+            right = getWidth() - getPaddingRight();
             left = right - width;
         } else if (lp.headerAlignment == HEADER_ALIGN_END) {
             // Align header with end margin or end edge of recycler view.
             if (!lp.headerEndMarginIsAuto && state.headerEndMargin > 0) {
-                left = getWidth() - state.headerEndMargin;
+                left = getWidth() - state.headerEndMargin - getPaddingLeft();
                 right = left + width;
             } else {
-                right = getWidth();
+                right = getWidth() - getPaddingRight();
                 left = right - width;
             }
         } else if (lp.headerAlignment == HEADER_ALIGN_START) {
             // Align header with start margin or start edge of recycler view.
             if (!lp.headerStartMarginIsAuto && state.headerStartMargin > 0) {
-                right = state.headerStartMargin;
+                right = state.headerStartMargin + getPaddingLeft();
                 left = right - width;
             } else {
-                left = 0;
-                right = width;
+                left = getPaddingLeft();
+                right = left + width;
             }
         } else {
-            left = 0;
-            right = getWidth();
-        }
+            left = getPaddingLeft();
+            right = left + width;
+         }
 
         if (lp.headerAlignment == HEADER_INLINE
                 && state.isDirectionStart()) {
@@ -531,7 +531,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Width to leave for the section to which this header belongs. Only applies if the
         // header is being laid out adjacent to the section.
-        int unavailableWidth = 0;
+        int unavailableWidth = getPaddingLeft() + getPaddingRight();
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
         if (lp.headerAlignment == HEADER_ALIGN_START && !lp.headerStartMarginIsAuto) {
             unavailableWidth = getWidth() - lp.headerStartMargin;
