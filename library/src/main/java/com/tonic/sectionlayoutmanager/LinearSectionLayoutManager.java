@@ -10,25 +10,26 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     private void layoutChild(LayoutState state, LayoutState.View child, int currentPosition) {
-        final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        if (!child.wasCached) {
+            final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-        int left = state.contentStartMargin;
-        int right = left + width;
-        int top;
-        int bottom;
+            int left = state.contentStartMargin;
+            int right = left + width;
+            int top;
+            int bottom;
 
-        Log.d("Layout Child + " + currentPosition, "Markerline + " + state.markerLine);
+            Log.d("Layout Child + " + currentPosition, "Markerline + " + state.markerLine);
 
-        if (state.isDirectionEnd()) {
-            top = state.markerLine;
-            bottom = state.markerLine + height;
-        } else {
-            top = state.markerLine - height;
-            bottom = state.markerLine;
+            if (state.isDirectionEnd()) {
+                top = state.markerLine;
+                bottom = state.markerLine + height;
+            } else {
+                top = state.markerLine - height;
+                bottom = state.markerLine;
+            }
+            mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
         }
-        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
-
         addView(state, child, currentPosition);
     }
 

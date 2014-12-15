@@ -237,6 +237,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     currentPosition += 1;
                 }
             }
+
             int count = sectionManager.fill(state, currentPosition);
             currentPosition += state.isDirectionStart() ? -count : count;
 
@@ -376,6 +377,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             if (headerLp.headerAlignment != HEADER_INLINE) {
                 state.headerOverlap = getDecoratedMeasuredHeight(sectionHeader.view);
                 state.headerOffset = 0;
+            } else {
+                state.headerOverlap = 0;
             }
             state.updateSectionData(sectionHeader);
         } else {
