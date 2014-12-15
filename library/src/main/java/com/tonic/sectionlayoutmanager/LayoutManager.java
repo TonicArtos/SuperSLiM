@@ -290,6 +290,67 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         state.recycleCache();
     }
 
+    @Override
+    public int computeVerticalScrollExtent(RecyclerView.State state) {
+        final View topChild = getChildAt(0);
+        final View bottomChild = getChildAt(getChildCount() - 1);
+        if (topChild == null) {
+            return 0;
+        }
+
+        final int decoratedTop = getDecoratedTop(topChild);
+        final int decoratedBottom = getDecoratedBottom(bottomChild);
+        final int realTopOffset = decoratedTop > 0 ? decoratedTop : 0;
+        final int realBottomOffset = decoratedBottom < getHeight() ? decoratedBottom : 0;
+        return getHeight() - realTopOffset - realBottomOffset;
+    }
+
+    @Override
+    public int computeVerticalScrollRange(RecyclerView.State state) {
+        final View topChild = getChildAt(0);
+        final View bottomChild = getChildAt(getChildCount() - 1);
+        if (topChild == null) {
+            return 0;
+        }
+
+        final int itemCount = state.getItemCount();
+        final int topPosition = getPosition(topChild);
+        final int bottomPosition = getPosition(bottomChild);
+        final boolean firstItemVisible = topPosition == 0;
+        final boolean lastItemVisible = bottomPosition == itemCount;
+
+        // Check for case where the entirety of the adapter contents are displayed.
+        final int viewSpan = getDecoratedBottom(bottomChild) - getDecoratedTop(topChild);
+        if (firstItemVisible && lastItemVisible
+                && viewSpan < getHeight() - getPaddingTop() - getPaddingBottom()) {
+            return 0;
+        }
+
+        // Estimated scroll range is a multiple of the displayed item span.
+        final float numItemsShown = getPosition(bottomChild) - getPosition(topChild);
+        return (int) (viewSpan * (itemCount / numItemsShown));
+    }
+
+    @Override
+    public int computeVerticalScrollOffset(RecyclerView.State state) {
+        final View topChild = getChildAt(0);
+        final View bottomChild = getChildAt(getChildCount() - 1);
+        if (topChild == null) {
+            return 0;
+        }
+
+        final int topPosition = getPosition(topChild);
+        final float abovePosition = topPosition == 0 ? 0 : topPosition - 1;
+        int decoratedTop = getDecoratedTop(topChild);
+        final int offscreenPortion = decoratedTop < 0 ? -decoratedTop : 0;
+        final int viewSpan = getDecoratedBottom(bottomChild) - decoratedTop;
+        // Estimated scroll range is a multiple of the displayed item span plus the part of the
+        // top view which is offscreen.
+        final float numItemsShown = getPosition(bottomChild) - getPosition(topChild);
+        return (int) (viewSpan * (abovePosition / numItemsShown)) + offscreenPortion;
+
+    }
+
     private int getBorderLine(LayoutState state, int anchorPosition) {
         int borderline;
         final android.view.View marker = state.getCachedView(anchorPosition);
