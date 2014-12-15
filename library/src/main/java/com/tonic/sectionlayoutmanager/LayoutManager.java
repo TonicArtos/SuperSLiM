@@ -129,7 +129,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Check we need to scroll.
         int viewSpan = getDecoratedBottom(bottomView) - getDecoratedTop(topView);
-        if (firstItemReached && lastItemReached && viewSpan <= getHeight() - getPaddingTop() - getPaddingBottom() - dy) {
+        if (firstItemReached && lastItemReached
+                && viewSpan <= getHeight() - getPaddingTop() - getPaddingBottom() - dy) {
             //We cannot scroll in either direction
             return 0;
         }
@@ -160,7 +161,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler,
                         state);
             }
-        } else  if (0 < delta) {
+        } else if (0 < delta) {
             if (!firstItemReached) {
                 fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
             }
@@ -209,14 +210,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sectionManager.setLayoutManager(this);
             state.setSectionData(sectionManager);
 
-//            Log.d("Fill Section " + state.section,
-//                    "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-//            Log.d("Fill Section " + state.section, "From position " + currentPosition);
-//            Log.d("Fill Section " + state.section, "First section " + state.sectionFirstPosition);
-//            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
-//            Log.d("Fill Section " + state.section,
-//                    "Header start margin " + state.headerStartMargin);
-//            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
+            Log.d("Fill Section " + state.section,
+                    "Direction " + (state.isDirectionEnd() ? "end" : "start"));
+            Log.d("Fill Section " + state.section, "From position " + currentPosition);
+            Log.d("Fill Section " + state.section, "First section " + state.sectionFirstPosition);
+            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
+            Log.d("Fill Section " + state.section,
+                    "Header start margin " + state.headerStartMargin);
+            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
             state.updateSectionData(sectionHeader);
@@ -285,7 +286,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
-//        Log.d("onLayout", "Child count " + getChildCount());
+        Log.d("onLayout", "Child count " + getChildCount());
         state.recycleCache();
     }
 
@@ -295,7 +296,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (marker == null) {
             borderline = 0;
         } else if (state.isDirectionStart()) {
-            borderline = getDecoratedBottom(marker);
+            LayoutParams lp = (LayoutParams) marker.getLayoutParams();
+            if (lp.isHeader && lp.headerAlignment != HEADER_INLINE) {
+                borderline = getDecoratedTop(marker);
+            } else {
+                borderline = getDecoratedBottom(marker);
+            }
         } else {
             borderline = getDecoratedTop(marker);
         }
@@ -336,7 +342,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-//        Log.d("Layout header " + state.sectionFirstPosition, "Markerline " + state.markerLine);
+        Log.d("Layout header " + state.sectionFirstPosition, "Markerline " + state.markerLine);
 
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
