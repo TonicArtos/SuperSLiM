@@ -19,8 +19,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             int top;
             int bottom;
 
-            Log.d("Layout Child + " + currentPosition, "Markerline + " + state.markerLine);
-
             if (state.isDirectionEnd()) {
                 top = state.markerLine;
                 bottom = state.markerLine + height;

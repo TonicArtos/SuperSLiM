@@ -156,8 +156,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
-        Log.d("Scroll", "Delta " + delta);
-        Log.d("Scroll", "First item reached " + firstItemReached);
         if (delta < 0) {
             if (!lastItemReached) {
                 fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler,
@@ -172,8 +170,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private void fill(SectionLayoutManager.Direction direction, final int anchorPosition,
             RecyclerView.Recycler recycler, RecyclerView.State rvs) {
-        Log.d("Fill", "Fill called");
-        Log.d("Fill", "Anchor position " + anchorPosition);
 
         LayoutState state = new LayoutState(this, recycler, rvs, getChildCount());
         final int itemCount = state.recyclerState.getItemCount();
@@ -197,9 +193,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
 
-        Log.d("Fill", "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-        Log.d("Fill", "Markerline " + state.markerLine);
-
         while (!fillToEndDone || !fillToStartDone) {
             // Look at the current view and find out details.
             state.setSectionData((LayoutParams) state.getView(
@@ -209,15 +202,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             SectionLayoutManager sectionManager = getSectionLayoutManager(state.section);
             sectionManager.setLayoutManager(this);
             state.setSectionData(sectionManager);
-
-            Log.d("Fill Section " + state.section,
-                    "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-            Log.d("Fill Section " + state.section, "From position " + currentPosition);
-            Log.d("Fill Section " + state.section, "First section " + state.sectionFirstPosition);
-            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
-            Log.d("Fill Section " + state.section,
-                    "Header start margin " + state.headerStartMargin);
-            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
 
@@ -286,7 +270,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
-        Log.d("onLayout", "Child count " + getChildCount());
         state.recycleCache();
     }
 
@@ -406,8 +389,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (header == null) {
             return;
         }
-
-        Log.d("Layout header " + state.sectionFirstPosition, "Markerline " + state.markerLine);
 
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
