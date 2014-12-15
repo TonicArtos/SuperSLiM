@@ -205,7 +205,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          * When filling to start the first section may be incomplete requiring a pass to end.
          * This only matters for filling in floating headers in the correct place.
          */
-        boolean pastIncompleteSection = false;
+        boolean pastIncompleteSection = state.isDirectionEnd();
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
 
@@ -232,7 +232,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
 
             if (state.isDirectionEnd()) {
-                if (currentPosition == state.sectionFirstPosition) {
+                if (currentPosition - 1 == state.sectionFirstPosition && sectionHeader != null) {
+                    // Make sure to load floating header where it would be skipped by a fill to
+                    // start starting on the header.
+                    LayoutParams headerLp = (LayoutParams) sectionHeader.view.getLayoutParams();
+                    if (headerLp.headerAlignment == HEADER_OVERLAY_END
+                            || headerLp.headerAlignment == HEADER_OVERLAY_START) {
+                        layoutHeader(state, sectionHeader);
+                    }
+                } else if (currentPosition == state.sectionFirstPosition) {
                     layoutHeader(state, sectionHeader);
                     currentPosition += 1;
                 }
