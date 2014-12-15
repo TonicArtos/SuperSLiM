@@ -124,7 +124,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                 // Look to see if the header overlaps with the displayed area of the section.
                 LayoutState.View child;
 
-                if (position < currentPosition) {
+                if (position <= currentPosition) {
                     child = state.getView(position);
                     measureChild(state, child);
                 } else {

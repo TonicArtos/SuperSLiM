@@ -156,15 +156,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
+        Log.d("Scroll", "Delta " + delta);
+        Log.d("Scroll", "First item reached " + firstItemReached);
         if (delta < 0) {
             if (!lastItemReached) {
                 fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler,
                         state);
             }
         } else if (0 < delta) {
-            if (!firstItemReached) {
                 fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
-            }
         }
 
         return -delta;
@@ -220,7 +220,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
-            state.updateSectionData(sectionHeader);
 
             // Check to see if we are actually going to fill a complete section.
             if (!pastIncompleteSection && state.isDirectionStart()) {
@@ -376,7 +375,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             measureHeader(sectionHeader);
             if (headerLp.headerAlignment != HEADER_INLINE) {
                 state.headerOverlap = getDecoratedMeasuredHeight(sectionHeader.view);
+                state.headerOffset = 0;
             }
+            state.updateSectionData(sectionHeader);
         } else {
             state.headerOverlap = 0;
         }
@@ -416,6 +417,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             } else if (state.isDirectionEnd() && state.markerLine >= getHeight()) {
                 return;
             }
+        }
+
+        if (state.headerOverlap > 0 && state.headerOffset == LayoutState.NO_HEADER_OFFSET) {
+            return;
         }
 
         // Attach or float view.
@@ -488,11 +493,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         } else {
             // Position header below marker line.
             top = state.markerLine;
-            bottom = state.markerLine + height;
+            bottom = top + height;
         }
 
         if (state.headerOffset > 0) {
             top -= state.headerOffset;
+            bottom -= state.headerOffset;
             state.headerOffset = LayoutState.NO_HEADER_OFFSET;
         }
 
