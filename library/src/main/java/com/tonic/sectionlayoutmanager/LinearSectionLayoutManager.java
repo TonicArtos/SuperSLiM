@@ -37,9 +37,8 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             return;
         }
 
-        mLayoutManager
-                .measureChildWithMargins(child.view,
-                        state.contentStartMargin + state.contentEndMargin, 0);
+        mLayoutManager.measureChildWithMargins(child.view,
+                state.headerStartMargin + state.headerEndMargin, 0);
     }
 
     @Override

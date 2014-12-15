@@ -34,7 +34,9 @@ public class LayoutState {
     public SectionLayoutManager.Direction direction;
 
     public int headerStartMargin;
+
     public int contentStartMargin;
+
     public int contentEndMargin;
 
     public int headerEndMargin;
@@ -102,7 +104,7 @@ public class LayoutState {
         headerStartMargin = lp.headerStartMargin;
         headerEndMargin = lp.headerEndMargin;
         contentStartMargin = headerStartMargin + mLayoutManager.getPaddingLeft();
-        contentEndMargin = headerEndMargin +mLayoutManager.getPaddingRight();
+        contentEndMargin = headerEndMargin + mLayoutManager.getPaddingRight();
     }
 
     public void setSectionData(SectionLayoutManager sectionManager) {
@@ -118,7 +120,7 @@ public class LayoutState {
         }
 
         contentStartMargin = headerStartMargin + mLayoutManager.getPaddingLeft();
-        contentEndMargin = headerEndMargin +mLayoutManager.getPaddingRight();
+        contentEndMargin = headerEndMargin + mLayoutManager.getPaddingRight();
     }
 
     public boolean isDirectionStart() {
@@ -130,7 +132,8 @@ public class LayoutState {
     }
 
     public void updateSectionData(View sectionHeader) {
-        LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) sectionHeader.view.getLayoutParams();
+        LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) sectionHeader.view
+                .getLayoutParams();
 
         if (lp.headerStartMarginIsAuto) {
             if (lp.headerAlignment == LayoutManager.HEADER_ALIGN_START) {

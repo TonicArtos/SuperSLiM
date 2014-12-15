@@ -531,7 +531,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Width to leave for the section to which this header belongs. Only applies if the
         // header is being laid out adjacent to the section.
-        int unavailableWidth = getPaddingLeft() + getPaddingRight();
+        int unavailableWidth = 0;
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
         if (lp.headerAlignment == HEADER_ALIGN_START && !lp.headerStartMarginIsAuto) {
             unavailableWidth = getWidth() - lp.headerStartMargin;
