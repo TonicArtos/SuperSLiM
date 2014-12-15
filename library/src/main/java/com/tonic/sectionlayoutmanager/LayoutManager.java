@@ -72,45 +72,61 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     @Override
     public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler,
             RecyclerView.State state) {
-        if (getChildCount() == 0) {
+        int numChildren = getChildCount();//
+        if (numChildren == 0) {
             return 0;
         }
 
         //Take top measurements from the top view as determined by the section layout manager.
-        final android.view.View firstVisibleChild = getChildAt(0);
-        android.view.View topView;
-
-        LayoutParams lp = (LayoutParams) firstVisibleChild.getLayoutParams();
-        if (lp.isHeader) {
-            // First visible view is a header so we don't need to refer to the section layout
-            // manager as to which view really is top most.
-            topView = firstVisibleChild;
-        } else {
-            SectionLayoutManager sectionLayoutManager = mSlmFactory
-                    .getSectionLayoutManager(lp.section);
-            sectionLayoutManager.setLayoutManager(this);
-            topView = sectionLayoutManager.getTopView(lp.section);
+        android.view.View topView = null;
+        // Look for a section header (which may be floating so can't just lok at the first
+        // child).
+        int sectionSearching = -1;
+        for (int i = 0; i < numChildren; i++) {
+            View v = getChildAt(i);
+            LayoutParams params = (LayoutParams) v.getLayoutParams();
+            if (sectionSearching >= 0 && sectionSearching != params.section) {
+                break;
+            } else if (params.isHeader) {
+                topView = v;
+                break;
+            }
         }
-        boolean firstItemReached = getPosition(firstVisibleChild) == 0;
+
+        boolean firstItemReached;
+        if (topView == null) {
+            // No floating header so ask for the highest view from the section (which might not
+            // be the first child).
+            SectionLayoutManager sectionLayoutManager = mSlmFactory
+                    .getSectionLayoutManager(sectionSearching);
+            sectionLayoutManager.setLayoutManager(this);
+            topView = sectionLayoutManager.getTopView(sectionSearching);
+            firstItemReached = getPosition(sectionLayoutManager.getFirstView(sectionSearching))
+                    == 0;
+        } else {
+            firstItemReached = getPosition(topView) == 0;
+        }
 
         //Take bottom measurements from the bottom view as determined by the section layout
         // manager.
-        android.view.View lastVisibleChild = getChildAt(getChildCount() - 1);
+        android.view.View lastVisibleChild = getChildAt(numChildren - 1);
         android.view.View bottomView;
 
         // Skip overlay headers which mock being last (except when they have empty sections and
         // really are last).
-        lp = (LayoutParams) lastVisibleChild.getLayoutParams();
+        LayoutParams lp = (LayoutParams) lastVisibleChild.getLayoutParams();
         if (lp.isHeader) {
             if (lp.headerAlignment == HEADER_OVERLAY_START
                     || lp.headerAlignment == HEADER_OVERLAY_END) {
                 // Check the one above. If it belongs to another section then the overlay header
                 // is really the last visible view.
-                android.view.View oneAbove = getChildAt(getChildCount() - 2);
-                LayoutParams oneAboveLp = (LayoutParams) oneAbove.getLayoutParams();
-                if (oneAboveLp.section == lp.section) {
-                    lastVisibleChild = oneAbove;
-                    lp = oneAboveLp;
+                if (numChildren > 1) {
+                    android.view.View oneAbove = getChildAt(numChildren - 2);
+                    LayoutParams oneAboveLp = (LayoutParams) oneAbove.getLayoutParams();
+                    if (oneAboveLp.section == lp.section) {
+                        lastVisibleChild = oneAbove;
+                        lp = oneAboveLp;
+                    }
                 }
             }
         }
@@ -162,7 +178,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         state);
             }
         } else if (0 < delta) {
-                fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
+            fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
         }
 
         return -delta;
@@ -467,7 +483,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         } else {
             left = getPaddingLeft();
             right = left + width;
-         }
+        }
 
         if (lp.headerAlignment == HEADER_INLINE
                 && state.isDirectionStart()) {

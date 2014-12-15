@@ -13,8 +13,19 @@ public abstract class SectionLayoutManager {
         mLayoutManager = layoutManager;
     }
 
+    /**
+     * Locate the view which has the lowest edge.
+     * @param section Section id.
+     * @return View with the lowest edge.
+     */
     public abstract View getBottomView(int section);
 
+    /**
+     * Locate the view with the highest edge.
+     *
+     * @param section Section id.
+     * @return View with the highest edge.
+     */
     public abstract View getTopView(int section);
 
     public int getHeaderStartMargin() {
@@ -23,6 +34,10 @@ public abstract class SectionLayoutManager {
 
     public int getHeaderEndMargin() {
         return MARGIN_UNSET;
+    }
+
+    public View getFirstView(int sectionSearching) {
+        return mLayoutManager.getChildAt(0);
     }
 
     public enum Direction {
