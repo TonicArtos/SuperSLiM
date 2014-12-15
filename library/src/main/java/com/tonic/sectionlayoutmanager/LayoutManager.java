@@ -129,7 +129,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Check we need to scroll.
         int viewSpan = getDecoratedBottom(bottomView) - getDecoratedTop(topView);
-        if (lastItemReached && viewSpan <= getHeight()) {
+        if (firstItemReached && lastItemReached && viewSpan <= getHeight() - getPaddingTop() - getPaddingBottom() - dy) {
             //We cannot scroll in either direction
             return 0;
         }
@@ -155,24 +155,25 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
-        if (dy > 0) {
+        if (delta < 0) {
             if (!lastItemReached) {
                 fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler,
                         state);
             }
-        } else {
+        } else  if (0 < delta) {
             if (!firstItemReached) {
                 fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
             }
         }
-
-        Log.d("Scroll", "Child count " + getChildCount());
 
         return -delta;
     }
 
     private void fill(SectionLayoutManager.Direction direction, final int anchorPosition,
             RecyclerView.Recycler recycler, RecyclerView.State rvs) {
+        Log.d("Fill", "Fill called");
+        Log.d("Fill", "Anchor position " + anchorPosition);
+
         LayoutState state = new LayoutState(this, recycler, rvs, getChildCount());
         final int itemCount = state.recyclerState.getItemCount();
         final int recyclerViewHeight = getHeight();
@@ -180,6 +181,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (anchorPosition >= itemCount || anchorPosition < 0) {
             return;
         }
+
+        state.detachAndCacheAllViews();
 
         state.direction = direction;
         final int borderline = getBorderLine(state, anchorPosition);
@@ -193,13 +196,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
 
-        state.detachAndCacheAllViews();
-
-        Log.d("Fill", "Fill called");
         Log.d("Fill", "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-        Log.d("Fill", "Anchor position " + anchorPosition);
+        Log.d("Fill", "Markerline " + state.markerLine);
 
-        while (true) {
+        while (!fillToEndDone || !fillToStartDone) {
             // Look at the current view and find out details.
             state.setSectionData((LayoutParams) state.getView(
                     ((LayoutParams) state.getView(currentPosition).view
@@ -209,32 +209,36 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sectionManager.setLayoutManager(this);
             state.setSectionData(sectionManager);
 
-            Log.d("Fill Section " + state.section,
-                    "Direction " + (state.isDirectionEnd() ? "end" : "start"));
-            Log.d("Fill Section " + state.section, "From Position " + currentPosition);
-            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
-            Log.d("Fill Section " + state.section, "Header start margin " + state.headerStartMargin);
-            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
+//            Log.d("Fill Section " + state.section,
+//                    "Direction " + (state.isDirectionEnd() ? "end" : "start"));
+//            Log.d("Fill Section " + state.section, "From position " + currentPosition);
+//            Log.d("Fill Section " + state.section, "First section " + state.sectionFirstPosition);
+//            Log.d("Fill Section " + state.section, "Marker position " + state.markerLine);
+//            Log.d("Fill Section " + state.section,
+//                    "Header start margin " + state.headerStartMargin);
+//            Log.d("Fill Section " + state.section, "Marker end margin " + state.headerEndMargin);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
             state.updateSectionData(sectionHeader);
 
             // Check to see if we are actually going to fill a complete section.
             if (!pastIncompleteSection && state.isDirectionStart()) {
-                pastIncompleteSection = ((LayoutParams) state.getView(currentPosition + 1).view
-                        .getLayoutParams()).section != state.section;
+                if (currentPosition + 1 >= itemCount) {
+                    pastIncompleteSection = true;
+                } else {
+                    pastIncompleteSection = ((LayoutParams) state.getView(currentPosition + 1).view
+                            .getLayoutParams()).section != state.section;
+                }
             }
 
             if (state.isDirectionEnd()) {
-                layoutHeader(state, sectionHeader);
                 if (currentPosition == state.sectionFirstPosition) {
+                    layoutHeader(state, sectionHeader);
                     currentPosition += 1;
                 }
             }
             int count = sectionManager.fill(state, currentPosition);
             currentPosition += state.isDirectionStart() ? -count : count;
-
-            Log.d("Fill Section " + state.section, "Count " + count);
 
             if (state.isDirectionStart()) {
                 layoutHeader(state, sectionHeader);
@@ -261,30 +265,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             pastIncompleteSection = true;
 
-            if (!fillToEndDone && state.isDirectionStart() && (state.markerLine <= 0
-                    || currentPosition < 0)) {
+            if (state.isDirectionStart() && (state.markerLine <= 0 || currentPosition < 0)) {
                 state.direction = SectionLayoutManager.Direction.END;
                 state.markerLine = borderline;
                 currentPosition = anchorPosition + 1;
                 fillToStartDone = true;
-                if (currentPosition >= itemCount || state.markerLine >= recyclerViewHeight) {
-                    fillToStartDone = true;
-                    break;
+                if (currentPosition >= itemCount) {
+                    fillToEndDone = true;
                 }
-            } else if (!fillToStartDone && state.isDirectionEnd() && (
-                    state.markerLine >= recyclerViewHeight || currentPosition >= itemCount)) {
+            } else if (state.isDirectionEnd() && (state.markerLine >= recyclerViewHeight
+                    || currentPosition >= itemCount)) {
                 state.direction = SectionLayoutManager.Direction.START;
                 state.markerLine = borderline;
                 currentPosition = anchorPosition - 1;
                 fillToEndDone = true;
-                if (currentPosition < 0 || state.markerLine <= 0) {
+                if (currentPosition < 0) {
                     fillToStartDone = true;
-                    break;
                 }
             }
         }
 
-        Log.d("onLayout", "Child count " + getChildCount());
+//        Log.d("onLayout", "Child count " + getChildCount());
         state.recycleCache();
     }
 
@@ -335,11 +336,22 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
+//        Log.d("Layout header " + state.sectionFirstPosition, "Markerline " + state.markerLine);
+
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
 
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
 
+        if (lp.headerAlignment == HEADER_INLINE) {
+            if (state.isDirectionStart() && state.markerLine <= 0) {
+                return;
+            } else if (state.isDirectionEnd() && state.markerLine >= getHeight()) {
+                return;
+            }
+        }
+
+        // Attach or float view.
         if (lp.headerAlignment == HEADER_OVERLAY_START
                 || lp.headerAlignment == HEADER_OVERLAY_END) {
             mPendingFloatingHeaders.put(lp.section, header);
@@ -354,10 +366,19 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
+        // Handle cached view.
         if (header.wasCached) {
+            if (lp.headerAlignment == HEADER_INLINE) {
+                if (state.isDirectionStart()) {
+                    state.markerLine = getDecoratedTop(header.view);
+                } else {
+                    state.markerLine = getDecoratedBottom(header.view);
+                }
+            }
             return;
         }
 
+        // Handle non-cached view.
         // TODO: RTL layout stuff
         int top;
         int bottom;

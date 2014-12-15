@@ -5,6 +5,7 @@ import com.tonic.sectionlayoutmanager.LayoutManager;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,6 +49,9 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 mItems.add(new LineItem(header, true, sectionCount, sectionFirstPosition));
             }
             mItems.add(new LineItem(countryNames[i], false, sectionCount, sectionFirstPosition));
+        }
+        for (int i = 0; i < mItems.size(); i++) {
+            Log.d("Adapter Item " + mItems.get(i).section + " " + i, mItems.get(i).text + "     " + (mItems.get(i).isHeader ? "Header" : ""));
         }
         mContext = context;
     }

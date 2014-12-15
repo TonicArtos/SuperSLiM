@@ -3,7 +3,6 @@
           xmlns:app="http://schemas.android.com/apk/res-auto"
           app:slm_alignHeader="start"
           app:slm_isHeader="true"
-          android:background="@android:color/holo_green_dark"
           android:gravity="start"
           android:padding="16dip"
           android:textAppearance="?android:attr/textAppearanceLarge"

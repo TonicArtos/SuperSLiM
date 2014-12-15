@@ -1,22 +1,24 @@
 package com.tonic.sectionlayoutmanager;
 
-import android.view.View;
+import android.util.Log;
 
 public class LinearSectionLayoutManager extends SectionLayoutManager {
 
-    private void setupChild(LayoutState state, android.view.View child) {
+    private void setupChild(LayoutState state, LayoutState.View child, int currentPosition) {
         measureChild(state, child);
-        layoutChild(state, child);
+        layoutChild(state, child, currentPosition);
     }
 
-    private void layoutChild(LayoutState state, View child) {
-        final int height = mLayoutManager.getDecoratedMeasuredHeight(child);
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child);
+    private void layoutChild(LayoutState state, LayoutState.View child, int currentPosition) {
+        final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
         int left = state.headerStartMargin;
         int right = left + width;
         int top;
         int bottom;
+
+//        Log.d("Layout Child + " + currentPosition, "Markerline + " + state.markerLine);
 
         if (state.isDirectionEnd()) {
             top = state.markerLine;
@@ -25,19 +27,19 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             top = state.markerLine - height;
             bottom = state.markerLine;
         }
-        mLayoutManager.layoutDecorated(child, left, top, right, bottom);
+        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
 
-        if (state.isDirectionEnd()) {
-            mLayoutManager.addView(child);
-            state.markerLine += height;
-        } else {
-            mLayoutManager.addView(child, 0);
-            state.markerLine -= height;
-        }
+        addView(state, child, currentPosition);
     }
 
-    private void measureChild(LayoutState state, View child) {
-        mLayoutManager.measureChildWithMargins(child, state.headerStartMargin + state.headerEndMargin, 0);
+    private void measureChild(LayoutState state, LayoutState.View child) {
+        if (child.wasCached) {
+            return;
+        }
+
+        mLayoutManager
+                .measureChildWithMargins(child.view,
+                        state.headerStartMargin + state.headerEndMargin, 0);
     }
 
     @Override
@@ -91,24 +93,20 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             if (currentPosition < 0 || currentPosition >= itemCount) {
                 break;
             }
-            if ((state.isDirectionStart() && state.markerLine <= 0) || (state.isDirectionEnd()
-                    && state.markerLine >= height)) {
+            if ((state.isDirectionStart() && state.markerLine <= 0)
+                    || (state.isDirectionEnd() && state.markerLine >= height)) {
                 break;
             }
 
-            LayoutState.View r = state.getView(currentPosition);
+            LayoutState.View child = state.getView(currentPosition);
 
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) r.view.getLayoutParams();
+            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) child.view
+                    .getLayoutParams();
             if (lp.isHeader || lp.section != state.section) {
                 break;
             }
 
-            if (r.wasCached) {
-                reattachView(state, r);
-                state.decacheView(currentPosition);
-            } else {
-                setupChild(state, r.view);
-            }
+            setupChild(state, child, currentPosition);
 
             countAdded += 1;
             if (state.isDirectionStart()) {
@@ -129,9 +127,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
                 if (position < currentPosition) {
                     child = state.getView(position);
-                    if (!child.wasCached) {
-                        measureChild(state, child.view);
-                    }
+                    measureChild(state, child);
                 } else {
                     // Run into an item that is displayed, indicating header overlap.
                     state.headerOffset = state.headerOverlap - headerCoverageLeft;
@@ -151,13 +147,25 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return countAdded;
     }
 
-    private void reattachView(LayoutState state, LayoutState.View r) {
-        if (state.isDirectionStart()) {
-            mLayoutManager.attachView(r.view, 0);
-            state.markerLine -= mLayoutManager.getDecoratedMeasuredHeight(r.view);
+    private void addView(LayoutState state, LayoutState.View r, int currentPosition) {
+        int height = mLayoutManager.getDecoratedMeasuredHeight(r.view);
+        if (r.wasCached) {
+            if (state.isDirectionStart()) {
+                mLayoutManager.attachView(r.view, 0);
+                state.markerLine -= height;
+            } else {
+                mLayoutManager.attachView(r.view);
+                state.markerLine += height;
+            }
+            state.decacheView(currentPosition);
         } else {
-            mLayoutManager.attachView(r.view);
-            state.markerLine += mLayoutManager.getDecoratedMeasuredHeight(r.view);
+            if (state.isDirectionEnd()) {
+                mLayoutManager.addView(r.view);
+                state.markerLine += height;
+            } else {
+                mLayoutManager.addView(r.view, 0);
+                state.markerLine -= height;
+            }
         }
     }
 }
