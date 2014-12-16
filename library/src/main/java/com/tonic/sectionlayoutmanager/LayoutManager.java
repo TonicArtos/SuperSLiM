@@ -180,10 +180,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         offsetChildrenVertical(delta);
 
         if (delta < 0) {
-            if (!lastItemReached) {
-                fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler,
-                        state);
-            }
+            fill(SectionLayoutManager.Direction.START, getPosition(bottomView), recycler, state);
         } else if (0 < delta) {
             fill(SectionLayoutManager.Direction.END, getPosition(topView), recycler, state);
         }
@@ -495,7 +492,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             if (getDecoratedTop(header.view) <= 0 && lp.isSticky) {
                 isStickied = true;
                 mStickiedPosition = state.sectionFirstPosition;
-                Log.d("Layout", "Become sticky " + state.sectionFirstPosition);
+                Log.d("Layout", "Cached became sticky " + state.sectionFirstPosition);
             }
         }
 
@@ -523,7 +520,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         updateHeaderRectSides(state, rect, width, lp);
         updateHeaderRectTopAndBottom(state, rect, height, lp);
 
-        if (rect.top >= 0) {
+        if (rect.top > 0) {
             if (isStickied) {
                 mStickiedPosition = NO_STICKIED_POSITION;
                 isStickied = false;
