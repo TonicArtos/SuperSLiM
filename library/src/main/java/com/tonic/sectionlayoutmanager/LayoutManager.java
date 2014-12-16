@@ -10,8 +10,6 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.List;
-
 /**
  * A LayoutManager that lays out section headers with optional stickiness and uses a map of
  * sections
@@ -31,9 +29,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     public static final int HEADER_MARGIN_AUTO = -0x01;
 
-    private static final int DEFAULT_STICKIED_POSITION = -0x01;
+    private static final int NO_STICKIED_POSITION = -0x01;
 
-    private int mStickiedPosition = DEFAULT_STICKIED_POSITION;
+    private int mStickiedPosition = NO_STICKIED_POSITION;
 
     private SlmFactory mSlmFactory = new SlmFactory() {
         @Override
@@ -44,6 +42,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private SparseArray<LayoutState.View> mPendingFloatingHeaders
             = new SparseArray<LayoutState.View>();
+
+    private int mStickiedAttachPoint;
+
+    /**
+     * Marker for lowest edge of stickied header.
+     */
+    private int mStickyBottomMarker;
 
     public LayoutManager(Context context) {
     }
@@ -79,8 +84,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         //Take top measurements from the top view as determined by the section layout manager.
         android.view.View topView = null;
-        // Look for a section header (which may be floating so can't just lok at the first
-        // child).
+        // Look for a section header (which may be floating so can't just look at the first child).
         int sectionSearching = -1;
         for (int i = 0; i < numChildren; i++) {
             View v = getChildAt(i);
@@ -90,6 +94,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             } else if (params.isHeader) {
                 topView = v;
                 break;
+            } else if (sectionSearching < 0) {
+                sectionSearching = params.section;
             }
         }
 
@@ -144,6 +150,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         boolean lastItemReached = getPosition(lastVisibleChild) == state.getItemCount() - 1;
 
         // Check we need to scroll.
+        if (topView == null) {
+            Log.d("here", "here");
+        }
         int viewSpan = getDecoratedBottom(bottomView) - getDecoratedTop(topView);
         if (firstItemReached && lastItemReached
                 && viewSpan <= getHeight() - getPaddingTop() - getPaddingBottom() - dy) {
@@ -209,6 +218,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 && currentPosition == state.sectionFirstPosition;
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
+
+        // Setup for stickied header.
+        LayoutState.View stickiedHeader;
+        int stickiedHeaderChildPosition = -1;
+        if (mStickiedPosition >= 0) {
+            stickiedHeader = state.getView(mStickiedPosition);
+            measureHeader(stickiedHeader);
+        }
 
         while (!fillToEndDone || !fillToStartDone) {
             // Look at the current view and find out details.
@@ -417,6 +434,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (header == null) {
             return;
         }
+        boolean isStickied = mStickiedPosition == state.sectionFirstPosition;
 
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
@@ -435,29 +453,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-        // Attach or float view.
-        if (lp.headerAlignment == HEADER_OVERLAY_START
-                || lp.headerAlignment == HEADER_OVERLAY_END) {
-            mPendingFloatingHeaders.put(lp.section, header);
-        } else if (!lp.isItemRemoved()) {
-            if (header.wasCached) {
-                attachView(header.view,
-                        state.isDirectionStart() ? 0 : -1);
-                state.decacheView(state.sectionFirstPosition);
-            } else {
-                addView(header.view,
-                        state.isDirectionStart() ? 0 : -1);
+        // Check cached header has not become sticky with scroll.
+        if (header.wasCached) {
+            if (getDecoratedTop(header.view) <= 0 && lp.isSticky) {
+                isStickied = true;
+                mStickiedPosition = state.sectionFirstPosition;
             }
         }
 
-        // Handle cached view.
-        if (header.wasCached) {
+        boolean alreadyAttachedOrFloated = false;
+        if (!isStickied) {
+            attachOrFloatView(state, header, lp);
+            alreadyAttachedOrFloated = true;
+        }
+
+        // Handle cached view but skip stickied headers as they do not have their cached layout
+        // preserved.
+        if (!isStickied && header.wasCached) {
             if (lp.headerAlignment == HEADER_INLINE) {
                 if (state.isDirectionStart()) {
                     state.markerLine = getDecoratedTop(header.view);
                 } else {
                     state.markerLine = getDecoratedBottom(header.view);
                 }
+            }
+
+            if (lp.isSticky && getDecoratedTop(header.view) < mStickyBottomMarker) {
+                mStickyBottomMarker = getDecoratedTop(header.view);
             }
             return;
         }
@@ -514,7 +536,26 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             state.headerOffset = LayoutState.NO_HEADER_OFFSET;
         }
 
+        if (top >= 0) {
+            if (isStickied) {
+                mStickiedPosition = NO_STICKIED_POSITION;
+            }
+            isStickied = false;
+        } else if (lp.isSticky) {
+            isStickied = true;
+            mStickiedPosition = state.sectionFirstPosition;
+        }
+
         layoutDecorated(header.view, left, top, right, bottom);
+        if (!isStickied) {
+            if (!alreadyAttachedOrFloated) {
+                // Attach any header which may not be stickied anymore.
+                attachOrFloatView(state, header, lp);
+            }
+            if (lp.isSticky && getDecoratedTop(header.view) < mStickyBottomMarker) {
+                mStickyBottomMarker = getDecoratedTop(header.view);
+            }
+        }
 
         if (lp.headerAlignment == HEADER_INLINE) {
             if (state.isDirectionStart()) {
@@ -523,6 +564,21 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             } else {
                 // Align marker line to align with bottom of header.
                 state.markerLine = bottom;
+            }
+        }
+    }
+
+    private void attachOrFloatView(LayoutState state, LayoutState.View view,
+            LayoutParams params) {
+        if (params.headerAlignment == HEADER_OVERLAY_START
+                || params.headerAlignment == HEADER_OVERLAY_END) {
+            mPendingFloatingHeaders.put(params.section, view);
+        } else if (!params.isItemRemoved()) {
+            if (view.wasCached) {
+                attachView(view.view, state.isDirectionStart() ? 0 : -1);
+                state.decacheView(state.sectionFirstPosition);
+            } else {
+                addView(view.view, state.isDirectionStart() ? 0 : -1);
             }
         }
     }
