@@ -87,6 +87,10 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         int countAdded = 0;
         int currentPosition = fromPosition;
 
+        if (state.isDirectionEnd() && state.headerOverlap > 0) {
+            updateHeaderOffset(state, itemCount, currentPosition);
+        }
+
         while (true) {
             if (currentPosition < 0 || currentPosition >= itemCount) {
                 break;
@@ -114,35 +118,45 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             }
         }
 
-        // If filling to start, need to check header height and adjust markerline to right location.
+        // If filling to start, need to check header height and adjust offset to right location.
         if (state.isDirectionStart() && state.headerOverlap > 0) {
-            int position = state.sectionFirstPosition + 1;
-            int headerCoverageLeft = state.headerOverlap;
-
-            while (true) {
-                // Look to see if the header overlaps with the displayed area of the section.
-                LayoutState.View child;
-
-                if (position <= currentPosition) {
-                    child = state.getView(position);
-                    measureChild(state, child);
-                } else {
-                    // Run into an item that is displayed, indicating header overlap.
-                    state.headerOffset = state.headerOverlap - headerCoverageLeft;
-                    break;
-                }
-
-                headerCoverageLeft -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
-                if (headerCoverageLeft <= 0) {
-                    state.headerOffset = LayoutState.NO_HEADER_OFFSET;
-                    break;
-                }
-
-                position += 1;
-            }
+            updateHeaderOffset(state, itemCount, currentPosition);
         }
 
         return countAdded;
+    }
+
+    private void updateHeaderOffset(LayoutState state, int itemCount, int currentPosition) {
+        int position = state.sectionFirstPosition + 1;
+        int headerCoverageLeft = state.headerOverlap;
+
+        while (true) {
+            if (position >= itemCount) {
+                break;
+            }
+
+            // Look to see if the header overlaps with the displayed area of the section.
+            LayoutState.View child;
+
+            if (position < currentPosition
+                    || (state.isDirectionStart() && position == currentPosition)) {
+                child = state.getView(position);
+                measureChild(state, child);
+            } else {
+                // Run into an item that is displayed, indicating header overlap.
+                state.headerOffset = state.headerOverlap - headerCoverageLeft;
+                break;
+            }
+
+            headerCoverageLeft -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
+
+            if (headerCoverageLeft <= 0) {
+                state.headerOffset = LayoutState.NO_HEADER_OFFSET;
+                break;
+            }
+
+            position += 1;
+        }
     }
 
     private void addView(LayoutState state, LayoutState.View r, int currentPosition) {

@@ -205,7 +205,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          * When filling to start the first section may be incomplete requiring a pass to end.
          * This only matters for filling in floating headers in the correct place.
          */
-        boolean pastIncompleteSection = state.isDirectionEnd();
+        boolean pastIncompleteSection = state.isDirectionEnd()
+                && currentPosition == state.sectionFirstPosition;
         boolean fillToEndDone = false;
         boolean fillToStartDone = false;
 
@@ -223,24 +224,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             // Check to see if we are actually going to fill a complete section.
             if (!pastIncompleteSection && state.isDirectionStart()) {
-                if (currentPosition + 1 >= itemCount) {
-                    pastIncompleteSection = true;
-                } else {
-                    pastIncompleteSection = ((LayoutParams) state.getView(currentPosition + 1).view
-                            .getLayoutParams()).section != state.section;
-                }
+                pastIncompleteSection = currentPosition + 1 >= itemCount ||
+                        ((LayoutParams) state.getView(currentPosition + 1).view
+                                .getLayoutParams()).section != state.section;
             }
 
             if (state.isDirectionEnd()) {
-                if (currentPosition - 1 == state.sectionFirstPosition && sectionHeader != null) {
-                    // Make sure to load floating header where it would be skipped by a fill to
-                    // start starting on the header.
-                    LayoutParams headerLp = (LayoutParams) sectionHeader.view.getLayoutParams();
-                    if (headerLp.headerAlignment == HEADER_OVERLAY_END
-                            || headerLp.headerAlignment == HEADER_OVERLAY_START) {
-                        layoutHeader(state, sectionHeader);
-                    }
-                } else if (currentPosition == state.sectionFirstPosition) {
+                if (currentPosition == state.sectionFirstPosition) {
                     layoutHeader(state, sectionHeader);
                     currentPosition += 1;
                 }
@@ -253,6 +243,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 layoutHeader(state, sectionHeader);
                 if (currentPosition == state.sectionFirstPosition) {
                     currentPosition -= 1;
+                }
+            } else if (!pastIncompleteSection && sectionHeader != null) {
+                // Make sure to load floating header for an incomplete section.
+                LayoutParams headerLp = (LayoutParams) sectionHeader.view.getLayoutParams();
+                if (headerLp.headerAlignment == HEADER_OVERLAY_END
+                        || headerLp.headerAlignment == HEADER_OVERLAY_START) {
+                    // Temporarily switch to borderline so the partial section can correctly
+                    // position the floating header.
+                    int markerLine = state.markerLine;
+                    state.markerLine = borderline;
+                    layoutHeader(state, sectionHeader);
+                    state.markerLine = markerLine;
                 }
             }
 
@@ -285,6 +287,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             } else if (state.isDirectionEnd() && (state.markerLine >= recyclerViewHeight
                     || currentPosition >= itemCount)) {
                 state.direction = SectionLayoutManager.Direction.START;
+                pastIncompleteSection = false;
                 state.markerLine = borderline;
                 currentPosition = anchorPosition - 1;
                 fillToEndDone = true;
@@ -294,6 +297,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
+        mPendingFloatingHeaders.clear();
         state.recycleCache();
     }
 
