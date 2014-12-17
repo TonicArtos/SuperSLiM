@@ -28,8 +28,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     public static final int HEADER_INLINE = 0x01;
 
-    public static final int HEADER_MARGIN_AUTO = -0x01;
-
     private static final int NO_STICKIED_POSITION = -0x01;
 
     private int mStickiedPosition = NO_STICKIED_POSITION;
@@ -41,16 +39,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
     };
 
-    private SparseArray<LayoutState.View> mPendingFloatingHeaders
-            = new SparseArray<LayoutState.View>();
-
+    private SparseArray<LayoutState.View> mPendingFloatingHeaders = new SparseArray<>();
     /**
      * Marker for lowest edge of stickied header.
      */
     private int mStickyBottomMarker;
-
-    public LayoutManager(Context context) {
-    }
 
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
@@ -227,8 +220,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sectionManager.setLayoutManager(this);
             state.setSectionData(sectionManager);
 
-//            Log.d("Fill", "Section " + state.section);
-//            Log.d("Fill", "Direction " + (state.isDirectionStart() ? " Start" : " End"));
+            Log.d("Fill", "Section " + state.section);
+            Log.d("Fill", "Direction " + (state.isDirectionStart() ? " Start" : " End"));
+            Log.d("Fill", "From " + currentPosition);
 
             LayoutState.View sectionHeader = loadSectionHeader(state);
 
@@ -690,12 +684,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
-        final LayoutParams newLp = new LayoutParams((ViewGroup.MarginLayoutParams) lp);
+        final LayoutParams newLp = new LayoutParams(lp);
         newLp.width = LayoutParams.MATCH_PARENT;
         newLp.height = LayoutParams.MATCH_PARENT;
-        if (newLp instanceof LayoutParams) {
-            newLp.init((LayoutParams) lp);
-        }
+        newLp.init(lp);
         return newLp;
     }
 
@@ -785,11 +777,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public LayoutParams(ViewGroup.LayoutParams other) {
-            super(other);
-            init(other);
-        }
-
-        public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
