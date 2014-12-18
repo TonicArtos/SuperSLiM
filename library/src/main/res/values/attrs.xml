@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="sectionlayoutmanager_LayoutManager">
+        <attr name="slm_isHeader" format="boolean"/>
+        <attr name="slm_alignHeader" format="enum">
+            <enum name="inline" value="0x01"/>
+            <enum name="start" value="0x02"/>
+            <enum name="end" value="0x03"/>
+            <enum name="overlay_start" value="0x04"/>
+            <enum name="overlay_end" value="0x05"/>
+        </attr>
+        <attr name="slm_isSticky" format="boolean"/>
+        <attr name="slm_sectionFirstPosition" format="integer"/>
+        <attr name="slm_section" format="integer"/>
+        <attr name="slm_headerStartMargin" format="enum|dimension">
+            <enum name="auto" value="-1"/>
+        </attr>
+        <attr name="slm_headerEndMargin" format="enum|dimension">
+            <enum name="auto" value="-1"/>
+        </attr>
+    </declare-styleable>
+</resources>
