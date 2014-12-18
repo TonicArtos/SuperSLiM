@@ -1,11 +1,10 @@
 package com.tonic.sectionlayoutmanager;
 
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.SparseArray;
 
 /**
- * State to track the current top markerLine views are being markerLine relative to.
+ * State to track the current top mMarkerLine views are being mMarkerLine relative to.
  */
 public class LayoutState {
 
@@ -21,29 +20,9 @@ public class LayoutState {
 
     private final RecyclerView.LayoutManager mLayoutManager;
 
-    public int headerOverlap;
-
-    public int markerLine;
-
-    public int sectionFirstPosition;
-
-    public int section;
-
-    public int headerOffset = NO_HEADER_OFFSET;
-
-    public SectionLayoutManager.Direction direction;
-
-    public int headerStartMargin;
-
-    public int contentStartMargin;
-
-    public int contentEndMargin;
-
-    public int headerEndMargin;
-
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
-            RecyclerView.State recyclerState, int cacheSize) {
-        viewCache = new SparseArray<android.view.View>(cacheSize);
+            RecyclerView.State recyclerState) {
+        viewCache = new SparseArray<android.view.View>(layoutManager.getChildCount());
         this.recyclerState = recyclerState;
         this.recycler = recycler;
         mLayoutManager = layoutManager;
@@ -96,62 +75,6 @@ public class LayoutState {
         return new View(child, wasCached);
     }
 
-    public void setSectionData(LayoutManager.LayoutParams lp) {
-        section = lp.section;
-        sectionFirstPosition = lp.sectionFirstPosition;
-        headerStartMargin = lp.headerStartMargin;
-        headerEndMargin = lp.headerEndMargin;
-        contentStartMargin = headerStartMargin + mLayoutManager.getPaddingLeft();
-        contentEndMargin = headerEndMargin + mLayoutManager.getPaddingRight();
-    }
-
-    public void setSectionData(SectionLayoutManager sectionManager) {
-        int startMargin = sectionManager.getHeaderStartMargin();
-        int endMargin = sectionManager.getHeaderEndMargin();
-
-        if (startMargin >= 0) {
-            headerStartMargin = startMargin;
-        }
-
-        if (endMargin >= 0) {
-            headerEndMargin = endMargin;
-        }
-
-        contentStartMargin = headerStartMargin + mLayoutManager.getPaddingLeft();
-        contentEndMargin = headerEndMargin + mLayoutManager.getPaddingRight();
-    }
-
-    public boolean isDirectionStart() {
-        return direction == SectionLayoutManager.Direction.START;
-    }
-
-    public boolean isDirectionEnd() {
-        return direction == SectionLayoutManager.Direction.END;
-    }
-
-    public void updateSectionData(View sectionHeader) {
-        LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) sectionHeader.view
-                .getLayoutParams();
-
-        if (lp.headerStartMarginIsAuto) {
-            if (lp.headerAlignment == LayoutManager.HEADER_ALIGN_START) {
-                headerStartMargin = mLayoutManager.getDecoratedMeasuredWidth(sectionHeader.view);
-            } else {
-                headerStartMargin = 0;
-            }
-        }
-        if (lp.headerEndMarginIsAuto) {
-            if (lp.headerAlignment == LayoutManager.HEADER_ALIGN_END) {
-                headerEndMargin = mLayoutManager.getDecoratedMeasuredWidth(sectionHeader.view);
-            } else {
-                headerEndMargin = 0;
-            }
-        }
-
-        contentStartMargin = headerStartMargin + mLayoutManager.getPaddingLeft();
-        contentEndMargin = headerEndMargin + mLayoutManager.getPaddingRight();
-    }
-
     public static class View {
 
         public final android.view.View view;
@@ -163,5 +86,8 @@ public class LayoutState {
             this.wasCached = wasCached;
         }
 
+        public LayoutManager.LayoutParams getLayoutParams() {
+            return (LayoutManager.LayoutParams) view.getLayoutParams();
+        }
     }
 }

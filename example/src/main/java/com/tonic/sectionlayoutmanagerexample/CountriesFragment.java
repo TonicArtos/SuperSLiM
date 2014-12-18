@@ -70,8 +70,9 @@ public class CountriesFragment extends Fragment {
 
         private LayoutManager.SlmFactory mSlmFactory = new LayoutManager.SlmFactory() {
             @Override
-            public SectionLayoutManager getSectionLayoutManager(int section) {
-                return new LinearSectionLayoutManager();
+            public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
+                    int section) {
+                return new LinearSectionLayoutManager(layoutManager);
             }
         };
 
@@ -80,7 +81,7 @@ public class CountriesFragment extends Fragment {
         }
 
         public void initViews(Context context) {
-            LayoutManager lm = new LayoutManager(context);
+            LayoutManager lm = new LayoutManager();
             lm.setSlmFactory(mSlmFactory);
             mRecyclerView.setLayoutManager(lm);
         }
