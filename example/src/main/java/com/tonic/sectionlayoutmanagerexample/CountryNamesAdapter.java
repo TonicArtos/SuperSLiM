@@ -28,6 +28,10 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private int mHeaderMode;
 
+    private boolean mMarginsFixed = CountriesFragment.DEFAULT_MARGINS_FIXED;
+
+    private boolean mHeadersSticky = CountriesFragment.DEFAULT_HEADERS_STICKY;
+
     public CountryNamesAdapter(Context context, int headerMode) {
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
         mHeaderMode = headerMode;
@@ -51,7 +55,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             mItems.add(new LineItem(countryNames[i], false, sectionCount, sectionFirstPosition));
         }
         for (int i = 0; i < mItems.size(); i++) {
-            Log.d("Adapter Item " + mItems.get(i).section + " " + i, mItems.get(i).text + "     " + (mItems.get(i).isHeader ? "Header" : ""));
+            Log.d("Adapter Item " + mItems.get(i).section + " " + i,
+                    mItems.get(i).text + "     " + (mItems.get(i).isHeader ? "Header" : ""));
         }
         mContext = context;
     }
@@ -88,8 +93,26 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         final LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) itemView
                 .getLayoutParams();
+        // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
             lp.headerAlignment = mHeaderMode;
+            if (mHeaderMode == LayoutManager.HEADER_INLINE) {
+                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            }
+
+            lp.headerEndMarginIsAuto = mMarginsFixed;
+            lp.headerStartMarginIsAuto = mMarginsFixed;
+            if (!mMarginsFixed) {
+                lp.headerEndMargin = (int) mContext.getResources()
+                        .getDimension(R.dimen.default_header_margin);
+                lp.headerStartMargin = (int) mContext.getResources()
+                        .getDimension(R.dimen.default_header_margin);
+                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            } else if (mHeaderMode != LayoutManager.HEADER_INLINE) {
+                lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
+
+            lp.isSticky = mHeadersSticky;
         }
         lp.section = item.section;
         lp.sectionFirstPosition = item.sectionFirstPosition;
@@ -98,12 +121,26 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     public void setHeaderMode(int mode) {
         mHeaderMode = mode;
+        notifyHeaderChanges();
+    }
+
+    private void notifyHeaderChanges() {
         for (int i = 0; i < mItems.size(); i++) {
             LineItem item = mItems.get(i);
             if (item.isHeader) {
                 notifyItemChanged(i);
             }
         }
+    }
+
+    public void setMarginsFixed(boolean marginsFixed) {
+        mMarginsFixed = marginsFixed;
+        notifyHeaderChanges();
+    }
+
+    public void setHeadersSticky(boolean headersSticky) {
+        mHeadersSticky = headersSticky;
+        notifyHeaderChanges();
     }
 
     private static class LineItem {

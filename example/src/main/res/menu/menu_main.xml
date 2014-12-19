@@ -32,4 +32,9 @@
             </group>
         </menu>
     </item>
+    <item android:id="@+id/action_fixed_margins"
+          android:checkable="true"
+          android:title="@string/menu_fixed_margins"
+          app:showAsAction="never"/>
+
 </menu>
