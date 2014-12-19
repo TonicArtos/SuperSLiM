@@ -548,10 +548,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // header is being laid out adjacent to the mSection.
         int unavailableWidth = 0;
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
+        int recyclerWidth = getWidth() - getPaddingLeft() - getPaddingRight();
         if (lp.headerAlignment == HEADER_ALIGN_START && !lp.headerStartMarginIsAuto) {
-            unavailableWidth = getWidth() - lp.headerStartMargin;
+            unavailableWidth = recyclerWidth - lp.headerStartMargin;
         } else if (lp.headerAlignment == HEADER_ALIGN_END && !lp.headerEndMarginIsAuto) {
-            unavailableWidth = getWidth() - lp.headerEndMargin;
+            unavailableWidth = recyclerWidth - lp.headerEndMargin;
         }
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
