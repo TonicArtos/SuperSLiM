@@ -19,11 +19,23 @@ public class CountriesFragment extends Fragment {
 
     private static final java.lang.String KEY_HEADER_MODE = "key_header_mode";
 
+    private static final java.lang.String KEY_HEADERS_STICKY = "key_headers_sticky";
+
+    private static final java.lang.String KEY_MARGINS_FIXED = "key_margins_fixed";
+
+    protected static final boolean DEFAULT_HEADERS_STICKY = true;
+
+    protected static final boolean DEFAULT_MARGINS_FIXED = true;
+
     private ViewHolder mViews;
 
     private CountryNamesAdapter mAdapter;
 
     private int mHeaderMode;
+
+    private boolean mAreHeadersSticky;
+
+    private boolean mAreMarginsFixed;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -37,8 +49,12 @@ public class CountriesFragment extends Fragment {
 
         if (savedInstanceState != null) {
             mHeaderMode = savedInstanceState.getInt(KEY_HEADER_MODE, LayoutManager.HEADER_INLINE);
+            mAreHeadersSticky = savedInstanceState.getBoolean(KEY_HEADERS_STICKY, DEFAULT_HEADERS_STICKY);
+            mAreMarginsFixed = savedInstanceState.getBoolean(KEY_MARGINS_FIXED, DEFAULT_MARGINS_FIXED);
         } else {
             mHeaderMode = LayoutManager.HEADER_INLINE;
+            mAreHeadersSticky = DEFAULT_HEADERS_STICKY;
+            mAreMarginsFixed = DEFAULT_MARGINS_FIXED;
         }
 
 
@@ -53,6 +69,8 @@ public class CountriesFragment extends Fragment {
         super.onSaveInstanceState(outState);
 
         outState.putInt(KEY_HEADER_MODE, mHeaderMode);
+        outState.putBoolean(KEY_HEADERS_STICKY, mAreHeadersSticky);
+        outState.putBoolean(KEY_MARGINS_FIXED, mAreMarginsFixed);
     }
 
     public void setHeaderMode(int mode) {
@@ -62,6 +80,24 @@ public class CountriesFragment extends Fragment {
 
     public int getHeaderMode() {
         return mHeaderMode;
+    }
+
+    public boolean areHeadersSticky() {
+        return mAreHeadersSticky;
+    }
+
+    public boolean areMarginsFixed() {
+        return mAreMarginsFixed;
+    }
+
+    public void setHeadersSticky(boolean areHeadersSticky) {
+        mAreHeadersSticky = areHeadersSticky;
+        mAdapter.setHeadersSticky(areHeadersSticky);
+    }
+
+    public void setMarginsFixed(boolean areMarginsFixed) {
+        mAreMarginsFixed = areMarginsFixed;
+        mAdapter.setMarginsFixed(areMarginsFixed);
     }
 
     private static class ViewHolder {

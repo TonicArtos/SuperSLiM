@@ -3,7 +3,6 @@ package com.tonic.sectionlayoutmanagerexample;
 import com.tonic.sectionlayoutmanager.LayoutManager;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -54,6 +53,10 @@ public class MainActivity extends FragmentActivity {
         if (item != null) {
             item.setChecked(true);
         }
+
+        menu.findItem(R.id.action_sticky).setChecked(countriesFragment.areHeadersSticky());
+        menu.findItem(R.id.action_fixed_margins).setChecked(countriesFragment.areMarginsFixed());
+
         return true;
     }
 
@@ -65,12 +68,23 @@ public class MainActivity extends FragmentActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
+        boolean checked = item.isChecked();
         if (id == R.id.action_sticky) {
+            CountriesFragment f = getCountriesFragment();
+            f.setHeadersSticky(!checked);
+            item.setChecked(!checked);
+            return true;
+        }
+
+        if (id == R.id.action_fixed_margins) {
+            CountriesFragment f = getCountriesFragment();
+            f.setMarginsFixed(!checked);
+            item.setChecked(!checked);
             return true;
         }
 
         if (id == R.id.action_header_inline) {
-            if (!item.isChecked()) {
+            if (!checked) {
                 item.setChecked(true);
                 updateHeaderMode(LayoutManager.HEADER_INLINE);
             }
@@ -78,7 +92,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         if (id == R.id.action_header_start) {
-            if (!item.isChecked()) {
+            if (!checked) {
                 item.setChecked(true);
                 updateHeaderMode(LayoutManager.HEADER_ALIGN_START);
             }
@@ -86,7 +100,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         if (id == R.id.action_header_end) {
-            if (!item.isChecked()) {
+            if (!checked) {
                 item.setChecked(true);
                 updateHeaderMode(LayoutManager.HEADER_ALIGN_END);
             }
@@ -94,7 +108,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         if (id == R.id.action_header_overlay_start) {
-            if (!item.isChecked()) {
+            if (!checked) {
                 item.setChecked(true);
                 updateHeaderMode(LayoutManager.HEADER_OVERLAY_START);
             }
@@ -102,7 +116,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         if (id == R.id.action_header_overlay_end) {
-            if (!item.isChecked()) {
+            if (!checked) {
                 item.setChecked(true);
                 updateHeaderMode(LayoutManager.HEADER_OVERLAY_END);
             }
