@@ -1,5 +1,6 @@
 package com.tonic.sectionlayoutmanager;
 
+import android.util.Log;
 import android.view.View;
 
 public class LinearSectionLayoutManager extends SectionLayoutManager {
@@ -143,7 +144,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             fillResult = fillSection(state, section);
         }
 
-        int headerOverlap = calculateHeaderOffset(state, section, itemCount,
+        fillResult.headerOffset = calculateHeaderOffset(state, section, itemCount,
                 fillResult.positionStart);
 
         return fillResult;

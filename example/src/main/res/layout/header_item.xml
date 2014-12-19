@@ -2,7 +2,6 @@
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:app="http://schemas.android.com/apk/res-auto"
           app:slm_isHeader="true"
-          app:slm_isSticky="true"
           android:gravity="start"
           android:padding="16dip"
           android:background="@android:color/holo_green_dark"

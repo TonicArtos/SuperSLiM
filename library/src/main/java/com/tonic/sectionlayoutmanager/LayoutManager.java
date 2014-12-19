@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +27,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     public static final int HEADER_INLINE = 0x01;
 
+    private static final int NO_POSITION_REQUEST = -1;
+
     private SlmFactory mSlmFactory = new SlmFactory() {
         @Override
         public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
@@ -35,6 +38,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     };
 
     private Rect mRect = new Rect();
+
+    private int mRequestPosition = NO_POSITION_REQUEST;
 
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
@@ -52,11 +57,39 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        final int anchorPosition = getAnchorItemPosition(state);
+        int anchorPosition = getAnchorItemPosition(state);
         final int borderLine;
+
+        if (state.getItemCount() == 0) {
+            detachAndScrapAttachedViews(recycler);
+            return;
+        }
+
+        if (mRequestPosition != NO_POSITION_REQUEST) {
+            anchorPosition = mRequestPosition;
+            mRequestPosition = NO_POSITION_REQUEST;
+        }
+
         borderLine = getBorderLine(anchorPosition, Direction.END);
         detachAndScrapAttachedViews(recycler);
         fill(recycler, state, anchorPosition, borderLine, true, Direction.END);
+    }
+
+    @Override
+    public void scrollToPosition(int position) {
+        if (0 < position || position >= getItemCount()) {
+            Log.e("SuperSLiM.LayoutManager", "Ignored scroll to " + position +
+                    " as it is not within the item range 0 - " + getItemCount());
+            return;
+        }
+
+        mRequestPosition = position;
+        requestLayout();
+    }
+
+    @Override
+    public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
+        removeAllViews();
     }
 
     @Override
@@ -216,7 +249,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         state.detachAndCacheAllViews();
 
         // Borderline
-        int borderline = scrapped ? scrappedBorderLine : getBorderLine(state, anchorPosition, Direction.END);
+        int borderline = scrapped ? scrappedBorderLine
+                : getBorderLine(state, anchorPosition, Direction.END);
 
         // Fix misalignment of first adapter child if header swaps from inline display.
         if (scrapped && anchorPosition == 1) {
@@ -237,8 +271,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Fill anchor section.
         FillResult anchorResult = sectionManager.fill(state, section);
         anchorResult = layoutAndAddHeader(state, section, anchorResult);
-
-
 
         // Fill sections before anchor to start.
         FillResult fillResult = anchorResult;
@@ -331,9 +363,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             LayoutParams params, Rect r) {
         r.top = fillResult.markerStart;
         if (params.headerAlignment != HEADER_INLINE && fillResult.headerOffset < 0) {
-            if (height + fillResult.headerOffset < 0) {
-                r.top += fillResult.headerOffset;
-            }
+            r.top += fillResult.headerOffset;
         }
         r.bottom = r.top + height;
 
