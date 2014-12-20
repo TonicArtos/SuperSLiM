@@ -256,7 +256,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
-        fill(recycler, state, getPosition(endSectionLastView), 0, false);
+        if (delta > 0) {
+            fill(recycler, state, getPosition(startSectionFirstView), 0, false);
+        } else {
+            fill(recycler, state, getPosition(endSectionLastView), 0, false);
+        }
 
         return -delta;
     }
