@@ -70,8 +70,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mRequestPosition = NO_POSITION_REQUEST;
             borderLine = 0;
         } else {
-            anchorPosition = getAnchorItemPosition(state);
-            borderLine = getBorderLine(anchorPosition, Direction.END);
+            View anchorView = getAnchorChild(state);
+            anchorPosition = anchorView == null ? 0 : getPosition(anchorView);
+            borderLine = getBorderLine(anchorView, Direction.END);
         }
 
         detachAndScrapAttachedViews(recycler);
@@ -475,20 +476,26 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return r;
     }
 
-    private int getBorderLine(int anchorPosition, Direction direction) {
+    /**
+     * Work out the borderline from the given anchor view and the intended direction to fill the
+     * view hierarchy.
+     *
+     * @param anchorView Anchor view to determine borderline from.
+     * @param direction  Direction fill will be taken towards.
+     * @return Borderline.
+     */
+    private int getBorderLine(View anchorView, Direction direction) {
         int borderline;
-        final android.view.View marker = getChildCount() == 0 ? null : getChildAt(
-                anchorPosition < 0 || getChildCount() <= anchorPosition ? 0 : anchorPosition);
-        if (marker == null) {
+        if (anchorView == null) {
             if (direction == Direction.START) {
                 borderline = getPaddingBottom();
             } else {
                 borderline = getPaddingTop();
             }
         } else if (direction == Direction.START) {
-            borderline = getDecoratedBottom(marker);
+            borderline = getDecoratedBottom(anchorView);
         } else {
-            borderline = getDecoratedTop(marker);
+            borderline = getDecoratedTop(anchorView);
         }
         return borderline;
     }
@@ -617,39 +624,34 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
 
-    private int getAnchorItemPosition(RecyclerView.State state) {
+    /**
+     * Find the first view in the hierarchy that can act as an anchor.
+     *
+     * @param state Recycler state.
+     * @return The anchor view, or null if no view is a valid anchor.
+     */
+    private View getAnchorChild(RecyclerView.State state) {
         final int itemCount = state.getItemCount();
 
         if (getChildCount() > 0) {
-            return findAnchorChild(itemCount);
-        }
-        return 0;
-    }
+            final int childCount = getChildCount();
 
-    /**
-     * Look through view views to find one that can act as an anchor.
-     *
-     * @param itemCount RecyclerView count of items.
-     * @return Anchor mMarkerLine.
-     */
-    private int findAnchorChild(int itemCount) {
-        final int childCount = getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                final View view = getChildAt(i);
 
-        for (int i = 0; i < childCount; i++) {
-            final View view = getChildAt(i);
+                // Skip headers.
+                if (((LayoutParams) view.getLayoutParams()).isHeader) {
+                    //TODO: Handle empty sections with headers.
+                    continue;
+                }
 
-            // Skip headers.
-            if (((LayoutParams) view.getLayoutParams()).isHeader) {
-                //TODO: Handle empty sections with headers.
-                continue;
-            }
-
-            final int position = getPosition(view);
-            if (position >= 0 && position < itemCount) {
-                return position;
+                final int position = getPosition(view);
+                if (position >= 0 && position < itemCount) {
+                    return view;
+                }
             }
         }
-        return 0;
+        return null;
     }
 
     @Override
