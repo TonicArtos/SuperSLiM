@@ -77,7 +77,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void scrollToPosition(int position) {
-        if (0 < position || position >= getItemCount()) {
+        if (position < 0 || getItemCount() <= position) {
             Log.e("SuperSLiM.LayoutManager", "Ignored scroll to " + position +
                     " as it is not within the item range 0 - " + getItemCount());
             return;
