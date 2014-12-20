@@ -131,6 +131,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
                 return calculateDtToFit(top, bottom, start, end, snapPreference);
             }
+
+            @Override
+            protected void onChildAttachedToWindow(View child) {
+                super.onChildAttachedToWindow(child);
+            }
         };
         smoothScroller.setTargetPosition(position);
         startSmoothScroll(smoothScroller);
@@ -334,15 +339,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 finalEndPosition);
 
         state.recycleCache();
-
-        Log.d("Fill", "Fill finished. Num children = " + getChildCount());
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (getPosition(child) == 136) {
-                Log.d("Fill", "Top " + getDecoratedTop(child));
-                Log.d("Fill", "Bottom " + getDecoratedBottom(child));
-            }
-        }
     }
 
     /**

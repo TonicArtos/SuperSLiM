@@ -127,6 +127,7 @@ public class CountriesFragment extends Fragment {
 
     public void smoothScrollToRandomPosition() {
         int position = mRng.nextInt(mAdapter.getItemCount());
+        position = 136;
         String s = "Smooth scroll to position " + position
                 + (mAdapter.isItemHeader(position) ? ", header " : ", item ")
                 + mAdapter.itemToString(position) + ".";
