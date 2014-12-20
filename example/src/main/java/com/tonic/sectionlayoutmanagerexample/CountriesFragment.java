@@ -69,6 +69,9 @@ public class CountriesFragment extends Fragment {
         mViews = new ViewHolder(view);
         mViews.initViews(getActivity());
         mAdapter = new CountryNamesAdapter(getActivity(), mHeaderMode);
+        mAdapter.setHeadersSticky(mAreHeadersSticky);
+        mAdapter.setMarginsFixed(mAreMarginsFixed);
+        mAdapter.setHeaderMode(mHeaderMode);
         mViews.setAdapter(mAdapter);
     }
 
