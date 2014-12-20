@@ -123,6 +123,14 @@ public class MainActivity extends FragmentActivity {
             return true;
         }
 
+        if (id == R.id.action_random_scroll) {
+            getCountriesFragment().scrollToRandomPosition();
+        }
+
+        if (id == R.id.action_random_smooth_scroll) {
+            getCountriesFragment().smoothScrollToRandomPosition();
+        }
+
         return super.onOptionsItemSelected(item);
     }
 

@@ -3,17 +3,14 @@
       xmlns:app="http://schemas.android.com/apk/res-auto"
       tools:context=".MainActivity">
     <item
-            android:id="@+id/action_sticky"
-            android:checkable="true"
-            android:title="@string/action_sticky"
-            android:orderInCategory="100"
-            app:showAsAction="never"/>
-    <item
             android:id="@+id/menu_header_mode"
             android:title="@string/menu_header_mode"
+            android:orderInCategory="100"
             app:showAsAction="never">
         <menu>
-            <group android:checkableBehavior="single" android:id="@+id/group_header_display">
+            <group
+                    android:checkableBehavior="single"
+                    android:id="@+id/group_header_display">
                 <item
                         android:id="@+id/action_header_inline"
                         android:title="@string/action_header_inline"/>
@@ -32,9 +29,27 @@
             </group>
         </menu>
     </item>
-    <item android:id="@+id/action_fixed_margins"
-          android:checkable="true"
-          android:title="@string/menu_fixed_margins"
-          app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_fixed_margins"
+            android:checkable="true"
+            android:orderInCategory="100"
+            android:title="@string/menu_fixed_margins"
+            app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_sticky"
+            android:checkable="true"
+            android:title="@string/action_sticky"
+            android:orderInCategory="100"
+            app:showAsAction="never"/>
 
+    <item
+            android:id="@+id/action_random_scroll"
+            android:title="@string/menu_random_scroll"
+            android:orderInCategory="90"
+            app:showAsAction="never"/>
+    <item
+            android:id="@+id/action_random_smooth_scroll"
+            android:title="@string/menu_random_smooth_scroll"
+            android:orderInCategory="90"
+            app:showAsAction="never"/>
 </menu>

@@ -12,5 +12,7 @@
     <string name="action_header_overlay_left">Overlay left</string>
     <string name="action_header_overlay_right">Overlay right</string>
     <string name="menu_fixed_margins">Fixed margins</string>
+    <string name="menu_random_scroll">Random scroll</string>
+    <string name="menu_random_smooth_scroll">Random smooth scroll</string>
 
 </resources>

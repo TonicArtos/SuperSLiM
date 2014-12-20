@@ -7,10 +7,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.tonic.sectionlayoutmanager.LayoutManager;
 import com.tonic.sectionlayoutmanager.LinearSectionLayoutManager;
 import com.tonic.sectionlayoutmanager.SectionLayoutManager;
+
+import java.util.Random;
 
 /**
  * Fragment that displays a list of country names.
@@ -37,6 +40,10 @@ public class CountriesFragment extends Fragment {
 
     private boolean mAreMarginsFixed;
 
+    private Random mRng = new Random();
+
+    private Toast mToast = null;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
@@ -49,14 +56,15 @@ public class CountriesFragment extends Fragment {
 
         if (savedInstanceState != null) {
             mHeaderMode = savedInstanceState.getInt(KEY_HEADER_MODE, LayoutManager.HEADER_INLINE);
-            mAreHeadersSticky = savedInstanceState.getBoolean(KEY_HEADERS_STICKY, DEFAULT_HEADERS_STICKY);
-            mAreMarginsFixed = savedInstanceState.getBoolean(KEY_MARGINS_FIXED, DEFAULT_MARGINS_FIXED);
+            mAreHeadersSticky = savedInstanceState
+                    .getBoolean(KEY_HEADERS_STICKY, DEFAULT_HEADERS_STICKY);
+            mAreMarginsFixed = savedInstanceState
+                    .getBoolean(KEY_MARGINS_FIXED, DEFAULT_MARGINS_FIXED);
         } else {
             mHeaderMode = LayoutManager.HEADER_INLINE;
             mAreHeadersSticky = DEFAULT_HEADERS_STICKY;
             mAreMarginsFixed = DEFAULT_MARGINS_FIXED;
         }
-
 
         mViews = new ViewHolder(view);
         mViews.initViews(getActivity());
@@ -100,6 +108,34 @@ public class CountriesFragment extends Fragment {
         mAdapter.setMarginsFixed(areMarginsFixed);
     }
 
+    public void scrollToRandomPosition() {
+        int position = mRng.nextInt(mAdapter.getItemCount());
+        String s = "Scroll to position " + position
+                + (mAdapter.isItemHeader(position) ? ", header " : ", item ")
+                + mAdapter.itemToString(position) + ".";
+        if (mToast != null) {
+            mToast.setText(s);
+        } else {
+            mToast = Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT);
+        }
+        mToast.show();
+        mViews.scrollToPosition(position);
+    }
+
+    public void smoothScrollToRandomPosition() {
+        int position = mRng.nextInt(mAdapter.getItemCount());
+        String s = "Smooth scroll to position " + position
+                + (mAdapter.isItemHeader(position) ? ", header " : ", item ")
+                + mAdapter.itemToString(position) + ".";
+        if (mToast != null) {
+            mToast.setText(s);
+        } else {
+            mToast = Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT);
+        }
+        mToast.show();
+        mViews.smoothScrollToPosition(position);
+    }
+
     private static class ViewHolder {
 
         private final RecyclerView mRecyclerView;
@@ -124,6 +160,14 @@ public class CountriesFragment extends Fragment {
 
         public void setAdapter(RecyclerView.Adapter<?> adapter) {
             mRecyclerView.setAdapter(adapter);
+        }
+
+        public void scrollToPosition(int position) {
+            mRecyclerView.scrollToPosition(position);
+        }
+
+        public void smoothScrollToPosition(int position) {
+            mRecyclerView.smoothScrollToPosition(position);
         }
     }
 }

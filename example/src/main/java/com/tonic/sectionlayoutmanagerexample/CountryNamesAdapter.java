@@ -143,6 +143,14 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         notifyHeaderChanges();
     }
 
+    public String itemToString(int position) {
+        return mItems.get(position).text;
+    }
+
+    public boolean isItemHeader(int position) {
+        return mItems.get(position).isHeader;
+    }
+
     private static class LineItem {
 
         public int section;
