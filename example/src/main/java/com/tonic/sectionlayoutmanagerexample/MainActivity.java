@@ -31,23 +31,22 @@ public class MainActivity extends FragmentActivity {
         MenuItem item = null;
 
         CountriesFragment countriesFragment = getCountriesFragment();
-
         final int headerMode = countriesFragment.getHeaderMode();
         switch (headerMode) {
             case LayoutManager.HEADER_INLINE:
                 item = menu.findItem(R.id.action_header_inline);
                 break;
             case LayoutManager.HEADER_ALIGN_START:
-                item = menu.findItem(R.id.action_header_inline);
+                item = menu.findItem(R.id.action_header_start);
                 break;
             case LayoutManager.HEADER_ALIGN_END:
-                item = menu.findItem(R.id.action_header_inline);
+                item = menu.findItem(R.id.action_header_end);
                 break;
             case LayoutManager.HEADER_OVERLAY_START:
-                item = menu.findItem(R.id.action_header_inline);
+                item = menu.findItem(R.id.action_header_overlay_start);
                 break;
             case LayoutManager.HEADER_OVERLAY_END:
-                item = menu.findItem(R.id.action_header_inline);
+                item = menu.findItem(R.id.action_header_overlay_end);
                 break;
         }
         if (item != null) {
