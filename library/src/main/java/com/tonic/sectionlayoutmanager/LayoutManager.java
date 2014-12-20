@@ -57,20 +57,23 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int anchorPosition = getAnchorItemPosition(state);
-        final int borderLine;
-
         if (state.getItemCount() == 0) {
             detachAndScrapAttachedViews(recycler);
             return;
         }
 
+        final int anchorPosition;
+        final int borderLine;
+
         if (mRequestPosition != NO_POSITION_REQUEST) {
             anchorPosition = mRequestPosition;
             mRequestPosition = NO_POSITION_REQUEST;
+            borderLine = 0;
+        } else {
+            anchorPosition = getAnchorItemPosition(state);
+            borderLine = getBorderLine(anchorPosition, Direction.END);
         }
 
-        borderLine = getBorderLine(anchorPosition, Direction.END);
         detachAndScrapAttachedViews(recycler);
         fill(recycler, state, anchorPosition, borderLine, true, Direction.END);
     }
