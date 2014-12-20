@@ -57,27 +57,30 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int anchorPosition = getAnchorItemPosition(state);
-        final int borderLine;
-
         if (state.getItemCount() == 0) {
             detachAndScrapAttachedViews(recycler);
             return;
         }
 
+        final int anchorPosition;
+        final int borderLine;
+
         if (mRequestPosition != NO_POSITION_REQUEST) {
             anchorPosition = mRequestPosition;
             mRequestPosition = NO_POSITION_REQUEST;
+            borderLine = 0;
+        } else {
+            anchorPosition = getAnchorItemPosition(state);
+            borderLine = getBorderLine(anchorPosition, Direction.END);
         }
 
-        borderLine = getBorderLine(anchorPosition, Direction.END);
         detachAndScrapAttachedViews(recycler);
-        fill(recycler, state, anchorPosition, borderLine, true, Direction.END);
+        fill(recycler, state, anchorPosition, borderLine, true);
     }
 
     @Override
     public void scrollToPosition(int position) {
-        if (0 < position || position >= getItemCount()) {
+        if (position < 0 || getItemCount() <= position) {
             Log.e("SuperSLiM.LayoutManager", "Ignored scroll to " + position +
                     " as it is not within the item range 0 - " + getItemCount());
             return;
@@ -196,11 +199,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
-        if (delta < 0) {
-            fill(recycler, state, getPosition(endSectionLastView), 0, false, Direction.START);
-        } else if (0 < delta) {
-            fill(recycler, state, getPosition(startSectionFirstView), 0, false, Direction.END);
-        }
+        fill(recycler, state, getPosition(endSectionLastView), 0, false);
 
         return -delta;
     }
@@ -235,8 +234,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State rvs,
-            final int anchorPosition, int scrappedBorderLine, boolean scrapped,
-            Direction direction) {
+            final int anchorPosition, int scrappedBorderLine, boolean scrapped) {
 
         LayoutState state = new LayoutState(this, recycler, rvs);
         final int itemCount = state.recyclerState.getItemCount();
@@ -252,17 +250,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int borderline = scrapped ? scrappedBorderLine
                 : getBorderLine(state, anchorPosition, Direction.END);
 
-        // Fix misalignment of first adapter child if header swaps from inline display.
-        if (scrapped && anchorPosition == 1) {
-            LayoutState.View header = state.getView(0);
-            LayoutParams params = header.getLayoutParams();
-            if (params.isHeader && params.headerAlignment != HEADER_INLINE) {
-                if (borderline > getPaddingTop()) {
-                    borderline = getPaddingTop();
-                }
-            }
-        }
-
         // Prepare anchor section.
         SectionData section = new SectionData(this, state, Direction.NONE, anchorPosition,
                 borderline);
@@ -273,36 +260,109 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         anchorResult = layoutAndAddHeader(state, section, anchorResult);
 
         // Fill sections before anchor to start.
-        FillResult fillResult = anchorResult;
-        int startFills = 1;
-        while (true) {
-            final int sectionAnchor = fillResult.positionStart - 1;
-            if (fillResult.markerStart < 0 || sectionAnchor < 0) {
-                break;
-            }
-            section = new SectionData(this, state, Direction.START,
-                    sectionAnchor, fillResult.markerStart);
-            sectionManager = section.loadManager(this, mSlmFactory);
-            fillResult = sectionManager.fill(state, section);
-            fillResult = layoutAndAddHeader(state, section, fillResult);
-        }
+        FillResult fillResult;
+        fillResult = fillSections(state, anchorResult, recyclerViewHeight, Direction.START);
+        final int finalStartMarker = fillResult.markerStart;
+        final int finalStartPosition = fillResult.positionStart;
 
         // Fill sections after anchor to end.
-        fillResult = anchorResult;
-        int endFills = 1;
-        while (true) {
-            final int sectionAnchor = fillResult.positionEnd + 1;
-            if (fillResult.markerEnd >= recyclerViewHeight || sectionAnchor >= itemCount) {
-                break;
-            }
-            section = new SectionData(this, state, Direction.END,
-                    sectionAnchor, fillResult.markerEnd);
-            sectionManager = section.loadManager(this, mSlmFactory);
-            fillResult = sectionManager.fill(state, section);
-            fillResult = layoutAndAddHeader(state, section, fillResult);
-        }
+        fillResult = fillSections(state, anchorResult, recyclerViewHeight, Direction.END);
+        final int finalEndMarker = fillResult.markerEnd;
+        final int finalEndPosition = fillResult.positionEnd;
+
+        fixOverscroll(state, finalStartMarker, finalStartPosition, finalEndMarker,
+                finalEndPosition);
 
         state.recycleCache();
+    }
+
+    /**
+     * Make sure there is no over-scroll. This means the last section is not inappropriately above
+     * the end edge, and the start section is not below the start edge.
+     *
+     * @param state              Layout state.
+     * @param finalStartMarker   Marker line for start of filled out area.
+     * @param finalStartPosition Start position of filled out views.
+     * @param finalEndMarker     Marker line for end of filled out area.
+     * @param finalEndPosition   End position of filled out views.
+     */
+    private void fixOverscroll(LayoutState state, int finalStartMarker, int finalStartPosition,
+            int finalEndMarker, int finalEndPosition) {
+        final int recyclerViewHeight = getHeight();
+        final int recyclerPaddedStartEdge = getPaddingTop();
+        final int recyclerPaddedEndEdge = recyclerViewHeight - getPaddingBottom();
+
+        if (finalStartMarker > recyclerPaddedStartEdge) {
+            // Shunt all children up to the start edge and then refill from start to end.
+            offsetChildrenVertical(recyclerPaddedStartEdge - finalStartMarker);
+
+            state.detachAndCacheAllViews();
+            // Build a fake fill state to trigger new fill from start to end.
+            FillResult fakeIt = new FillResult();
+            fakeIt.markerEnd = recyclerPaddedStartEdge;
+            fakeIt.positionEnd = finalStartPosition - 1;
+
+            fillSections(state, fakeIt, recyclerViewHeight, Direction.END);
+        } else if (!dataSetFullyLaidOut(state, finalStartPosition, finalEndPosition)
+                && finalEndMarker < recyclerPaddedEndEdge) {
+            // Shunt all children to end edge and then refill from end to start.
+            offsetChildrenVertical(recyclerPaddedEndEdge - finalEndMarker);
+
+            state.detachAndCacheAllViews();
+            // Build a fake fill state to trigger new fill from end to start.
+            FillResult fakeIt = new FillResult();
+            fakeIt.markerStart = recyclerPaddedEndEdge;
+            fakeIt.positionStart = finalEndPosition + 1;
+
+            fillSections(state, fakeIt, recyclerViewHeight, Direction.START);
+        }
+    }
+
+    private FillResult fillSections(LayoutState layoutState, FillResult fillState,
+            int recyclerViewHeight, Direction direction) {
+        while (true) {
+            final int anchor;
+            final SectionData section;
+            if (direction == Direction.END) {
+                anchor = fillState.positionEnd + 1;
+                if (fillState.markerEnd >= recyclerViewHeight
+                        || anchor >= layoutState.recyclerState.getItemCount()) {
+                    break;
+                }
+                section = new SectionData(this, layoutState, direction, anchor,
+                        fillState.markerEnd);
+            } else {
+                anchor = fillState.positionStart - 1;
+                if (fillState.markerStart < 0 || anchor < 0) {
+                    break;
+                }
+                section = new SectionData(this, layoutState, direction, anchor,
+                        fillState.markerStart);
+            }
+
+            SectionLayoutManager sectionManager = section.loadManager(this, mSlmFactory);
+            fillState = sectionManager.fill(layoutState, section);
+            fillState = layoutAndAddHeader(layoutState, section, fillState);
+        }
+        return fillState;
+    }
+
+    private boolean dataSetFullyLaidOut(LayoutState state, int finalStartPosition,
+            int finalEndPosition) {
+        final boolean fillFromFirst = finalStartPosition == 0;
+        final boolean filledToLast = finalEndPosition == state.recyclerState.getItemCount() - 1;
+        return fillFromFirst && filledToLast;
+    }
+
+    /**
+     * Check to see if, after fill in the views, the parent area cannot be filled by all the child
+     * views.
+     *
+     * @return True if the parent cannot be filled.
+     */
+    private boolean cannotFillParent(LayoutState state) {
+
+        return false;
     }
 
     public FillResult layoutAndAddHeader(LayoutState state, SectionData section,
