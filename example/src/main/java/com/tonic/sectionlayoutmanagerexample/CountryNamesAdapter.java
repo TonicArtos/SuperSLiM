@@ -100,14 +100,18 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             }
 
-            lp.headerEndMarginIsAuto = mMarginsFixed;
-            lp.headerStartMarginIsAuto = mMarginsFixed;
-            if (!mMarginsFixed) {
+            lp.headerEndMarginIsAuto = !mMarginsFixed;
+            lp.headerStartMarginIsAuto = !mMarginsFixed;
+            if (mMarginsFixed) {
                 lp.headerEndMargin = (int) mContext.getResources()
                         .getDimension(R.dimen.default_header_margin);
                 lp.headerStartMargin = (int) mContext.getResources()
                         .getDimension(R.dimen.default_header_margin);
-                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                if (mHeaderMode == LayoutManager.HEADER_OVERLAY_END || mHeaderMode == LayoutManager.HEADER_OVERLAY_START) {
+                    lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                } else {
+                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                }
             } else if (mHeaderMode != LayoutManager.HEADER_INLINE) {
                 lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
