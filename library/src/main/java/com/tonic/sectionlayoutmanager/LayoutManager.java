@@ -250,17 +250,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int borderline = scrapped ? scrappedBorderLine
                 : getBorderLine(state, anchorPosition, Direction.END);
 
-        // Fix misalignment of first adapter child if header swaps from inline display.
-        if (scrapped && anchorPosition == 1) {
-            LayoutState.View header = state.getView(0);
-            LayoutParams params = header.getLayoutParams();
-            if (params.isHeader && params.headerAlignment != HEADER_INLINE) {
-                if (borderline > getPaddingTop()) {
-                    borderline = getPaddingTop();
-                }
-            }
-        }
-
         // Prepare anchor section.
         SectionData section = new SectionData(this, state, Direction.NONE, anchorPosition,
                 borderline);
