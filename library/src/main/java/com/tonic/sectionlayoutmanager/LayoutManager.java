@@ -70,7 +70,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mRequestPosition = NO_POSITION_REQUEST;
             borderLine = 0;
         } else {
-            View anchorView = getAnchorItemView(state);
+            View anchorView = getAnchorChild(state);
             anchorPosition = anchorView == null ? 0 : getPosition(anchorView);
             borderLine = getBorderLine(anchorView, Direction.END);
         }
@@ -476,6 +476,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return r;
     }
 
+    /**
+     * Work out the borderline from the given anchor view and the intended direction to fill the
+     * view hierarchy.
+     *
+     * @param anchorView Anchor view to determine borderline from.
+     * @param direction  Direction fill will be taken towards.
+     * @return Borderline.
+     */
     private int getBorderLine(View anchorView, Direction direction) {
         int borderline;
         if (anchorView == null) {
@@ -616,36 +624,31 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
 
-    private View getAnchorItemView(RecyclerView.State state) {
+    /**
+     * Find the first view in the hierarchy that can act as an anchor.
+     *
+     * @param state Recycler state.
+     * @return The anchor view, or null if no view is a valid anchor.
+     */
+    private View getAnchorChild(RecyclerView.State state) {
         final int itemCount = state.getItemCount();
 
         if (getChildCount() > 0) {
-            return findAnchorChild(itemCount);
-        }
-        return null;
-    }
+            final int childCount = getChildCount();
 
-    /**
-     * Look through view views to find one that can act as an anchor.
-     *
-     * @param itemCount RecyclerView count of items.
-     * @return Anchor mMarkerLine.
-     */
-    private View findAnchorChild(int itemCount) {
-        final int childCount = getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                final View view = getChildAt(i);
 
-        for (int i = 0; i < childCount; i++) {
-            final View view = getChildAt(i);
+                // Skip headers.
+                if (((LayoutParams) view.getLayoutParams()).isHeader) {
+                    //TODO: Handle empty sections with headers.
+                    continue;
+                }
 
-            // Skip headers.
-            if (((LayoutParams) view.getLayoutParams()).isHeader) {
-                //TODO: Handle empty sections with headers.
-                continue;
-            }
-
-            final int position = getPosition(view);
-            if (position >= 0 && position < itemCount) {
-                return view;
+                final int position = getPosition(view);
+                if (position >= 0 && position < itemCount) {
+                    return view;
+                }
             }
         }
         return null;
