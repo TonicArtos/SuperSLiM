@@ -104,7 +104,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         } else {
             state.anchorPosition = getPosition(view);
             state.anchorOffset = getDecoratedTop(view);
-            Log.d("save", "position " + getPosition(view));
         }
         return state;
     }
@@ -627,77 +626,72 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
 
-/*
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-        View topChild = getChildAt(0);
-        View bottomChild = getChildAt(getChildCount() - 1);
-        if (getPosition(bottomChild) == mStickiedPosition && getChildCount() > 1) {
-            bottomChild = getChildAt(getChildCount() - 2);
-        }
-        if (topChild == null) {
-            return 0;
-        }
+//        return getChildCount() * 10;
 
-        final int decoratedTop = getDecoratedTop(topChild);
-        final int decoratedBottom = getDecoratedBottom(bottomChild);
-        final int realTopOffset = decoratedTop > 0 ? decoratedTop : 0;
-        final int realBottomOffset = decoratedBottom < getHeight() ? decoratedBottom : 0;
-        return getHeight() - realTopOffset - realBottomOffset;
+        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
+        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
+        View endView = manager.getLastView(endSection);
+
+        int topOffset = computeVerticalScrollOffset(state);
+
+        int lastContentPosition = getPosition(endView) + 1;
+        int lastBottom = getDecoratedBottom(endView);
+        int lastHeight = getDecoratedMeasuredHeight(endView);
+        int bottomOffset = lastContentPosition * 10 - (lastBottom >= getHeight() ?
+                (lastBottom - getHeight())
+                        / (lastHeight / 10) : 0);
+
+        return bottomOffset - topOffset;
     }
 
     @Override
     public int computeVerticalScrollRange(RecyclerView.State state) {
-        View topChild = getChildAt(0);
-        View bottomChild = getChildAt(getChildCount() - 1);
-        if (getPosition(bottomChild) == mStickiedPosition && getChildCount() > 1) {
-            bottomChild = getChildAt(getChildCount() - 2);
-        }
-        if (topChild == null) {
-            return 0;
-        }
-
-        final int itemCount = state.getItemCount();
-        final int topPosition = getPosition(topChild);
-        final int bottomPosition = getPosition(bottomChild);
-        final boolean firstItemVisible = topPosition == 0;
-        final boolean lastItemVisible = bottomPosition == itemCount;
-
-        // Check for case where the entirety of the adapter contents are displayed.
-        final int viewSpan = getDecoratedBottom(bottomChild) - getDecoratedTop(topChild);
-        if (firstItemVisible && lastItemVisible
-                && viewSpan < getHeight() - getPaddingTop() - getPaddingBottom()) {
-            return 0;
-        }
-
-        // Estimated scroll range is a multiple of the displayed item span.
-        final float numItemsShown = getPosition(bottomChild) - getPosition(topChild);
-        return (int) (viewSpan * (itemCount / numItemsShown));
+        return state.getItemCount() * 10;
     }
 
     @Override
     public int computeVerticalScrollOffset(RecyclerView.State state) {
-        View topChild = getChildAt(0);
-        View bottomChild = getChildAt(getChildCount() - 1);
-        if (getPosition(bottomChild) == mStickiedPosition && getChildCount() > 1) {
-            bottomChild = getChildAt(getChildCount() - 2);
-        }
-        if (topChild == null) {
-            return 0;
+        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
+        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
+        View firstContentView = manager.getFirstView(startSection);
+        View firstHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
+                Direction.END);
+
+        int firstContentPosition = getPosition(firstContentView);
+        int contentTop = getDecoratedTop(firstContentView);
+        int contentHeight = getDecoratedMeasuredHeight(firstContentView);
+
+        if (firstHeaderView == null) {
+            return (int) (firstContentPosition * 10
+                    - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
         }
 
-        final int topPosition = getPosition(topChild);
-        final float abovePosition = topPosition == 0 ? 0 : topPosition - 1;
-        int decoratedTop = getDecoratedTop(topChild);
-        final int offscreenPortion = decoratedTop < 0 ? -decoratedTop : 0;
-        final int viewSpan = getDecoratedBottom(bottomChild) - decoratedTop;
-        // Estimated scroll range is a multiple of the displayed item span plus the part of the
-        // top view which is offscreen.
-        final float numItemsShown = getPosition(bottomChild) - getPosition(topChild);
-        return (int) (viewSpan * (abovePosition / numItemsShown)) + offscreenPortion;
-
+        int headerPosition = getPosition(firstHeaderView);
+        if (firstContentPosition - headerPosition == 1) {
+            int i = 0;
+            for (; i < getItemCount(); i++) {
+                if (getChildAt(i) == firstContentView) {
+                    break;
+                }
+            }
+            if (i + 1 < getItemCount()) {
+                View next = getChildAt(i + 1);
+                LayoutParams nextParams = (LayoutParams) next.getLayoutParams();
+                if (next == firstHeaderView || nextParams.section != startSection) {
+                    int headerTop = getDecoratedTop(firstHeaderView);
+                    int headerHeight = getDecoratedMeasuredHeight(firstHeaderView);
+                    return (int) (headerPosition * 10
+                            - (headerTop < 0 ? headerTop / (headerHeight / 20f) : 0));
+                }
+            }
+            return (int) (headerPosition * 10
+                    - (contentTop < 0 ? contentTop / (contentHeight / 20f) : 0));
+        }
+        return (int) (firstContentPosition * 10
+                - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
     }
-    */
 
     void measureHeader(LayoutState.View header) {
         if (header.wasCached) {
