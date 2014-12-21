@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.tonic.sectionlayoutmanager.GridSectionLayoutManager;
 import com.tonic.sectionlayoutmanager.LayoutManager;
 import com.tonic.sectionlayoutmanager.LinearSectionLayoutManager;
 import com.tonic.sectionlayoutmanager.SectionLayoutManager;
@@ -26,10 +27,6 @@ public class CountriesFragment extends Fragment {
 
     private static final java.lang.String KEY_MARGINS_FIXED = "key_margins_fixed";
 
-    protected static final boolean DEFAULT_HEADERS_STICKY = true;
-
-    protected static final boolean DEFAULT_MARGINS_FIXED = true;
-
     private ViewHolder mViews;
 
     private CountryNamesAdapter mAdapter;
@@ -44,6 +41,27 @@ public class CountriesFragment extends Fragment {
 
     private Toast mToast = null;
 
+    private GridSectionLayoutManager mGridSectionLayoutManager;
+
+    private SectionLayoutManager mLinearSectionLayoutManager;
+
+    private LayoutManager.SlmFactory mSlmFactory = new LayoutManager.SlmFactory() {
+
+        @Override
+        public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
+                int section) {
+            int sectionKind = section % 2;
+            final SectionLayoutManager slm;
+            if (sectionKind == 0) {
+                GridSectionLayoutManager grid = mGridSectionLayoutManager;
+                slm = mGridSectionLayoutManager;
+            } else {
+                slm = mLinearSectionLayoutManager;
+            }
+            return slm;
+        }
+    };
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
@@ -55,19 +73,30 @@ public class CountriesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (savedInstanceState != null) {
-            mHeaderMode = savedInstanceState.getInt(KEY_HEADER_MODE, LayoutManager.HEADER_INLINE);
+            mHeaderMode = savedInstanceState
+                    .getInt(KEY_HEADER_MODE,
+                            getResources().getInteger(R.integer.default_header_alignment));
             mAreHeadersSticky = savedInstanceState
-                    .getBoolean(KEY_HEADERS_STICKY, DEFAULT_HEADERS_STICKY);
+                    .getBoolean(KEY_HEADERS_STICKY,
+                            getResources().getBoolean(R.bool.default_headers_sticky));
             mAreMarginsFixed = savedInstanceState
-                    .getBoolean(KEY_MARGINS_FIXED, DEFAULT_MARGINS_FIXED);
+                    .getBoolean(KEY_MARGINS_FIXED,
+                            getResources().getBoolean(R.bool.default_margins_fixed));
         } else {
-            mHeaderMode = LayoutManager.HEADER_INLINE;
-            mAreHeadersSticky = DEFAULT_HEADERS_STICKY;
-            mAreMarginsFixed = DEFAULT_MARGINS_FIXED;
+            mHeaderMode = getResources().getInteger(R.integer.default_header_alignment);
+            mAreHeadersSticky = getResources().getBoolean(R.bool.default_headers_sticky);
+            mAreMarginsFixed = getResources().getBoolean(R.bool.default_margins_fixed);
         }
 
+        LayoutManager lm = new LayoutManager();
+        mGridSectionLayoutManager = new GridSectionLayoutManager(lm, getActivity());
+        mGridSectionLayoutManager.setColumnMinimumWidth((int) getResources()
+                .getDimension(R.dimen.column_width));
+        mLinearSectionLayoutManager = new LinearSectionLayoutManager(lm);
+        lm.setSlmFactory(mSlmFactory);
+
         mViews = new ViewHolder(view);
-        mViews.initViews(getActivity());
+        mViews.initViews(getActivity(), lm);
         mAdapter = new CountryNamesAdapter(getActivity(), mHeaderMode);
         mAdapter.setHeadersSticky(mAreHeadersSticky);
         mAdapter.setMarginsFixed(mAreMarginsFixed);
@@ -143,21 +172,12 @@ public class CountriesFragment extends Fragment {
 
         private final RecyclerView mRecyclerView;
 
-        private LayoutManager.SlmFactory mSlmFactory = new LayoutManager.SlmFactory() {
-            @Override
-            public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
-                    int section) {
-                return new LinearSectionLayoutManager(layoutManager);
-            }
-        };
 
         public ViewHolder(View view) {
             mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
         }
 
-        public void initViews(Context context) {
-            LayoutManager lm = new LayoutManager();
-            lm.setSlmFactory(mSlmFactory);
+        public void initViews(Context context, LayoutManager lm) {
             mRecyclerView.setLayoutManager(lm);
         }
 

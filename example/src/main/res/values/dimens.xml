@@ -3,4 +3,5 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="default_header_margin">56dp</dimen>
+    <dimen name="column_width">64dp</dimen>
 </resources>
