@@ -1,43 +1,121 @@
 package com.tonic.sectionlayoutmanager;
 
+import android.content.Context;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 
-public class LinearSectionLayoutManager extends SectionLayoutManager {
+/**
+ * Lays out views in a grid. The number of columns can be set directly, or a minimum size can be
+ * requested. If you request a 100dip minimum column size and there is 330dip available, the layout
+ * with calculate there to be 3 columns each 130dip across.
+ */
+public class GridSectionLayoutManager extends SectionLayoutManager {
 
-    public LinearSectionLayoutManager(LayoutManager layoutManager) {
+    private final Context mContext;
+
+    private int mMinimumWidth = 0;
+
+    private int mNumColumns = 0;
+
+    private int mColumnWidth;
+
+    private boolean mColumnsSpecified;
+
+    public GridSectionLayoutManager(LayoutManager layoutManager, Context context) {
         super(layoutManager);
+        mContext = context;
     }
 
-    private AddData layoutChild(LayoutState state, SectionData section, LayoutState.View child,
-            LayoutManager.Direction direction, int currentPosition, int markerLine) {
+    public void setColumnMinimumWidth(int minimumWidth) {
+        mMinimumWidth = minimumWidth;
+        mColumnsSpecified = false;
+    }
+
+    public void setNumColumns(int numColumns) {
+        mNumColumns = numColumns;
+        mMinimumWidth = 0;
+        mColumnsSpecified = true;
+    }
+
+    private AddData fillRow(LayoutState state, SectionData section, LayoutState.View startChild,
+            LayoutManager.Direction direction, int startPosition, int markerLine) {
+        final int itemCount = state.recyclerState.getItemCount();
+
         AddData addData = new AddData();
-        if (!child.wasCached) {
-            final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
-            final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        addData.earliestIndexAddedTo = -1;
 
-            int left = section.getContentStartMargin();
-            int right = left + width;
-            int top;
-            int bottom;
+        LayoutManager.LayoutParams params = startChild.getLayoutParams();
+        int sectionFirst = params.sectionFirstPosition;
+        LayoutManager.LayoutParams firstParams = state.getView(sectionFirst).getLayoutParams();
+        int sectionStart = firstParams.isHeader ? sectionFirst + 1 : sectionFirst;
+        int startColumn = (startPosition - sectionStart) % mNumColumns;
 
-            if (direction == LayoutManager.Direction.END) {
-                top = markerLine;
-                bottom = top + height;
-            } else {
-                bottom = markerLine;
-                top = bottom - height;
+        // Fill out a row at a time. That way we can position them all correctly.
+
+        // Measure all children in the row.
+        int rowStart = startColumn != 0 ? startPosition - startColumn : startPosition;
+        int rowHeight = 0;
+        LayoutState.View[] rowViews = new LayoutState.View[mNumColumns];
+        for (int i = 0; i < mNumColumns; i++) {
+            int nextPosition = rowStart + i;
+            if (nextPosition < 0 || itemCount <= nextPosition) {
+                // Keep going because we might have something in range.
+                rowViews[i] = null;
+                continue;
             }
-            mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
-        }
-        if (direction == LayoutManager.Direction.END) {
-            addData.markerLine = mLayoutManager.getDecoratedBottom(child.view);
-        } else {
-            addData.markerLine = mLayoutManager.getDecoratedTop(child.view);
+            LayoutState.View next = state.getView(nextPosition);
+            LayoutManager.LayoutParams nextParams = next.getLayoutParams();
+            // Only measure and keep children belonging to the section.
+            if (nextParams.section == section.getSection()) {
+//                if (!next.wasCached) {
+                    measureChild(section, next);
+//                }
+                int height = mLayoutManager.getDecoratedMeasuredHeight(next.view);
+                rowHeight = height > rowHeight ? height : rowHeight;
+            } else {
+                next = null;
+            }
+            rowViews[i] = next;
         }
 
-        addData.indexAddedTo = addView(state, child, currentPosition, direction);
+        // Layout children in row starting from start child (startColumn).
+        for (int col = startColumn; 0 <= col && col < mNumColumns;
+                col += direction == LayoutManager.Direction.END ? 1 : -1) {
+            LayoutState.View child = rowViews[col];
+            if (child == null) {
+                continue;
+            }
+            int top = direction == LayoutManager.Direction.END ? markerLine
+                    : markerLine - rowHeight;
+//            if (!child.wasCached) {
+                layoutChild(child, section, col, top);
+//            }
+            int attachIndex = addView(state, child, mLayoutManager.getPosition(child.view),
+                    direction);
+            addData.numChildrenAdded += 1;
+            if (addData.earliestIndexAddedTo == -1 || addData.earliestIndexAddedTo > attachIndex) {
+                addData.earliestIndexAddedTo = attachIndex;
+            }
+        }
+
+        if (direction == LayoutManager.Direction.END) {
+            addData.markerLine = markerLine + rowHeight;
+        } else {
+            addData.markerLine = markerLine - rowHeight;
+        }
 
         return addData;
+    }
+
+    private void layoutChild(LayoutState.View child, SectionData section, int col, int top) {
+        int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+        int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        int bottom = top + height;
+        int left = section.getContentStartMargin() + col * mColumnWidth;
+        int right = left + width;
+
+        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
     }
 
     private void measureChild(SectionData section, LayoutState.View child) {
@@ -45,8 +123,10 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             return;
         }
 
+        int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
         mLayoutManager.measureChildWithMargins(child.view,
-                section.getHeaderStartMargin() + section.getHeaderEndMargin(), 0);
+                section.getHeaderStartMargin() + section.getHeaderEndMargin() + widthOtherColumns,
+                0);
     }
 
     @Override
@@ -59,7 +139,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                 return candidate;
             }
 
-            android.view.View view = mLayoutManager.getChildAt(lookAt);
+            View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
@@ -72,7 +152,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public android.view.View getLastView(int section) {
+    public View getLastView(int section) {
         int lookAt = mLayoutManager.getChildCount() - 1;
         View candidate = null;
         while (true) {
@@ -80,7 +160,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                 return candidate;
             }
 
-            android.view.View view = mLayoutManager.getChildAt(lookAt);
+            View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
@@ -113,6 +193,8 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     @Override
     public int getLowestEdge(int section, int endEdge) {
         // Look from end to find children that are the lowest.
+        int bottomMostEdge = 0;
+        int leftPosition = mLayoutManager.getWidth();
         for (int i = mLayoutManager.getChildCount() - 1; i >= 0; i--) {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
@@ -123,8 +205,17 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             if (params.isHeader) {
                 continue;
             }
-            // A more interesting layout would have to do something more here.
-            return mLayoutManager.getDecoratedBottom(child);
+
+            if (child.getLeft() >= leftPosition) {
+                // Last one in row already checked.
+                return bottomMostEdge;
+            } else {
+                leftPosition = child.getLeft();
+            }
+            int bottomEdge = mLayoutManager.getDecoratedBottom(child);
+            if (bottomMostEdge < bottomEdge) {
+                bottomMostEdge = bottomEdge;
+            }
         }
         return endEdge;
     }
@@ -133,6 +224,8 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     public FillResult fill(LayoutState state, SectionData section) {
         final int itemCount = state.recyclerState.getItemCount();
         final int height = mLayoutManager.getHeight();
+
+        calculateColumnWidthValues(section);
 
         FillResult fillResult;
         if (section.isFillDirectionStart()) {
@@ -149,11 +242,28 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return fillResult;
     }
 
-    private FillResult fillToStart(LayoutState state, SectionData section) {
-        final int itemCount = state.recyclerState.getItemCount();
-        final int endEdge = mLayoutManager.getHeight();
-        final int startEdge = 0;
+    private void calculateColumnWidthValues(SectionData section) {
+        int availableWidth = mLayoutManager.getWidth()
+                - section.getContentStartMargin() - section.getContentEndMargin();
+        if (!mColumnsSpecified) {
+            if (mMinimumWidth <= 0) {
+                mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
+                        mContext.getResources().getDisplayMetrics());
+            }
+            mNumColumns = availableWidth / Math.abs(mMinimumWidth);
+        }
+        if (mNumColumns < 1) {
+            mNumColumns = 1;
+        }
+        mColumnWidth = availableWidth / mNumColumns;
+        if (mColumnWidth == 0) {
+            Log.e("GridSectionLayoutManager",
+                    "Too many columns (" + mNumColumns + ") for available width" + availableWidth
+                            + ".");
+        }
+    }
 
+    private FillResult fillToStart(LayoutState state, SectionData section) {
         /*
          * First fill section to start from anchor position. Then check minimum height requirement
          * is met, if not offset all children added by the required margin.
@@ -166,25 +276,17 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         fillResult = fillViews(state, section, fillResult, section.getAnchorPosition(),
                 section.getMarkerLine(), LayoutManager.Direction.START);
 
-        int minimumHeight = section.getMinimumHeight();
+        final int minimumHeight = section.getMinimumHeight();
         // Push section children and start marker up if section is shorter than header.
         if (minimumHeight > 0) {
             int viewSpan = fillResult.markerEnd - fillResult.markerStart;
             if (section.getFirstPosition() != fillResult.positionStart + 1) {
-                // Haven't checked over entire area to see if the section is indeed smaller than the
-                // header. The assumption is that there is a header because we have a minimum
-                // height.
-                int rangeToCheck = fillResult.positionStart - (section.getFirstPosition() + 1);
-                for (int i = 1; i <= rangeToCheck && viewSpan < minimumHeight; i++) {
-                    LayoutState.View child = state.getView(fillResult.positionStart - i);
-                    measureChild(section, child);
-                    viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
-                }
+                viewSpan = getViewSpan(state, section, fillResult, minimumHeight, viewSpan);
             }
 
             // Perform offset if needed.
             if (viewSpan < minimumHeight) {
-                int offset = viewSpan - minimumHeight;
+                final int offset = viewSpan - minimumHeight;
                 for (int i = 0; i < fillResult.addedChildCount; i++) {
                     View child = mLayoutManager.getChildAt(fillResult.firstChildIndex + i);
                     child.offsetTopAndBottom(offset);
@@ -194,6 +296,27 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         }
 
         return fillResult;
+    }
+
+    private int getViewSpan(LayoutState state, SectionData section, FillResult fillResult,
+            int minimumHeight, int viewSpan) {
+        // Haven't checked over entire area to see if the section is indeed smaller than the
+        // header. The assumption is that there is a header because we have a minimum
+        // height.
+        final int rangeToCheck = fillResult.positionStart - (section.getFirstPosition() + 1);
+        for (int i = mNumColumns; i <= rangeToCheck && viewSpan < minimumHeight; i += mNumColumns) {
+            int rowHeight = 0;
+            for (int col = 0; col < mNumColumns; col++) {
+                final LayoutState.View child = state.getView(fillResult.positionStart - i + col);
+                measureChild(section, child);
+                final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                if (height > rowHeight) {
+                    rowHeight = height;
+                }
+            }
+            viewSpan += rowHeight;
+        }
+        return viewSpan;
     }
 
     private FillResult fillToEnd(LayoutState state, SectionData section) {
@@ -210,7 +333,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                 section.getMarkerLine(), LayoutManager.Direction.END);
 
         // Push end marker down if section is shorter than the header.
-        int viewSpan = fillResult.markerEnd - fillResult.markerStart;
+        final int viewSpan = fillResult.markerEnd - fillResult.markerStart;
         if (viewSpan < section.getMinimumHeight()) {
             fillResult.markerEnd += section.getMinimumHeight() - viewSpan;
         }
@@ -236,20 +359,12 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         fillResult = fillViews(state, section, fillResult, section.getAnchorPosition() - 1,
                 section.getMarkerLine(), LayoutManager.Direction.START);
 
-        int minimumHeight = section.getMinimumHeight();
+        final int minimumHeight = section.getMinimumHeight();
         // Push section children and start marker up if section is shorter than header.
         if (minimumHeight > 0) {
             int viewSpan = fillResult.markerEnd - fillResult.markerStart;
             if (section.getFirstPosition() != fillResult.positionStart + 1) {
-                // Haven't checked over entire area to see if the section is indeed smaller than the
-                // header. The assumption is that there is a header because we have a minimum
-                // height.
-                int rangeToCheck = fillResult.positionStart - (section.getFirstPosition() + 1);
-                for (int i = 1; i <= rangeToCheck && viewSpan < minimumHeight; i++) {
-                    LayoutState.View child = state.getView(fillResult.positionStart - i);
-                    measureChild(section, child);
-                    viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
-                }
+                viewSpan = getViewSpan(state, section, fillResult, minimumHeight, viewSpan);
             }
 
             // Perform offset if needed.
@@ -277,16 +392,16 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             if (params.isHeader || params.section != section.getSection()) {
                 break;
             }
-            measureChild(section, child);
-            AddData r = layoutChild(state, section, child, direction, currentPosition, markerLine);
-            currentPosition += direction == LayoutManager.Direction.START ? -1 : 1;
+            AddData r = fillRow(state, section, child, direction, currentPosition, markerLine);
+            currentPosition += r.numChildrenAdded
+                    * (direction == LayoutManager.Direction.START ? -1 : 1);
             markerLine = r.markerLine;
-            fillResult.addedChildCount += 1;
+            fillResult.addedChildCount += r.numChildrenAdded;
             if (fillResult.firstChildIndex == -1) {
-                fillResult.firstChildIndex = r.indexAddedTo;
+                fillResult.firstChildIndex = r.earliestIndexAddedTo;
             } else {
-                fillResult.firstChildIndex = r.indexAddedTo < fillResult.firstChildIndex
-                        ? r.indexAddedTo : fillResult.firstChildIndex;
+                fillResult.firstChildIndex = r.earliestIndexAddedTo < fillResult.firstChildIndex
+                        ? r.earliestIndexAddedTo : fillResult.firstChildIndex;
             }
         }
 
@@ -320,34 +435,36 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
         int position = section.getFirstPosition() + 1;
         while (headerOffset > -section.getHeaderHeight() && position < itemCount) {
-            // Look to see if the header overlaps with the displayed area of the mSection.
-            LayoutState.View child;
-
+            int rowHeight = 0;
+            // Look to see if the header overlaps with the first item in the row. If not
+            // get the largest height from the row and subtract.
             if (position < displayedPosition) {
-                // Make sure to measure current position if fill direction is to the start.
-                child = state.getView(position);
-                measureChild(section, child);
+                //Run through row and get largest height.
+                for (int col = 0; col < mNumColumns; col++) {
+                    // Make sure to measure current position if fill direction is to the start.
+                    LayoutState.View child = state.getView(position + col);
+                    measureChild(section, child);
+                    int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                    if (height > rowHeight) {
+                        rowHeight = height;
+                    }
+                }
             } else {
                 // Run into an item that is displayed, indicating header overlap.
                 break;
             }
 
-            headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
-
-            position += 1;
+            headerOffset -= rowHeight;
+            position += mNumColumns; // Skip past row.
         }
 
         return headerOffset;
     }
 
-    private int addView(LayoutState state, LayoutState.View child,
-            int position, LayoutManager.Direction direction) {
-        int addIndex;
-        if (direction == LayoutManager.Direction.START) {
-            addIndex = 0;
-        } else {
-            addIndex = mLayoutManager.getChildCount();
-        }
+    private int addView(LayoutState state, LayoutState.View child, int position,
+            LayoutManager.Direction direction) {
+        final int addIndex = direction == LayoutManager.Direction.START ? 0
+                : mLayoutManager.getChildCount();
 
         if (child.wasCached) {
             mLayoutManager.attachView(child.view, addIndex);
@@ -361,7 +478,9 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
     class AddData {
 
-        int indexAddedTo;
+        int numChildrenAdded;
+
+        int earliestIndexAddedTo;
 
         int markerLine;
     }
