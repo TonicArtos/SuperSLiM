@@ -47,6 +47,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int mRequestPositionOffset = 0;
 
+    private boolean mDisableStickyHeaderDisplay = false;
+
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
     }
@@ -129,6 +131,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
+        // Temporarily disable sticky headers.
+        mDisableStickyHeaderDisplay = true;
+
         LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
             @Override
             public PointF computeScrollVectorForPosition(int targetPosition) {
@@ -137,6 +142,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 }
 
                 return new PointF(0, getDirectionToPosition(targetPosition));
+            }
+
+            @Override
+            protected void onStop() {
+                super.onStop();
+                // Turn sticky headers back on.
+                mDisableStickyHeaderDisplay = false;
             }
 
             @Override
@@ -316,6 +328,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int nextStep = direction == Direction.END ? 1 : -1;
         for (; 0 <= position && position < itemCount; position += nextStep) {
             View child = getChildAt(position);
+            if (child == null) {
+                continue;
+            }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
             if (params.section != section) {
                 break;
@@ -471,7 +486,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Check header if header is stuck.
-        final boolean isStuck = params.isSticky && fillResult.markerStart < 0;
+        final boolean isStuck = params.isSticky && fillResult.markerStart < 0
+                && !mDisableStickyHeaderDisplay;
 
         // Attach after section children if overlay, otherwise before.
         final int attachIndex;
@@ -484,12 +500,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Attach header.
         if (header.wasCached) {
-            if (params.isSticky || getDecoratedBottom(header.view) >= 0) {
+            if ((params.isSticky && !mDisableStickyHeaderDisplay)
+                    || getDecoratedBottom(header.view) >= 0) {
                 attachView(header.view, attachIndex);
                 state.decacheView(section.getFirstPosition());
                 fillResult.positionStart -= 1;
             }
-            if (!params.isSticky) {
+            if (!params.isSticky || mDisableStickyHeaderDisplay) {
                 // Layout unneeded if the header is not sticky and was cached.
                 return fillResult;
             }
@@ -520,7 +537,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
         r.bottom = r.top + height;
 
-        if (params.isSticky) {
+        if (params.isSticky && !mDisableStickyHeaderDisplay) {
             if (r.top < 0) {
                 r.top = 0;
                 r.bottom = height;
@@ -628,8 +645,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-//        return getChildCount() * 10;
-
         int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
         View endView = manager.getLastView(endSection);
