@@ -664,33 +664,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int contentHeight = getDecoratedMeasuredHeight(firstContentView);
 
         if (firstHeaderView == null) {
-            return firstContentPosition * 10 - (contentTop < 0 ? contentTop / (contentHeight / 10)
-                    : 0);
+            return (int) (firstContentPosition * 10
+                    - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
         }
-
-        int contentBottom = getDecoratedBottom(firstContentView);
-        int headerTop = getDecoratedTop(firstHeaderView);
-        int headerBottom = getDecoratedBottom(firstHeaderView);
 
         int headerPosition = getPosition(firstHeaderView);
-        if (headerPosition == 0 && headerTop == getPaddingTop()
-                && firstContentPosition == 1 && contentTop >= getPaddingTop()
-                || firstContentPosition - headerPosition == 1 && headerTop < contentTop
-                || headerTop < contentTop && headerBottom < contentBottom) {
-            int firstHeaderPosition = headerPosition;
-            int headerHeight = getDecoratedMeasuredHeight(firstHeaderView);
-            if (headerTop < 0) {
-                return firstHeaderPosition * 10 - headerTop / (headerHeight / 10);
-            } else {
-                LayoutParams lp = (LayoutParams) firstHeaderView.getLayoutParams();
-                if (lp.headerAlignment != HEADER_INLINE) {
-                    return 0;
+        if (firstContentPosition - headerPosition == 1) {
+            int i = 0;
+            for (; i < getItemCount(); i++) {
+                if (getChildAt(i) == firstContentView) {
+                    break;
                 }
-                int headerOverlap = contentTop - getDecoratedBottom(firstHeaderView);
-                return firstHeaderPosition * 10 - headerOverlap / (headerHeight / 10);
             }
+            if (i + 1 < getItemCount()) {
+                View next = getChildAt(i + 1);
+                LayoutParams nextParams = (LayoutParams) next.getLayoutParams();
+                if (next == firstHeaderView || nextParams.section != startSection) {
+                    int headerTop = getDecoratedTop(firstHeaderView);
+                    int headerHeight = getDecoratedMeasuredHeight(firstHeaderView);
+                    return (int) (headerPosition * 10
+                            - (headerTop < 0 ? headerTop / (headerHeight / 20f) : 0));
+                }
+            }
+            return (int) (headerPosition * 10
+                    - (contentTop < 0 ? contentTop / (contentHeight / 20f) : 0));
         }
-        return firstContentPosition * 10 - (contentTop < 0 ? contentTop / (contentHeight / 10) : 0);
+        return (int) (firstContentPosition * 10
+                - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
     }
 
     void measureHeader(LayoutState.View header) {
