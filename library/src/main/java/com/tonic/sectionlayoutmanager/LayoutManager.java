@@ -47,6 +47,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int mRequestPositionOffset = 0;
 
+    private boolean mDisableStickyHeaderDisplay = false;
+
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
     }
@@ -121,52 +123,68 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state,
-            int position) {
+    public void smoothScrollToPosition(final RecyclerView recyclerView, RecyclerView.State state,
+            final int position) {
         if (position < 0 || getItemCount() <= position) {
             Log.e("SuperSLiM.LayoutManager", "Ignored smooth scroll to " + position +
                     " as it is not within the item range 0 - " + getItemCount());
             return;
         }
 
-        LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
-            @Override
-            public PointF computeScrollVectorForPosition(int targetPosition) {
-                if (getChildCount() == 0) {
-                    return null;
-                }
+        // Temporarily disable sticky headers.
+        mDisableStickyHeaderDisplay = true;
+        requestLayout();
 
-                return new PointF(0, getDirectionToPosition(targetPosition));
-            }
-
+        recyclerView.getHandler().post(new Runnable() {
             @Override
-            protected int getVerticalSnapPreference() {
-                return LinearSmoothScroller.SNAP_TO_START;
-            }
+            public void run() {
+                LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
+                    @Override
+                    public PointF computeScrollVectorForPosition(int targetPosition) {
+                        if (getChildCount() == 0) {
+                            return null;
+                        }
 
-            @Override
-            public int calculateDyToMakeVisible(View view, int snapPreference) {
-                final RecyclerView.LayoutManager layoutManager = getLayoutManager();
-                if (!layoutManager.canScrollVertically()) {
-                    return 0;
-                }
-                final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
-                        view.getLayoutParams();
-                final int top = layoutManager.getDecoratedTop(view) - params.topMargin;
-                final int bottom = layoutManager.getDecoratedBottom(view) + params.bottomMargin;
-                final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop() : 0;
-                final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
-                int dy = calculateDtToFit(top, bottom, start, end, snapPreference);
-                return dy == 0 ? 1 : dy;
-            }
+                        return new PointF(0, getDirectionToPosition(targetPosition));
+                    }
 
-            @Override
-            protected void onChildAttachedToWindow(View child) {
-                super.onChildAttachedToWindow(child);
+                    @Override
+                    protected void onStop() {
+                        super.onStop();
+                        // Turn sticky headers back on.
+                        mDisableStickyHeaderDisplay = false;
+                    }
+
+                    @Override
+                    protected int getVerticalSnapPreference() {
+                        return LinearSmoothScroller.SNAP_TO_START;
+                    }
+
+                    @Override
+                    public int calculateDyToMakeVisible(View view, int snapPreference) {
+                        final RecyclerView.LayoutManager layoutManager = getLayoutManager();
+                        if (!layoutManager.canScrollVertically()) {
+                            return 0;
+                        }
+                        final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
+                                view.getLayoutParams();
+                        final int top = layoutManager.getDecoratedTop(view) - params.topMargin;
+                        final int bottom = layoutManager.getDecoratedBottom(view) + params.bottomMargin;
+                        final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop() : 0;
+                        final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
+                        int dy = calculateDtToFit(top, bottom, start, end, snapPreference);
+                        return dy == 0 ? 1 : dy;
+                    }
+
+                    @Override
+                    protected void onChildAttachedToWindow(View child) {
+                        super.onChildAttachedToWindow(child);
+                    }
+                };
+                smoothScroller.setTargetPosition(position);
+                startSmoothScroll(smoothScroller);
             }
-        };
-        smoothScroller.setTargetPosition(position);
-        startSmoothScroll(smoothScroller);
+        });
     }
 
     private int getDirectionToPosition(int targetPosition) {
@@ -174,8 +192,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
 
         View startSectionFirstView = manager.getFirstView(startSection);
-//        View startHeaderView = findAttachedHeaderForSection(getItemCount(), startSection,
-// Direction.END);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
@@ -316,6 +332,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int nextStep = direction == Direction.END ? 1 : -1;
         for (; 0 <= position && position < itemCount; position += nextStep) {
             View child = getChildAt(position);
+            if (child == null) {
+                continue;
+            }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
             if (params.section != section) {
                 break;
@@ -471,7 +490,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Check header if header is stuck.
-        final boolean isStuck = params.isSticky && fillResult.markerStart < 0;
+        final boolean isStuck = params.isSticky && fillResult.markerStart < 0
+                && !mDisableStickyHeaderDisplay;
 
         // Attach after section children if overlay, otherwise before.
         final int attachIndex;
@@ -484,12 +504,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Attach header.
         if (header.wasCached) {
-            if (params.isSticky || getDecoratedBottom(header.view) >= 0) {
+            if ((params.isSticky && !mDisableStickyHeaderDisplay)
+                    || getDecoratedBottom(header.view) >= 0) {
                 attachView(header.view, attachIndex);
                 state.decacheView(section.getFirstPosition());
                 fillResult.positionStart -= 1;
             }
-            if (!params.isSticky) {
+            if (!params.isSticky || mDisableStickyHeaderDisplay) {
                 // Layout unneeded if the header is not sticky and was cached.
                 return fillResult;
             }
@@ -520,7 +541,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
         r.bottom = r.top + height;
 
-        if (params.isSticky) {
+        if (params.isSticky && !mDisableStickyHeaderDisplay) {
             if (r.top < 0) {
                 r.top = 0;
                 r.bottom = height;
@@ -628,8 +649,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-//        return getChildCount() * 10;
-
         int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
         View endView = manager.getLastView(endSection);
