@@ -129,7 +129,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 final int bottom = layoutManager.getDecoratedBottom(view) + params.bottomMargin;
                 final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop() : 0;
                 final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
-                return calculateDtToFit(top, bottom, start, end, snapPreference);
+                int dy = calculateDtToFit(top, bottom, start, end, snapPreference);
+                return dy == 0 ? 1 : dy;
             }
 
             @Override
