@@ -45,6 +45,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int mRequestPosition = NO_POSITION_REQUEST;
 
+    private int mRequestPositionOffset = 0;
+
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
     }
@@ -73,7 +75,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (mRequestPosition != NO_POSITION_REQUEST) {
             anchorPosition = mRequestPosition;
             mRequestPosition = NO_POSITION_REQUEST;
-            borderLine = 0;
+            borderLine = mRequestPositionOffset;
+            mRequestPositionOffset = 0;
         } else {
             View anchorView = getAnchorChild(itemCount);
             anchorPosition = anchorView == null ? 0 : getPosition(anchorView);
@@ -87,6 +90,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     @Override
     public void onRestoreInstanceState(Parcelable state) {
         mRequestPosition = ((SavedState) state).anchorPosition;
+        mRequestPositionOffset = ((SavedState) state).anchorOffset;
         requestLayout();
     }
 
@@ -94,7 +98,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public Parcelable onSaveInstanceState() {
         SavedState state = new SavedState();
         View view = getAnchorChild(getItemCount());
-        state.anchorPosition = getPosition(view);
+        if (view == null) {
+            state.anchorPosition = 0;
+            state.anchorOffset = 0;
+        } else {
+            state.anchorPosition = getPosition(view);
+            state.anchorOffset = getDecoratedTop(view);
+            Log.d("save", "position " + getPosition(view));
+        }
         return state;
     }
 
@@ -416,7 +427,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         fillState.markerEnd);
             } else {
                 anchor = fillState.positionStart - 1;
-                if (fillState.markerStart < 0 || anchor < 0) {
+                if (fillState.markerStart <= 0 || anchor < 0) {
                     break;
                 }
                 section = new SectionData(this, layoutState, direction, anchor,
@@ -888,11 +899,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public int anchorPosition;
 
+        public int anchorOffset;
+
         protected SavedState() {
         }
 
         protected SavedState(Parcel in) {
             anchorPosition = in.readInt();
+            anchorOffset = in.readInt();
         }
 
         @Override
@@ -903,6 +917,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         @Override
         public void writeToParcel(Parcel out, int flags) {
             out.writeInt(anchorPosition);
+            out.writeInt(anchorOffset);
         }
     }
 }
