@@ -2,7 +2,9 @@ package com.tonic.sectionlayoutmanager;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.PointF;
 import android.graphics.Rect;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -92,6 +94,65 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
+    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state,
+            int position) {
+        if (position < 0 || getItemCount() <= position) {
+            Log.e("SuperSLiM.LayoutManager", "Ignored smooth scroll to " + position +
+                    " as it is not within the item range 0 - " + getItemCount());
+            return;
+        }
+
+        LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
+            @Override
+            public PointF computeScrollVectorForPosition(int targetPosition) {
+                if (getChildCount() == 0) {
+                    return null;
+                }
+
+                return new PointF(0, getDirectionToPosition(targetPosition));
+            }
+
+            @Override
+            protected int getVerticalSnapPreference() {
+                return LinearSmoothScroller.SNAP_TO_START;
+            }
+
+            @Override
+            public int calculateDyToMakeVisible(View view, int snapPreference) {
+                final RecyclerView.LayoutManager layoutManager = getLayoutManager();
+                if (!layoutManager.canScrollVertically()) {
+                    return 0;
+                }
+                final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
+                        view.getLayoutParams();
+                final int top = layoutManager.getDecoratedTop(view) - params.topMargin;
+                final int bottom = layoutManager.getDecoratedBottom(view) + params.bottomMargin;
+                final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop() : 0;
+                final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
+                int dy = calculateDtToFit(top, bottom, start, end, snapPreference);
+                return dy == 0 ? 1 : dy;
+            }
+
+            @Override
+            protected void onChildAttachedToWindow(View child) {
+                super.onChildAttachedToWindow(child);
+            }
+        };
+        smoothScroller.setTargetPosition(position);
+        startSmoothScroll(smoothScroller);
+    }
+
+    private int getDirectionToPosition(int targetPosition) {
+        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
+        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
+
+        View startSectionFirstView = manager.getFirstView(startSection);
+//        View startHeaderView = findAttachedHeaderForSection(getItemCount(), startSection,
+// Direction.END);
+        return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
+    }
+
+    @Override
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
         removeAllViews();
     }
@@ -123,7 +184,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
 
         View startSectionFirstView = manager.getFirstView(startSection);
-        View startHeaderView = findAttachedHeaderForSection(state, startSection, Direction.END);
+        View startHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
+                Direction.END);
         int startSectionHighestEdge = manager.getHighestEdge(startSection, getPaddingTop());
 
         // Get end views.
@@ -131,7 +193,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         manager = mSlmFactory.getSectionLayoutManager(this, endSection);
 
         View endSectionLastView = manager.getLastView(endSection);
-        View endHeaderView = findAttachedHeaderForSection(state, endSection,
+        View endHeaderView = findAttachedHeaderForSection(state.getItemCount(), endSection,
                 Direction.START);
         int endSectionLowestEdge = manager
                 .getLowestEdge(endSection, getHeight() - getPaddingBottom());
@@ -200,7 +262,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
-        fill(recycler, state, getPosition(endSectionLastView), 0, false);
+        if (delta > 0) {
+            fill(recycler, state, getPosition(startSectionFirstView), 0, false);
+        } else {
+            fill(recycler, state, getPosition(endSectionLastView), 0, false);
+        }
 
         return -delta;
     }
@@ -209,7 +275,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * Find a view that is the header for the specified section. Looks in direction specified from
      * opposite end.
      *
-     * @param state     RecyclerView state.
+     * @param itemCount Current number of items in adapter.
      * @param section   Section to look for header inside of. Search is expected to start inside
      *                  the
      *                  section so it must be at the matching end specified by the direction.
@@ -217,9 +283,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      *                  end.
      * @return Null if no header found, otherwise the header view.
      */
-    private View findAttachedHeaderForSection(RecyclerView.State state, int section,
-            Direction direction) {
-        final int itemCount = state.getItemCount();
+    private View findAttachedHeaderForSection(final int itemCount, final int section,
+            final Direction direction) {
         int position = direction == Direction.END ? 0 : getChildCount() - 1;
         int nextStep = direction == Direction.END ? 1 : -1;
         for (; 0 <= position && position < itemCount; position += nextStep) {
