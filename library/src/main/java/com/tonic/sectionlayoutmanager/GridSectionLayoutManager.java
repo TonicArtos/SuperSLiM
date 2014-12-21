@@ -53,6 +53,9 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
         // Fill out a row at a time. That way we can position them all correctly.
 
+        boolean rowAlreadyPositioned = false;
+        int rowPriorPosition = 0;
+
         // Measure all children in the row.
         int rowStart = startColumn != 0 ? startPosition - startColumn : startPosition;
         int rowHeight = 0;
@@ -68,15 +71,25 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             LayoutManager.LayoutParams nextParams = next.getLayoutParams();
             // Only measure and keep children belonging to the section.
             if (nextParams.section == section.getSection()) {
-//                if (!next.wasCached) {
-                    measureChild(section, next);
-//                }
+                measureChild(section, next);
+                // Detect already attached children and adjust effective markerline from it.
+                if (!rowAlreadyPositioned && next.wasCached) {
+                    rowAlreadyPositioned = true;
+                    rowPriorPosition = mLayoutManager.getDecoratedTop(next.view);
+                }
                 int height = mLayoutManager.getDecoratedMeasuredHeight(next.view);
                 rowHeight = height > rowHeight ? height : rowHeight;
             } else {
                 next = null;
             }
             rowViews[i] = next;
+        }
+
+        final int top;
+        if (rowAlreadyPositioned) {
+            top = rowPriorPosition;
+        } else {
+            top = direction == LayoutManager.Direction.END ? markerLine : markerLine - rowHeight;
         }
 
         // Layout children in row starting from start child (startColumn).
@@ -86,11 +99,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             if (child == null) {
                 continue;
             }
-            int top = direction == LayoutManager.Direction.END ? markerLine
-                    : markerLine - rowHeight;
-//            if (!child.wasCached) {
-                layoutChild(child, section, col, top);
-//            }
+            layoutChild(child, section, col, top);
             int attachIndex = addView(state, child, mLayoutManager.getPosition(child.view),
                     direction);
             addData.numChildrenAdded += 1;
@@ -102,13 +111,17 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         if (direction == LayoutManager.Direction.END) {
             addData.markerLine = markerLine + rowHeight;
         } else {
-            addData.markerLine = markerLine - rowHeight;
+            addData.markerLine = rowAlreadyPositioned ? rowPriorPosition: markerLine - rowHeight;
         }
 
         return addData;
     }
 
     private void layoutChild(LayoutState.View child, SectionData section, int col, int top) {
+        if (child.wasCached) {
+            return;
+        }
+
         int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
         int bottom = top + height;
