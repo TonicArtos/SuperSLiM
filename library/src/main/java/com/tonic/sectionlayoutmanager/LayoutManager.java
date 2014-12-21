@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -59,7 +61,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (state.getItemCount() == 0) {
+        int itemCount = state.getItemCount();
+        if (itemCount == 0) {
             detachAndScrapAttachedViews(recycler);
             return;
         }
@@ -72,13 +75,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mRequestPosition = NO_POSITION_REQUEST;
             borderLine = 0;
         } else {
-            View anchorView = getAnchorChild(state);
+            View anchorView = getAnchorChild(itemCount);
             anchorPosition = anchorView == null ? 0 : getPosition(anchorView);
             borderLine = getBorderLine(anchorView, Direction.END);
         }
 
         detachAndScrapAttachedViews(recycler);
         fill(recycler, state, anchorPosition, borderLine, true);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        mRequestPosition = ((SavedState) state).anchorPosition;
+        requestLayout();
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        SavedState state = new SavedState();
+        View view = getAnchorChild(getItemCount());
+        state.anchorPosition = getPosition(view);
+        return state;
     }
 
     @Override
@@ -692,12 +709,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     /**
      * Find the first view in the hierarchy that can act as an anchor.
      *
-     * @param state Recycler state.
+     * @param itemCount Number of items currently in the adapter.
      * @return The anchor view, or null if no view is a valid anchor.
      */
-    private View getAnchorChild(RecyclerView.State state) {
-        final int itemCount = state.getItemCount();
-
+    private View getAnchorChild(final int itemCount) {
         if (getChildCount() > 0) {
             final int childCount = getChildCount();
 
@@ -856,4 +871,38 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 int section);
     }
 
+    protected static class SavedState implements Parcelable {
+
+        public static final Parcelable.Creator<SavedState> CREATOR
+                = new Parcelable.Creator<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+
+        public int anchorPosition;
+
+        protected SavedState() {
+        }
+
+        protected SavedState(Parcel in) {
+            anchorPosition = in.readInt();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            out.writeInt(anchorPosition);
+        }
+    }
 }
