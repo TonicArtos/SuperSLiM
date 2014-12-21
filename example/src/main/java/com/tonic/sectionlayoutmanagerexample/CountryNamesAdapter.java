@@ -28,9 +28,9 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private int mHeaderMode;
 
-    private boolean mMarginsFixed = CountriesFragment.DEFAULT_MARGINS_FIXED;
+    private boolean mMarginsFixed;
 
-    private boolean mHeadersSticky = CountriesFragment.DEFAULT_HEADERS_STICKY;
+    private boolean mHeadersSticky;
 
     public CountryNamesAdapter(Context context, int headerMode) {
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
@@ -53,10 +53,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 mItems.add(new LineItem(header, true, sectionCount, sectionFirstPosition));
             }
             mItems.add(new LineItem(countryNames[i], false, sectionCount, sectionFirstPosition));
-        }
-        for (int i = 0; i < mItems.size(); i++) {
-            Log.d("Adapter Item " + mItems.get(i).section + " " + i,
-                    mItems.get(i).text + "     " + (mItems.get(i).isHeader ? "Header" : ""));
         }
         mContext = context;
     }
@@ -103,10 +99,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
             if (mMarginsFixed) {
-                lp.headerEndMargin = (int) mContext.getResources()
-                        .getDimension(R.dimen.default_header_margin);
-                lp.headerStartMargin = (int) mContext.getResources()
-                        .getDimension(R.dimen.default_header_margin);
                 if (mHeaderMode == LayoutManager.HEADER_OVERLAY_END || mHeaderMode == LayoutManager.HEADER_OVERLAY_START) {
                     lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
                 } else {
