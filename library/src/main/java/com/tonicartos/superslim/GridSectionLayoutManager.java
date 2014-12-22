@@ -230,7 +230,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 bottomMostEdge = bottomEdge;
             }
         }
-        return endEdge;
+        return bottomMostEdge;
     }
 
     @Override
