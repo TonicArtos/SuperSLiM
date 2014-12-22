@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanager;
+package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -818,38 +818,38 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             super(c, attrs);
 
             TypedArray a = c.obtainStyledAttributes(attrs,
-                    R.styleable.sectionlayoutmanager_LayoutManager);
+                    R.styleable.superslim_LayoutManager);
             isHeader = a.getBoolean(
-                    R.styleable.sectionlayoutmanager_LayoutManager_slm_isHeader,
+                    R.styleable.superslim_LayoutManager_slm_isHeader,
                     false);
             headerAlignment = a.getInt(
-                    R.styleable.sectionlayoutmanager_LayoutManager_slm_alignHeader,
+                    R.styleable.superslim_LayoutManager_slm_alignHeader,
                     HEADER_INLINE);
             sectionFirstPosition = a.getInt(
-                    R.styleable.sectionlayoutmanager_LayoutManager_slm_sectionFirstPosition,
+                    R.styleable.superslim_LayoutManager_slm_sectionFirstPosition,
                     HEADER_NONE);
             isSticky = a.getBoolean(
-                    R.styleable.sectionlayoutmanager_LayoutManager_slm_isSticky,
+                    R.styleable.superslim_LayoutManager_slm_isSticky,
                     false);
             section = a.getInt(
-                    R.styleable.sectionlayoutmanager_LayoutManager_slm_section,
+                    R.styleable.superslim_LayoutManager_slm_section,
                     0);
 
             // Header margin types can be dimension or integer (enum).
-            if (a.getType(R.styleable.sectionlayoutmanager_LayoutManager_slm_headerStartMargin) ==
+            if (a.getType(R.styleable.superslim_LayoutManager_slm_headerStartMargin) ==
                     TypedValue.TYPE_DIMENSION) {
                 headerStartMarginIsAuto = false;
                 headerStartMargin = a.getDimensionPixelSize(
-                        R.styleable.sectionlayoutmanager_LayoutManager_slm_headerStartMargin,
+                        R.styleable.superslim_LayoutManager_slm_headerStartMargin,
                         0);
             } else {
                 headerStartMarginIsAuto = true;
             }
-            if (a.getType(R.styleable.sectionlayoutmanager_LayoutManager_slm_headerEndMargin) ==
+            if (a.getType(R.styleable.superslim_LayoutManager_slm_headerEndMargin) ==
                     TypedValue.TYPE_DIMENSION) {
                 headerEndMarginIsAuto = false;
                 headerEndMargin = a.getDimensionPixelSize(
-                        R.styleable.sectionlayoutmanager_LayoutManager_slm_headerEndMargin,
+                        R.styleable.superslim_LayoutManager_slm_headerEndMargin,
                         0);
             } else {
                 headerEndMarginIsAuto = true;

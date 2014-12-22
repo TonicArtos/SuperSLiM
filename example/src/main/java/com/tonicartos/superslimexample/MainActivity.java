@@ -1,6 +1,6 @@
-package com.tonic.sectionlayoutmanagerexample;
+package com.tonicartos.superslimexample;
 
-import com.tonic.sectionlayoutmanager.LayoutManager;
+import com.tonicartos.superslim.LayoutManager;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;

@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanager;
+package com.tonicartos.superslim;
 
 /**
  * Created by tonic on 18/12/14.

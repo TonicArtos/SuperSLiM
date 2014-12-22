@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanagerexample;
+package com.tonicartos.superslimexample;
 
 import android.support.v7.widget.RecyclerView;
 import android.widget.TextView;

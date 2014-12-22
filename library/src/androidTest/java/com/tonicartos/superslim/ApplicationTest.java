@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanagerexample;
+package com.tonicartos.superslim;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
