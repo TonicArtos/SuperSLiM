@@ -91,7 +91,7 @@ public class CountriesFragment extends Fragment {
         LayoutManager lm = new LayoutManager();
         mGridSectionLayoutManager = new GridSectionLayoutManager(lm, getActivity());
         mGridSectionLayoutManager.setColumnMinimumWidth((int) getResources()
-                .getDimension(R.dimen.column_width));
+                .getDimension(R.dimen.grid_column_width));
         mLinearSectionLayoutManager = new LinearSectionLayoutManager(lm);
         lm.setSlmFactory(mSlmFactory);
 
