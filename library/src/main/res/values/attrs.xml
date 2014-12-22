@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="sectionlayoutmanager_LayoutManager">
+    <declare-styleable name="superslim_LayoutManager">
         <attr name="slm_isHeader" format="boolean"/>
         <attr name="slm_alignHeader" format="enum">
             <enum name="inline" value="0x01"/>

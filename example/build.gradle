@@ -13,7 +13,7 @@ android {
 
     }
     defaultConfig {
-        applicationId 'com.tonic.sectionlayoutmanager.example'
+        applicationId 'com.tonicartos.superslim.example'
         versionCode 1
         versionName '0.1'
         minSdkVersion 21

@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanager;
+package com.tonicartos.superslim;
 
 import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;

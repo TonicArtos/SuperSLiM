@@ -1,4 +1,4 @@
-package com.tonic.sectionlayoutmanagerexample;
+package com.tonicartos.superslimexample;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,10 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.tonic.sectionlayoutmanager.GridSectionLayoutManager;
-import com.tonic.sectionlayoutmanager.LayoutManager;
-import com.tonic.sectionlayoutmanager.LinearSectionLayoutManager;
-import com.tonic.sectionlayoutmanager.SectionLayoutManager;
+import com.tonicartos.superslim.GridSectionLayoutManager;
+import com.tonicartos.superslim.LayoutManager;
+import com.tonicartos.superslim.LinearSectionLayoutManager;
+import com.tonicartos.superslim.SectionLayoutManager;
 
 import java.util.Random;
 
