@@ -49,6 +49,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mDisableStickyHeaderDisplay = false;
 
+    private boolean mSmoothScrollEnabled = true;
+
+    public boolean isSmoothScrollEnabled() {
+        return mSmoothScrollEnabled;
+    }
+
+    public void setSmoothScrollEnabled(boolean smoothScrollEnabled) {
+        mSmoothScrollEnabled = smoothScrollEnabled;
+    }
+
     public void setSlmFactory(SlmFactory factory) {
         mSlmFactory = factory;
     }
@@ -138,7 +148,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         recyclerView.getHandler().post(new Runnable() {
             @Override
             public void run() {
-                LinearSmoothScroller smoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
+                LinearSmoothScroller smoothScroller = new LinearSmoothScroller(
+                        recyclerView.getContext()) {
                     @Override
                     public PointF computeScrollVectorForPosition(int targetPosition) {
                         if (getChildCount() == 0) {
@@ -169,9 +180,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
                                 view.getLayoutParams();
                         final int top = layoutManager.getDecoratedTop(view) - params.topMargin;
-                        final int bottom = layoutManager.getDecoratedBottom(view) + params.bottomMargin;
-                        final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop() : 0;
-                        final int end = layoutManager.getHeight() - layoutManager.getPaddingBottom();
+                        final int bottom = layoutManager.getDecoratedBottom(view)
+                                + params.bottomMargin;
+                        final int start = getPosition(view) == 0 ? layoutManager.getPaddingTop()
+                                : 0;
+                        final int end = layoutManager.getHeight() - layoutManager
+                                .getPaddingBottom();
                         int dy = calculateDtToFit(top, bottom, start, end, snapPreference);
                         return dy == 0 ? 1 : dy;
                     }
@@ -649,6 +663,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            return getChildCount();
+        }
+
         int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
         View endView = manager.getLastView(endSection);
@@ -667,11 +685,22 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollRange(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            return state.getItemCount();
+        }
         return state.getItemCount() * 10;
     }
 
     @Override
     public int computeVerticalScrollOffset(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            final View v = getChildAt(0);
+            final View v2 = getChildAt(2);
+            final int p = getPosition(v);
+            final int p2 = getPosition(v2);
+            return p2 - p == 1 ? p : p2;
+        }
+
         int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
         SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
         View firstContentView = manager.getFirstView(startSection);
