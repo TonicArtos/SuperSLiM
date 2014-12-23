@@ -49,7 +49,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mDisableStickyHeaderDisplay = false;
 
-    private boolean mSmoothScrollEnabled = true;
+    private boolean mSmoothScrollEnabled = false;
 
     public boolean isSmoothScrollEnabled() {
         return mSmoothScrollEnabled;
