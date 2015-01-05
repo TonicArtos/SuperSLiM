@@ -12,10 +12,10 @@ A highly configurable section based layout manager with headers and all that.
   - Linear
   - Grid *not yet implemented*
   - Staggered Grid *not yet implemented*
-See the [Roadmap](Roadmap) for more details and future development.
+See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
 
 ## Getting Started
-Please refer to the [user guide](User's Guide).
+Please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
 
 ## Acknowledgements
 Thanks to Dave Smith for his introduction to writing a RecyclerView LayoutManager over at [Wires are Obsolete](http://wiresareobsolete.com/), and to Lucas Rocha for his [TwoWayView Library](http://github.com/lucasr/twoway-view/) which is worth checking out too.
