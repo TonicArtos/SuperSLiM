@@ -4,6 +4,7 @@
           app:slm_isHeader="true"
           app:slm_isSticky="true"
           app:slm_headerStartMargin="56dip"
+          app:slm_headerEndMargin="auto"
           android:gravity="start"
           android:padding="16dip"
           android:textSize="24sp"

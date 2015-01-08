@@ -16,7 +16,7 @@ android {
         applicationId 'com.tonicartos.superslim.example'
         versionCode 1
         versionName '0.1'
-        minSdkVersion 21
+        minSdkVersion 14
         targetSdkVersion 21
     }
 }
@@ -24,7 +24,7 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile project(':library')
-    compile 'com.android.support:support-v4:21.0.2'
-    compile 'com.android.support:recyclerview-v7:21.0.2'
-    compile 'com.android.support:appcompat-v7:21.0.2'
+    compile 'com.android.support:support-v4:21.0.+'
+    compile 'com.android.support:recyclerview-v7:21.0.+'
+    compile 'com.android.support:appcompat-v7:21.0.+'
 }

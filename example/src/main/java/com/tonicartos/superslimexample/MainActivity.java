@@ -4,11 +4,13 @@ import com.tonicartos.superslim.LayoutManager;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends ActionBarActivity {
 
     private static final String TAG_COUNTRIES_FRAGMENT = "tag_countries_fragment";
 
@@ -20,6 +22,11 @@ public class MainActivity extends FragmentActivity {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
                     .commit();
+        }
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
         }
     }
 
