@@ -1,9 +1,11 @@
 package com.tonicartos.superslim;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v7.widget.LinearSmoothScroller;
@@ -843,6 +845,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             isHeader = DEFAULT_IS_HEADER;
         }
 
+        @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
 
@@ -865,21 +868,35 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     0);
 
             // Header margin types can be dimension or integer (enum).
-            if (a.getType(R.styleable.superslim_LayoutManager_slm_headerStartMargin) ==
-                    TypedValue.TYPE_DIMENSION) {
+            boolean isDimension;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                TypedValue value = new TypedValue();
+                a.getValue(R.styleable.superslim_LayoutManager_slm_headerStartMargin, value);
+                isDimension = value.type == TypedValue.TYPE_DIMENSION;
+            } else {
+                isDimension = a.getType(R.styleable.superslim_LayoutManager_slm_headerStartMargin)
+                        == TypedValue.TYPE_DIMENSION;
+            }
+            if (isDimension) {
                 headerStartMarginIsAuto = false;
                 headerStartMargin = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_headerStartMargin,
-                        0);
+                        R.styleable.superslim_LayoutManager_slm_headerStartMargin, 0);
             } else {
                 headerStartMarginIsAuto = true;
             }
-            if (a.getType(R.styleable.superslim_LayoutManager_slm_headerEndMargin) ==
-                    TypedValue.TYPE_DIMENSION) {
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                TypedValue value = new TypedValue();
+                a.getValue(R.styleable.superslim_LayoutManager_slm_headerEndMargin, value);
+                isDimension = value.type == TypedValue.TYPE_DIMENSION;
+            } else {
+                isDimension = a.getType(R.styleable.superslim_LayoutManager_slm_headerEndMargin)
+                        == TypedValue.TYPE_DIMENSION;
+            }
+            if (isDimension) {
                 headerEndMarginIsAuto = false;
                 headerEndMargin = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_headerEndMargin,
-                        0);
+                        R.styleable.superslim_LayoutManager_slm_headerEndMargin, 0);
             } else {
                 headerEndMarginIsAuto = true;
             }
