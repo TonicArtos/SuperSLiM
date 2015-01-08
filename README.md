@@ -10,9 +10,13 @@ A highly configurable section based layout manager with headers and all that.
   - Header overlays
 - Individual layouts for each section at the same time
   - Linear
-  - Grid *not yet implemented*
+  - Grid
   - Staggered Grid *not yet implemented*
+
 See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
+
+![Example App Animation](https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif)  
+This example can be found in this repository.
 
 ## Getting Started
 Please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
