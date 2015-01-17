@@ -1,6 +1,34 @@
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+#built application files
+*.apk
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
 .DS_Store
-/build
+
+# Eclipse project files
+.classpath
+.project
+
+# Android Studio
+.idea/
+.gradle
+build/
+*.iml
+
+*.properties
+com_crashlytics_export_strings.xml
