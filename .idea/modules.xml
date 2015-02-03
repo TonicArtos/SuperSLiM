@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SLM.iml" filepath="$PROJECT_DIR$/SLM.iml" />
       <module fileurl="file://$PROJECT_DIR$/SLM Example.iml" filepath="$PROJECT_DIR$/SLM Example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SuperSLiM.iml" filepath="$PROJECT_DIR$/SuperSLiM.iml" />
       <module fileurl="file://$PROJECT_DIR$/example/example.iml" filepath="$PROJECT_DIR$/example/example.iml" />
       <module fileurl="file://$PROJECT_DIR$/library/library.iml" filepath="$PROJECT_DIR$/library/library.iml" />
     </modules>
