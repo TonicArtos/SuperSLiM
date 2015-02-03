@@ -1,14 +1,14 @@
 SuperSLiM
 =========
 
-A highly configurable section based layout manager with headers and all that.
+SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.
 
 ## Features
 - Section Headers
   - Sticky headers
   - Headers in content margins
   - Header overlays
-- Individual layouts for each section at the same time
+- Section Layouts
   - Linear
   - Grid
   - Staggered Grid *not yet implemented*
