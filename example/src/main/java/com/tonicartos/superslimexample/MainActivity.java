@@ -3,7 +3,6 @@ package com.tonicartos.superslimexample;
 import com.tonicartos.superslim.LayoutManager;
 
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -39,22 +38,27 @@ public class MainActivity extends ActionBarActivity {
 
         CountriesFragment countriesFragment = getCountriesFragment();
         final int headerMode = countriesFragment.getHeaderMode();
-        switch (headerMode) {
-            case LayoutManager.HEADER_INLINE:
-                item = menu.findItem(R.id.action_header_inline);
-                break;
-            case LayoutManager.HEADER_ALIGN_START:
-                item = menu.findItem(R.id.action_header_start);
-                break;
-            case LayoutManager.HEADER_ALIGN_END:
-                item = menu.findItem(R.id.action_header_end);
-                break;
-            case LayoutManager.HEADER_OVERLAY_START:
-                item = menu.findItem(R.id.action_header_overlay_start);
-                break;
-            case LayoutManager.HEADER_OVERLAY_END:
-                item = menu.findItem(R.id.action_header_overlay_end);
-                break;
+        if (headerMode == LayoutManager.LayoutParams.HEADER_INLINE) {
+            item = menu.findItem(R.id.action_header_inline);
+
+        } else if ((headerMode & LayoutManager.LayoutParams.HEADER_ALIGN_START)
+                == LayoutManager.LayoutParams.HEADER_ALIGN_START) {
+            item = menu.findItem(R.id.action_header_start);
+
+        } else if ((headerMode & LayoutManager.LayoutParams.HEADER_ALIGN_END)
+                == LayoutManager.LayoutParams.HEADER_ALIGN_END) {
+            item = menu.findItem(R.id.action_header_end);
+
+        } else if ((headerMode & (
+                LayoutManager.LayoutParams.HEADER_ALIGN_START | LayoutManager.LayoutParams.HEADER_OVERLAY))
+                != 0) {
+            item = menu.findItem(R.id.action_header_overlay_start);
+
+        } else if ((headerMode & (
+                LayoutManager.LayoutParams.HEADER_ALIGN_END | LayoutManager.LayoutParams.HEADER_OVERLAY))
+                != 0) {
+            item = menu.findItem(R.id.action_header_overlay_end);
+
         }
         if (item != null) {
             item.setChecked(true);
@@ -92,7 +96,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_inline) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_INLINE);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_INLINE);
             }
             return true;
         }
@@ -100,7 +104,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_start) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_ALIGN_START);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_ALIGN_START);
             }
             return true;
         }
@@ -108,7 +112,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_end) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_ALIGN_END);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_ALIGN_END);
             }
             return true;
         }
@@ -116,7 +120,8 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_overlay_start) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_OVERLAY_START);
+                updateHeaderMode(
+                        LayoutManager.LayoutParams.HEADER_OVERLAY | LayoutManager.LayoutParams.HEADER_ALIGN_START);
             }
             return true;
         }
@@ -124,7 +129,8 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_overlay_end) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_OVERLAY_END);
+                updateHeaderMode(
+                        LayoutManager.LayoutParams.HEADER_OVERLAY | LayoutManager.LayoutParams.HEADER_ALIGN_END);
             }
             return true;
         }

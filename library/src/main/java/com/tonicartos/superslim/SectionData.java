@@ -52,27 +52,26 @@ public class SectionData {
             lm.measureHeader(mSectionHeader);
             mHeaderHeight = lm.getDecoratedMeasuredHeight(mSectionHeader.view);
             if (params.headerStartMarginIsAuto) {
-                if (params.headerAlignment == LayoutManager.HEADER_ALIGN_START) {
+                if (params.isHeaderStartAligned() && !params.isHeaderOverlay()) {
                     mHeaderStartMargin = lm.getDecoratedMeasuredWidth(mSectionHeader.view);
                 } else {
                     mHeaderStartMargin = 0;
                 }
             }
             if (params.headerEndMarginIsAuto) {
-                if (params.headerAlignment == LayoutManager.HEADER_ALIGN_END) {
+                if (params.isHeaderEndAligned() && !params.isHeaderOverlay()) {
                     mHeaderEndMargin = lm.getDecoratedMeasuredWidth(mSectionHeader.view);
                 } else {
                     mHeaderEndMargin = 0;
                 }
             }
-            if (params.headerAlignment == LayoutManager.HEADER_INLINE &&
-                    (direction == LayoutManager.Direction.END ||
+            if (params.isHeaderInline() && (direction == LayoutManager.Direction.END ||
                             (direction == LayoutManager.Direction.NONE &&
                                     mAnchorPosition == mFirstPosition))) {
                 mMarkerLine += mHeaderHeight;
             }
 
-            if (params.headerAlignment == LayoutManager.HEADER_INLINE) {
+            if (params.isHeaderInline()) {
                 mMinimumHeight = 0;
             } else {
                 mMinimumHeight = mHeaderHeight;

@@ -91,19 +91,19 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
             lp.headerAlignment = mHeaderMode;
-            if (mHeaderMode == LayoutManager.HEADER_INLINE) {
+            if (mHeaderMode == LayoutManager.LayoutParams.HEADER_INLINE) {
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             }
 
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
             if (mMarginsFixed) {
-                if (mHeaderMode == LayoutManager.HEADER_OVERLAY_END || mHeaderMode == LayoutManager.HEADER_OVERLAY_START) {
+                if ((mHeaderMode & LayoutManager.LayoutParams.HEADER_OVERLAY) != 0) {
                     lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
                 } else {
                     lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
                 }
-            } else if (mHeaderMode != LayoutManager.HEADER_INLINE) {
+            } else if (mHeaderMode != LayoutManager.LayoutParams.HEADER_INLINE) {
                 lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
 
