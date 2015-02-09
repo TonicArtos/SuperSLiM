@@ -18,6 +18,10 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 ## Getting Started
 Please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
 
+## Support
+- [Google+ Community](https://plus.google.com/communities/104097089134643994744)
+- [Stack Overflow](https://stackoverflow.com/questions/tagged/superslim)
+- 
 ## Samples
 All included in the repository.
 
