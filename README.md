@@ -21,7 +21,7 @@ Please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/Us
 ## Support
 - [Google+ Community](https://plus.google.com/communities/104097089134643994744)
 - [Stack Overflow](https://stackoverflow.com/questions/tagged/superslim)
-- 
+ 
 ## Samples
 All included in the repository.
 
