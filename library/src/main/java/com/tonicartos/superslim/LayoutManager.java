@@ -776,7 +776,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private Rect setHeaderRectTopAndBottom(LayoutState state, FillResult fillResult, int height,
             LayoutParams params, Rect r) {
         r.top = fillResult.markerStart;
-        if (params.headerAlignment != LayoutParams.HEADER_INLINE && fillResult.headerOffset < 0) {
+        if (params.headerDisplay != LayoutParams.HEADER_INLINE && fillResult.headerOffset < 0) {
             r.top += fillResult.headerOffset;
         }
         r.bottom = r.top + height;
@@ -823,7 +823,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public boolean isHeader;
 
-        public int headerAlignment;
+        public int headerDisplay;
 
         public int sectionFirstPosition;
 
@@ -854,8 +854,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             isHeader = a.getBoolean(
                     R.styleable.superslim_LayoutManager_slm_isHeader,
                     false);
-            headerAlignment = a.getInt(
-                    R.styleable.superslim_LayoutManager_slm_alignHeader,
+            headerDisplay = a.getInt(
+                    R.styleable.superslim_LayoutManager_slm_headerDisplay,
                     HEADER_INLINE);
             sectionFirstPosition = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_sectionFirstPosition,
@@ -910,30 +910,30 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public boolean areHeaderFlagsSet(int flags) {
-            return (headerAlignment & flags) == flags;
+            return (headerDisplay & flags) == flags;
         }
 
         public boolean isHeaderEndAligned() {
-            return (headerAlignment & HEADER_ALIGN_END) != 0;
+            return (headerDisplay & HEADER_ALIGN_END) != 0;
         }
 
         public boolean isHeaderInline() {
-            return (headerAlignment & HEADER_INLINE) != 0;
+            return (headerDisplay & HEADER_INLINE) != 0;
         }
 
         public boolean isHeaderOverlay() {
-            return (headerAlignment & HEADER_OVERLAY) != 0;
+            return (headerDisplay & HEADER_OVERLAY) != 0;
         }
 
         public boolean isHeaderStartAligned() {
-            return (headerAlignment & HEADER_ALIGN_START) != 0;
+            return (headerDisplay & HEADER_ALIGN_START) != 0;
         }
 
         private void init(ViewGroup.LayoutParams other) {
             if (other instanceof LayoutParams) {
                 final LayoutParams lp = (LayoutParams) other;
                 isHeader = lp.isHeader;
-                headerAlignment = lp.headerAlignment;
+                headerDisplay = lp.headerDisplay;
                 sectionFirstPosition = lp.sectionFirstPosition;
                 isSticky = lp.isSticky;
                 section = lp.section;
@@ -943,7 +943,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 headerStartMarginIsAuto = lp.headerStartMarginIsAuto;
             } else {
                 isHeader = DEFAULT_IS_HEADER;
-                headerAlignment = DEFAULT_HEADER_ALIGNMENT;
+                headerDisplay = DEFAULT_HEADER_ALIGNMENT;
                 isSticky = DEFAULT_IS_STICKY;
                 headerEndMargin = DEFAULT_HEADER_MARGIN;
                 headerStartMargin = DEFAULT_HEADER_MARGIN;
