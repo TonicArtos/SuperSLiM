@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default header position is aligned to the start edge of the content area -->
-    <integer name="default_header_positioning">2</integer>
+    <!-- Start aligned and sticky. -->
+    <integer name="default_header_display">18</integer>
 </resources>

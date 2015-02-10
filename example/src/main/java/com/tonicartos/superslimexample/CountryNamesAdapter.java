@@ -25,15 +25,13 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private final ArrayList<LineItem> mItems;
 
-    private int mHeaderMode;
+    private int mHeaderDisplay;
 
     private boolean mMarginsFixed;
 
-    private boolean mHeadersSticky;
-
     public CountryNamesAdapter(Context context, int headerMode) {
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
-        mHeaderMode = headerMode;
+        mHeaderDisplay = headerMode;
 
         mItems = new ArrayList<LineItem>();
 
@@ -90,7 +88,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 .getLayoutParams();
         // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
-            lp.headerDisplay = mHeaderMode;
+            lp.headerDisplay = mHeaderDisplay;
             if (lp.isHeaderInline() || (mMarginsFixed && !lp.isHeaderOverlay())) {
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
             } else {
@@ -99,16 +97,14 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
-
-            lp.isSticky = mHeadersSticky;
         }
         lp.section = item.section;
         lp.sectionFirstPosition = item.sectionFirstPosition;
         itemView.setLayoutParams(lp);
     }
 
-    public void setHeaderMode(int mode) {
-        mHeaderMode = mode;
+    public void setHeaderDisplay(int headerDisplay) {
+        mHeaderDisplay = headerDisplay;
         notifyHeaderChanges();
     }
 
@@ -123,11 +119,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     public void setMarginsFixed(boolean marginsFixed) {
         mMarginsFixed = marginsFixed;
-        notifyHeaderChanges();
-    }
-
-    public void setHeadersSticky(boolean headersSticky) {
-        mHeadersSticky = headersSticky;
         notifyHeaderChanges();
     }
 

@@ -23,19 +23,13 @@ public class CountriesFragment extends Fragment {
 
     private static final String KEY_HEADER_POSITIONING = "key_header_mode";
 
-    private static final String KEY_HEADERS_STICKY = "key_headers_sticky";
-
     private static final String KEY_MARGINS_FIXED = "key_margins_fixed";
-
-    private static final String KEY_HEADERS_OVERLAID = "key_headers_overlaid";
 
     private ViewHolder mViews;
 
     private CountryNamesAdapter mAdapter;
 
-    private int mHeaderPositioning;
-
-    private boolean mAreHeadersSticky;
+    private int mHeaderDisplay;
 
     private boolean mAreMarginsFixed;
 
@@ -46,8 +40,6 @@ public class CountriesFragment extends Fragment {
     private GridSectionLayoutManager mGridSectionLayoutManager;
 
     private SectionLayoutManager mLinearSectionLayoutManager;
-
-    private boolean mAreHeadersOverlaid;
 
     private LayoutManager.SlmFactory mSlmFactory = new LayoutManager.SlmFactory() {
 
@@ -67,7 +59,7 @@ public class CountriesFragment extends Fragment {
     };
 
     public boolean areHeadersOverlaid() {
-        return mAreHeadersOverlaid;
+        return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) != 0;
     }
 
     @Override
@@ -81,23 +73,15 @@ public class CountriesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (savedInstanceState != null) {
-            mHeaderPositioning = savedInstanceState
+            mHeaderDisplay = savedInstanceState
                     .getInt(KEY_HEADER_POSITIONING,
-                            getResources().getInteger(R.integer.default_header_positioning));
-            mAreHeadersSticky = savedInstanceState
-                    .getBoolean(KEY_HEADERS_STICKY,
-                            getResources().getBoolean(R.bool.default_headers_sticky));
+                            getResources().getInteger(R.integer.default_header_display));
             mAreMarginsFixed = savedInstanceState
                     .getBoolean(KEY_MARGINS_FIXED,
                             getResources().getBoolean(R.bool.default_margins_fixed));
-            mAreHeadersOverlaid = savedInstanceState
-                    .getBoolean(KEY_HEADERS_OVERLAID,
-                            getResources().getBoolean(R.bool.default_headers_overlaid));
         } else {
-            mHeaderPositioning = getResources().getInteger(R.integer.default_header_positioning);
-            mAreHeadersSticky = getResources().getBoolean(R.bool.default_headers_sticky);
+            mHeaderDisplay = getResources().getInteger(R.integer.default_header_display);
             mAreMarginsFixed = getResources().getBoolean(R.bool.default_margins_fixed);
-            mAreHeadersOverlaid = getResources().getBoolean(R.bool.default_headers_overlaid);
         }
 
         LayoutManager lm = new LayoutManager();
@@ -109,10 +93,9 @@ public class CountriesFragment extends Fragment {
 
         mViews = new ViewHolder(view);
         mViews.initViews(getActivity(), lm);
-        mAdapter = new CountryNamesAdapter(getActivity(), mHeaderPositioning);
-        mAdapter.setHeadersSticky(mAreHeadersSticky);
+        mAdapter = new CountryNamesAdapter(getActivity(), mHeaderDisplay);
         mAdapter.setMarginsFixed(mAreMarginsFixed);
-        mAdapter.setHeaderMode(mHeaderPositioning);
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
         mViews.setAdapter(mAdapter);
     }
 
@@ -120,29 +103,21 @@ public class CountriesFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putInt(KEY_HEADER_POSITIONING, mHeaderPositioning);
-        outState.putBoolean(KEY_HEADERS_STICKY, mAreHeadersSticky);
+        outState.putInt(KEY_HEADER_POSITIONING, mHeaderDisplay);
         outState.putBoolean(KEY_MARGINS_FIXED, mAreMarginsFixed);
-        outState.putBoolean(KEY_HEADERS_OVERLAID, mAreHeadersOverlaid);
     }
 
-    public void setHeaderPositioning(int mode) {
-        mHeaderPositioning = mode;
-        updateHeaderMode();
+    public void setHeaderMode(int mode) {
+        mHeaderDisplay = mode | (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) | (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY);
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
     }
 
-    void updateHeaderMode() {
-        mAdapter.setHeaderMode(mAreHeadersOverlaid
-                ? mHeaderPositioning | LayoutManager.LayoutParams.HEADER_OVERLAY
-                : mHeaderPositioning);
-    }
-
-    public int getHeaderPositioning() {
-        return mHeaderPositioning;
+    public int getHeaderMode() {
+        return mHeaderDisplay;
     }
 
     public boolean areHeadersSticky() {
-        return mAreHeadersSticky;
+        return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY) != 0;
     }
 
     public boolean areMarginsFixed() {
@@ -150,13 +125,13 @@ public class CountriesFragment extends Fragment {
     }
 
     public void setHeadersOverlaid(boolean areHeadersOverlaid) {
-        mAreHeadersOverlaid = areHeadersOverlaid;
-        updateHeaderMode();
+        mHeaderDisplay = areHeadersOverlaid ? mHeaderDisplay | LayoutManager.LayoutParams.HEADER_OVERLAY : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_OVERLAY;
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
     }
 
     public void setHeadersSticky(boolean areHeadersSticky) {
-        mAreHeadersSticky = areHeadersSticky;
-        mAdapter.setHeadersSticky(areHeadersSticky);
+        mHeaderDisplay = areHeadersSticky ? mHeaderDisplay | LayoutManager.LayoutParams.HEADER_STICKY : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_STICKY;
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
     }
 
     public void setMarginsFixed(boolean areMarginsFixed) {

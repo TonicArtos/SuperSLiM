@@ -64,7 +64,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Check header if header is stuck.
-        final boolean isStuck = params.isSticky && fillResult.markerStart < 0
+        final boolean isStuck = params.isHeaderSticky() && fillResult.markerStart < 0
                 && !mDisableStickyHeaderDisplay;
 
         // Attach after section children if overlay, otherwise before.
@@ -77,13 +77,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Attach header.
         if (header.wasCached) {
-            if ((params.isSticky && !mDisableStickyHeaderDisplay)
+            if ((params.isHeaderSticky() && !mDisableStickyHeaderDisplay)
                     || getDecoratedBottom(header.view) >= 0) {
                 attachView(header.view, attachIndex);
                 state.decacheView(section.getFirstPosition());
                 fillResult.positionStart -= 1;
             }
-            if (!params.isSticky || mDisableStickyHeaderDisplay) {
+            if (!params.isHeaderSticky() || mDisableStickyHeaderDisplay) {
                 // Layout unneeded if the header is not sticky and was cached.
                 return fillResult;
             }
@@ -781,7 +781,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
         r.bottom = r.top + height;
 
-        if (params.isSticky && !mDisableStickyHeaderDisplay) {
+        if (params.isHeaderSticky() && !mDisableStickyHeaderDisplay) {
             if (r.top < 0) {
                 r.top = 0;
                 r.bottom = height;
@@ -811,23 +811,21 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public static final int HEADER_OVERLAY = 0x08;
 
-        private static final boolean DEFAULT_IS_HEADER = false;
+        public static final int HEADER_STICKY = 0x10;
 
-        private static final boolean DEFAULT_IS_STICKY = false;
+        private static final boolean DEFAULT_IS_HEADER = false;
 
         private static final int HEADER_NONE = -0x01;
 
         private static final int DEFAULT_HEADER_MARGIN = -0x01;
 
-        private static final int DEFAULT_HEADER_ALIGNMENT = HEADER_INLINE;
+        private static final int DEFAULT_HEADER_DISPLAY = HEADER_INLINE | HEADER_STICKY;
 
         public boolean isHeader;
 
         public int headerDisplay;
 
         public int sectionFirstPosition;
-
-        public boolean isSticky;
 
         public int section;
 
@@ -856,13 +854,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     false);
             headerDisplay = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_headerDisplay,
-                    HEADER_INLINE);
+                    DEFAULT_HEADER_DISPLAY);
             sectionFirstPosition = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_sectionFirstPosition,
                     HEADER_NONE);
-            isSticky = a.getBoolean(
-                    R.styleable.superslim_LayoutManager_slm_isSticky,
-                    false);
             section = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_section,
                     0);
@@ -929,13 +924,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return (headerDisplay & HEADER_ALIGN_START) != 0;
         }
 
+        public boolean isHeaderSticky() {
+            return (headerDisplay & HEADER_STICKY) != 0;
+        }
+
         private void init(ViewGroup.LayoutParams other) {
             if (other instanceof LayoutParams) {
                 final LayoutParams lp = (LayoutParams) other;
                 isHeader = lp.isHeader;
                 headerDisplay = lp.headerDisplay;
                 sectionFirstPosition = lp.sectionFirstPosition;
-                isSticky = lp.isSticky;
                 section = lp.section;
                 headerEndMargin = lp.headerEndMargin;
                 headerStartMargin = lp.headerStartMargin;
@@ -943,8 +941,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 headerStartMarginIsAuto = lp.headerStartMarginIsAuto;
             } else {
                 isHeader = DEFAULT_IS_HEADER;
-                headerDisplay = DEFAULT_HEADER_ALIGNMENT;
-                isSticky = DEFAULT_IS_STICKY;
+                headerDisplay = DEFAULT_HEADER_DISPLAY;
                 headerEndMargin = DEFAULT_HEADER_MARGIN;
                 headerStartMargin = DEFAULT_HEADER_MARGIN;
                 headerStartMarginIsAuto = true;

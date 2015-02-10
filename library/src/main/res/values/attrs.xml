@@ -7,8 +7,8 @@
             <flag name="start" value="0x02"/>
             <flag name="end" value="0x04"/>
             <flag name="overlay" value="0x08"/>
+            <flag name="sticky" value="0x10" />
         </attr>
-        <attr name="slm_isSticky" format="boolean"/>
         <attr name="slm_sectionFirstPosition" format="integer"/>
         <attr name="slm_section" format="integer"/>
         <attr name="slm_headerStartMargin" format="enum|dimension">

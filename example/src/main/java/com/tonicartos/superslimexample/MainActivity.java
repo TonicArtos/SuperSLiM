@@ -37,7 +37,7 @@ public class MainActivity extends ActionBarActivity {
         MenuItem item = null;
 
         CountriesFragment countriesFragment = getCountriesFragment();
-        final int headerMode = countriesFragment.getHeaderPositioning();
+        final int headerMode = countriesFragment.getHeaderMode();
         if (headerMode == LayoutManager.LayoutParams.HEADER_INLINE) {
             item = menu.findItem(R.id.action_header_inline);
 
@@ -128,7 +128,7 @@ public class MainActivity extends ActionBarActivity {
 
     private void updateHeaderMode(int mode) {
         CountriesFragment fragment = getCountriesFragment();
-        fragment.setHeaderPositioning(mode);
+        fragment.setHeaderMode(mode);
     }
 
     private CountriesFragment getCountriesFragment() {
