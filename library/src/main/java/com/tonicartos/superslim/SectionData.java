@@ -65,7 +65,8 @@ public class SectionData {
                     mHeaderEndMargin = 0;
                 }
             }
-            if (params.isHeaderInline() && !params.isHeaderOverlay() && (direction == LayoutManager.Direction.END ||
+            if (params.isHeaderInline() && !params.isHeaderOverlay() && (
+                    direction == LayoutManager.Direction.END ||
                             (direction == LayoutManager.Direction.NONE &&
                                     mAnchorPosition == mFirstPosition))) {
                 mMarkerLine += mHeaderHeight;
@@ -90,32 +91,48 @@ public class SectionData {
         mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
     }
 
+    public int getAnchorPosition() {
+        return mAnchorPosition;
+    }
+
+    public int getContentEndMargin() {
+        return mContentEndMargin;
+    }
+
+    public int getContentStartMargin() {
+        return mContentStartMargin;
+    }
+
     public int getFirstPosition() {
         return mFirstPosition;
     }
 
-    public int getSection() {
-        return mSection;
+    public int getHeaderEndMargin() {
+        return mHeaderEndMargin;
     }
 
     public int getHeaderHeight() {
         return mHeaderHeight;
     }
 
-    public int getMinimumHeight() {
-        return mMinimumHeight;
-    }
-
-    public int getAnchorPosition() {
-        return mAnchorPosition;
+    public int getHeaderStartMargin() {
+        return mHeaderStartMargin;
     }
 
     public int getMarkerLine() {
         return mMarkerLine;
     }
 
-    public boolean isFillDirectionStart() {
-        return mFillDirection == LayoutManager.Direction.START;
+    public int getMinimumHeight() {
+        return mMinimumHeight;
+    }
+
+    public int getSection() {
+        return mSection;
+    }
+
+    public LayoutState.View getSectionHeader() {
+        return mSectionHeader;
     }
 
     public boolean isFillDirectionEnd() {
@@ -124,6 +141,10 @@ public class SectionData {
 
     public boolean isFillDirectionNON() {
         return mFillDirection == LayoutManager.Direction.NONE;
+    }
+
+    public boolean isFillDirectionStart() {
+        return mFillDirection == LayoutManager.Direction.START;
     }
 
     public SectionLayoutManager loadManager(LayoutManager lm, LayoutManager.SlmFactory slmFactory) {
@@ -147,26 +168,6 @@ public class SectionData {
         mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
 
         return sectionManager;
-    }
-
-    public LayoutState.View getSectionHeader() {
-        return mSectionHeader;
-    }
-
-    public int getContentEndMargin() {
-        return mContentEndMargin;
-    }
-
-    public int getContentStartMargin() {
-        return mContentStartMargin;
-    }
-
-    public int getHeaderEndMargin() {
-        return mHeaderEndMargin;
-    }
-
-    public int getHeaderStartMargin() {
-        return mHeaderStartMargin;
     }
 
     @Override

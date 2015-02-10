@@ -54,6 +54,14 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         mContext = context;
     }
 
+    public boolean isItemHeader(int position) {
+        return mItems.get(position).isHeader;
+    }
+
+    public String itemToString(int position) {
+        return mItems.get(position).text;
+    }
+
     @Override
     public CountryViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         TextView view;
@@ -65,16 +73,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                     .inflate(R.layout.text_line_item, parent, false);
         }
         return new CountryViewHolder(view);
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return mItems.get(position).isHeader ? VIEW_TYPE_HEADER : VIEW_TYPE_CONTENT;
-    }
-
-    @Override
-    public int getItemCount() {
-        return mItems.size();
     }
 
     @Override
@@ -103,8 +101,23 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         itemView.setLayoutParams(lp);
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        return mItems.get(position).isHeader ? VIEW_TYPE_HEADER : VIEW_TYPE_CONTENT;
+    }
+
+    @Override
+    public int getItemCount() {
+        return mItems.size();
+    }
+
     public void setHeaderDisplay(int headerDisplay) {
         mHeaderDisplay = headerDisplay;
+        notifyHeaderChanges();
+    }
+
+    public void setMarginsFixed(boolean marginsFixed) {
+        mMarginsFixed = marginsFixed;
         notifyHeaderChanges();
     }
 
@@ -115,19 +128,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 notifyItemChanged(i);
             }
         }
-    }
-
-    public void setMarginsFixed(boolean marginsFixed) {
-        mMarginsFixed = marginsFixed;
-        notifyHeaderChanges();
-    }
-
-    public String itemToString(int position) {
-        return mItems.get(position).text;
-    }
-
-    public boolean isItemHeader(int position) {
-        return mItems.get(position).isHeader;
     }
 
     private static class LineItem {

@@ -14,23 +14,6 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG_COUNTRIES_FRAGMENT = "tag_countries_fragment";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
-                    .commit();
-        }
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-        }
-    }
-
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -126,13 +109,29 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void updateHeaderMode(int mode) {
-        CountriesFragment fragment = getCountriesFragment();
-        fragment.setHeaderMode(mode);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
+                    .commit();
+        }
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+        }
     }
 
     private CountriesFragment getCountriesFragment() {
         return (CountriesFragment) getSupportFragmentManager()
                 .findFragmentByTag(TAG_COUNTRIES_FRAGMENT);
+    }
+
+    private void updateHeaderMode(int mode) {
+        CountriesFragment fragment = getCountriesFragment();
+        fragment.setHeaderMode(mode);
     }
 }

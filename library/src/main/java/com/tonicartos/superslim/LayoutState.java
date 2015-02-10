@@ -28,26 +28,6 @@ public class LayoutState {
         mLayoutManager = layoutManager;
     }
 
-    public void cacheView(int position, android.view.View view) {
-        viewCache.put(position, view);
-    }
-
-    public void decacheView(int position) {
-        viewCache.remove(position);
-    }
-
-    public void recycleCache() {
-        for (int i = 0; i < viewCache.size(); i++) {
-            recycler.recycleView(viewCache.valueAt(i));
-        }
-    }
-
-    public void detachCachedViews() {
-        for (int i = 0; i < viewCache.size(); i++) {
-            mLayoutManager.detachView(viewCache.valueAt(i));
-        }
-    }
-
     public void cacheAllViews() {
         for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
             final android.view.View child = mLayoutManager.getChildAt(i);
@@ -56,9 +36,23 @@ public class LayoutState {
         }
     }
 
+    public void cacheView(int position, android.view.View view) {
+        viewCache.put(position, view);
+    }
+
+    public void decacheView(int position) {
+        viewCache.remove(position);
+    }
+
     public void detachAndCacheAllViews() {
         cacheAllViews();
         detachCachedViews();
+    }
+
+    public void detachCachedViews() {
+        for (int i = 0; i < viewCache.size(); i++) {
+            mLayoutManager.detachView(viewCache.valueAt(i));
+        }
     }
 
     public android.view.View getCachedView(int position) {
@@ -73,6 +67,12 @@ public class LayoutState {
         }
 
         return new View(child, wasCached);
+    }
+
+    public void recycleCache() {
+        for (int i = 0; i < viewCache.size(); i++) {
+            recycler.recycleView(viewCache.valueAt(i));
+        }
     }
 
     public static class View {

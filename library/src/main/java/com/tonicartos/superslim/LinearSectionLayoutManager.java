@@ -8,47 +8,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         super(layoutManager);
     }
 
-    private AddData layoutChild(LayoutState state, SectionData section, LayoutState.View child,
-            LayoutManager.Direction direction, int currentPosition, int markerLine) {
-        AddData addData = new AddData();
-        if (!child.wasCached) {
-            final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
-            final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
-
-            int left = section.getContentStartMargin();
-            int right = left + width;
-            int top;
-            int bottom;
-
-            if (direction == LayoutManager.Direction.END) {
-                top = markerLine;
-                bottom = top + height;
-            } else {
-                bottom = markerLine;
-                top = bottom - height;
-            }
-            mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
-        }
-        if (direction == LayoutManager.Direction.END) {
-            addData.markerLine = mLayoutManager.getDecoratedBottom(child.view);
-        } else {
-            addData.markerLine = mLayoutManager.getDecoratedTop(child.view);
-        }
-
-        addData.indexAddedTo = addView(state, child, currentPosition, direction);
-
-        return addData;
-    }
-
-    private void measureChild(SectionData section, LayoutState.View child) {
-        if (child.wasCached) {
-            return;
-        }
-
-        mLayoutManager.measureChildWithMargins(child.view,
-                section.getHeaderStartMargin() + section.getHeaderEndMargin(), 0);
-    }
-
     @Override
     public View getFirstView(int section) {
         int lookAt = 0;
@@ -149,6 +108,129 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return fillResult;
     }
 
+    private int addView(LayoutState state, LayoutState.View child,
+            int position, LayoutManager.Direction direction) {
+        int addIndex;
+        if (direction == LayoutManager.Direction.START) {
+            addIndex = 0;
+        } else {
+            addIndex = mLayoutManager.getChildCount();
+        }
+
+        if (child.wasCached) {
+            mLayoutManager.attachView(child.view, addIndex);
+            state.decacheView(position);
+        } else {
+            mLayoutManager.addView(child.view, addIndex);
+        }
+
+        return addIndex;
+    }
+
+    /**
+     * Work out by how much the header overlaps with the displayed content.
+     *
+     * @param state             Current layout state.
+     * @param section           Section data
+     * @param itemCount         Total number of items.
+     * @param displayedPosition Closest position to start being displayed.
+     * @return Header overlap.
+     */
+    private int calculateHeaderOffset(LayoutState state, SectionData section, int itemCount,
+            int displayedPosition) {
+        /*
+         * Work from an assumed overlap and add heights from the start until the overlap is zero or
+         * less, or the current position (or max items) is reached.
+         */
+        int headerOffset = 0;
+
+        int position = section.getFirstPosition() + 1;
+        while (headerOffset > -section.getHeaderHeight() && position < itemCount) {
+            // Look to see if the header overlaps with the displayed area of the mSection.
+            LayoutState.View child;
+
+            if (position < displayedPosition) {
+                // Make sure to measure current position if fill direction is to the start.
+                child = state.getView(position);
+                measureChild(section, child);
+            } else {
+                // Run into an item that is displayed, indicating header overlap.
+                break;
+            }
+
+            headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
+
+            position += 1;
+        }
+
+        return headerOffset;
+    }
+
+    private FillResult fillSection(LayoutState state, SectionData section) {
+        final int itemCount = state.recyclerState.getItemCount();
+        final int endEdge = mLayoutManager.getHeight();
+        final int startEdge = 0;
+
+        /*
+         * First fill section to end from anchor position. Then fill to start from position above
+         * anchor position. Then check minimum height requirement is met, if not offset the section
+         * bottom marker by required amount.
+         */
+        FillResult fillResult = new FillResult();
+        fillResult.firstChildIndex = -1;
+
+        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition(),
+                section.getMarkerLine(), LayoutManager.Direction.END);
+        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition() - 1,
+                section.getMarkerLine(), LayoutManager.Direction.START);
+
+        int minimumHeight = section.getMinimumHeight();
+        // Push section children and start marker up if section is shorter than header.
+        if (minimumHeight > 0) {
+            int viewSpan = fillResult.markerEnd - fillResult.markerStart;
+            if (section.getFirstPosition() != fillResult.positionStart + 1) {
+                // Haven't checked over entire area to see if the section is indeed smaller than the
+                // header. The assumption is that there is a header because we have a minimum
+                // height.
+                int rangeToCheck = fillResult.positionStart - (section.getFirstPosition() + 1);
+                for (int i = 1; i <= rangeToCheck && viewSpan < minimumHeight; i++) {
+                    LayoutState.View child = state.getView(fillResult.positionStart - i);
+                    measureChild(section, child);
+                    viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                }
+            }
+
+            // Perform offset if needed.
+            if (viewSpan < minimumHeight) {
+                fillResult.markerEnd += section.getMinimumHeight() - viewSpan;
+            }
+        }
+
+        return fillResult;
+    }
+
+    private FillResult fillToEnd(LayoutState state, SectionData section) {
+        /*
+         * First fill section to end from anchor position. Then check minimum height requirement
+         * is met, if not offset the section bottom marker by required amount.
+         */
+        FillResult fillResult = new FillResult();
+        fillResult.firstChildIndex = -1;
+        fillResult.markerStart = section.getMarkerLine();
+        fillResult.positionStart = section.getAnchorPosition();
+
+        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition(),
+                section.getMarkerLine(), LayoutManager.Direction.END);
+
+        // Push end marker down if section is shorter than the header.
+        int viewSpan = fillResult.markerEnd - fillResult.markerStart;
+        if (viewSpan < section.getMinimumHeight()) {
+            fillResult.markerEnd += section.getMinimumHeight() - viewSpan;
+        }
+
+        return fillResult;
+    }
+
     private FillResult fillToStart(LayoutState state, SectionData section) {
         final int itemCount = state.recyclerState.getItemCount();
         final int endEdge = mLayoutManager.getHeight();
@@ -196,71 +278,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return fillResult;
     }
 
-    private FillResult fillToEnd(LayoutState state, SectionData section) {
-        /*
-         * First fill section to end from anchor position. Then check minimum height requirement
-         * is met, if not offset the section bottom marker by required amount.
-         */
-        FillResult fillResult = new FillResult();
-        fillResult.firstChildIndex = -1;
-        fillResult.markerStart = section.getMarkerLine();
-        fillResult.positionStart = section.getAnchorPosition();
-
-        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition(),
-                section.getMarkerLine(), LayoutManager.Direction.END);
-
-        // Push end marker down if section is shorter than the header.
-        int viewSpan = fillResult.markerEnd - fillResult.markerStart;
-        if (viewSpan < section.getMinimumHeight()) {
-            fillResult.markerEnd += section.getMinimumHeight() - viewSpan;
-        }
-
-        return fillResult;
-    }
-
-    private FillResult fillSection(LayoutState state, SectionData section) {
-        final int itemCount = state.recyclerState.getItemCount();
-        final int endEdge = mLayoutManager.getHeight();
-        final int startEdge = 0;
-
-        /*
-         * First fill section to end from anchor position. Then fill to start from position above
-         * anchor position. Then check minimum height requirement is met, if not offset the section
-         * bottom marker by required amount.
-         */
-        FillResult fillResult = new FillResult();
-        fillResult.firstChildIndex = -1;
-
-        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition(),
-                section.getMarkerLine(), LayoutManager.Direction.END);
-        fillResult = fillViews(state, section, fillResult, section.getAnchorPosition() - 1,
-                section.getMarkerLine(), LayoutManager.Direction.START);
-
-        int minimumHeight = section.getMinimumHeight();
-        // Push section children and start marker up if section is shorter than header.
-        if (minimumHeight > 0) {
-            int viewSpan = fillResult.markerEnd - fillResult.markerStart;
-            if (section.getFirstPosition() != fillResult.positionStart + 1) {
-                // Haven't checked over entire area to see if the section is indeed smaller than the
-                // header. The assumption is that there is a header because we have a minimum
-                // height.
-                int rangeToCheck = fillResult.positionStart - (section.getFirstPosition() + 1);
-                for (int i = 1; i <= rangeToCheck && viewSpan < minimumHeight; i++) {
-                    LayoutState.View child = state.getView(fillResult.positionStart - i);
-                    measureChild(section, child);
-                    viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
-                }
-            }
-
-            // Perform offset if needed.
-            if (viewSpan < minimumHeight) {
-                fillResult.markerEnd += section.getMinimumHeight() - viewSpan;
-            }
-        }
-
-        return fillResult;
-    }
-
     private FillResult fillViews(LayoutState state, SectionData section, FillResult fillResult,
             int anchorPosition, final int anchorLine, LayoutManager.Direction direction) {
         final int itemCount = state.recyclerState.getItemCount();
@@ -301,62 +318,45 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return fillResult;
     }
 
-    /**
-     * Work out by how much the header overlaps with the displayed content.
-     *
-     * @param state             Current layout state.
-     * @param section           Section data
-     * @param itemCount         Total number of items.
-     * @param displayedPosition Closest position to start being displayed.
-     * @return Header overlap.
-     */
-    private int calculateHeaderOffset(LayoutState state, SectionData section, int itemCount,
-            int displayedPosition) {
-        /*
-         * Work from an assumed overlap and add heights from the start until the overlap is zero or
-         * less, or the current position (or max items) is reached.
-         */
-        int headerOffset = 0;
+    private AddData layoutChild(LayoutState state, SectionData section, LayoutState.View child,
+            LayoutManager.Direction direction, int currentPosition, int markerLine) {
+        AddData addData = new AddData();
+        if (!child.wasCached) {
+            final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-        int position = section.getFirstPosition() + 1;
-        while (headerOffset > -section.getHeaderHeight() && position < itemCount) {
-            // Look to see if the header overlaps with the displayed area of the mSection.
-            LayoutState.View child;
+            int left = section.getContentStartMargin();
+            int right = left + width;
+            int top;
+            int bottom;
 
-            if (position < displayedPosition) {
-                // Make sure to measure current position if fill direction is to the start.
-                child = state.getView(position);
-                measureChild(section, child);
+            if (direction == LayoutManager.Direction.END) {
+                top = markerLine;
+                bottom = top + height;
             } else {
-                // Run into an item that is displayed, indicating header overlap.
-                break;
+                bottom = markerLine;
+                top = bottom - height;
             }
-
-            headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
-
-            position += 1;
+            mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
+        }
+        if (direction == LayoutManager.Direction.END) {
+            addData.markerLine = mLayoutManager.getDecoratedBottom(child.view);
+        } else {
+            addData.markerLine = mLayoutManager.getDecoratedTop(child.view);
         }
 
-        return headerOffset;
+        addData.indexAddedTo = addView(state, child, currentPosition, direction);
+
+        return addData;
     }
 
-    private int addView(LayoutState state, LayoutState.View child,
-            int position, LayoutManager.Direction direction) {
-        int addIndex;
-        if (direction == LayoutManager.Direction.START) {
-            addIndex = 0;
-        } else {
-            addIndex = mLayoutManager.getChildCount();
-        }
-
+    private void measureChild(SectionData section, LayoutState.View child) {
         if (child.wasCached) {
-            mLayoutManager.attachView(child.view, addIndex);
-            state.decacheView(position);
-        } else {
-            mLayoutManager.addView(child.view, addIndex);
+            return;
         }
 
-        return addIndex;
+        mLayoutManager.measureChildWithMargins(child.view,
+                section.getHeaderStartMargin() + section.getHeaderEndMargin(), 0);
     }
 
     class AddData {

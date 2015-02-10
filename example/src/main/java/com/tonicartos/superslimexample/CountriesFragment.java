@@ -62,6 +62,24 @@ public class CountriesFragment extends Fragment {
         return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) != 0;
     }
 
+    public boolean areHeadersSticky() {
+        return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY) != 0;
+    }
+
+    public boolean areMarginsFixed() {
+        return mAreMarginsFixed;
+    }
+
+    public int getHeaderMode() {
+        return mHeaderDisplay;
+    }
+
+    public void setHeaderMode(int mode) {
+        mHeaderDisplay = mode | (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) | (
+                mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY);
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
@@ -107,38 +125,6 @@ public class CountriesFragment extends Fragment {
         outState.putBoolean(KEY_MARGINS_FIXED, mAreMarginsFixed);
     }
 
-    public void setHeaderMode(int mode) {
-        mHeaderDisplay = mode | (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) | (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY);
-        mAdapter.setHeaderDisplay(mHeaderDisplay);
-    }
-
-    public int getHeaderMode() {
-        return mHeaderDisplay;
-    }
-
-    public boolean areHeadersSticky() {
-        return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_STICKY) != 0;
-    }
-
-    public boolean areMarginsFixed() {
-        return mAreMarginsFixed;
-    }
-
-    public void setHeadersOverlaid(boolean areHeadersOverlaid) {
-        mHeaderDisplay = areHeadersOverlaid ? mHeaderDisplay | LayoutManager.LayoutParams.HEADER_OVERLAY : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_OVERLAY;
-        mAdapter.setHeaderDisplay(mHeaderDisplay);
-    }
-
-    public void setHeadersSticky(boolean areHeadersSticky) {
-        mHeaderDisplay = areHeadersSticky ? mHeaderDisplay | LayoutManager.LayoutParams.HEADER_STICKY : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_STICKY;
-        mAdapter.setHeaderDisplay(mHeaderDisplay);
-    }
-
-    public void setMarginsFixed(boolean areMarginsFixed) {
-        mAreMarginsFixed = areMarginsFixed;
-        mAdapter.setMarginsFixed(areMarginsFixed);
-    }
-
     public void scrollToRandomPosition() {
         int position = mRng.nextInt(mAdapter.getItemCount());
         String s = "Scroll to position " + position
@@ -151,6 +137,25 @@ public class CountriesFragment extends Fragment {
         }
         mToast.show();
         mViews.scrollToPosition(position);
+    }
+
+    public void setHeadersOverlaid(boolean areHeadersOverlaid) {
+        mHeaderDisplay = areHeadersOverlaid ? mHeaderDisplay
+                | LayoutManager.LayoutParams.HEADER_OVERLAY
+                : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_OVERLAY;
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
+    }
+
+    public void setHeadersSticky(boolean areHeadersSticky) {
+        mHeaderDisplay = areHeadersSticky ? mHeaderDisplay
+                | LayoutManager.LayoutParams.HEADER_STICKY
+                : mHeaderDisplay & ~LayoutManager.LayoutParams.HEADER_STICKY;
+        mAdapter.setHeaderDisplay(mHeaderDisplay);
+    }
+
+    public void setMarginsFixed(boolean areMarginsFixed) {
+        mAreMarginsFixed = areMarginsFixed;
+        mAdapter.setMarginsFixed(areMarginsFixed);
     }
 
     public void smoothScrollToRandomPosition() {
@@ -180,12 +185,12 @@ public class CountriesFragment extends Fragment {
             mRecyclerView.setLayoutManager(lm);
         }
 
-        public void setAdapter(RecyclerView.Adapter<?> adapter) {
-            mRecyclerView.setAdapter(adapter);
-        }
-
         public void scrollToPosition(int position) {
             mRecyclerView.scrollToPosition(position);
+        }
+
+        public void setAdapter(RecyclerView.Adapter<?> adapter) {
+            mRecyclerView.setAdapter(adapter);
         }
 
         public void smoothScrollToPosition(int position) {
