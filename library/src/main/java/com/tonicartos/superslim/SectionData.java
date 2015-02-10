@@ -28,8 +28,7 @@ public class SectionData {
 
     public SectionData(LayoutManager lm, LayoutState state,
             LayoutManager.Direction direction, int anchorPosition, int markerLine) {
-        LayoutState.View firstView = state
-                .getView(
+        LayoutState.View firstView = state.getView(
                         (state.getView(anchorPosition).getLayoutParams()).sectionFirstPosition);
         LayoutManager.LayoutParams params = firstView
                 .getLayoutParams();
@@ -75,6 +74,7 @@ public class SectionData {
                 mMinimumHeight = mHeaderHeight;
             }
         } else {
+            state.recycleView(mSectionHeader);
             mSectionHeader = null;
             mMinimumHeight = 0;
         }

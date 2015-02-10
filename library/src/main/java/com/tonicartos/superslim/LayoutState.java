@@ -71,6 +71,12 @@ public class LayoutState {
         }
     }
 
+    public void recycleView(View child) {
+        if (!child.wasCached) {
+            recycler.recycleView(child.view);
+        }
+    }
+
     public static class View {
 
         public final android.view.View view;
