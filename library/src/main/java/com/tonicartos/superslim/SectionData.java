@@ -1,8 +1,5 @@
 package com.tonicartos.superslim;
 
-/**
- * Created by tonic on 18/12/14.
- */
 public class SectionData {
 
     private final int mMinimumHeight;
@@ -139,7 +136,7 @@ public class SectionData {
         return mFillDirection == LayoutManager.Direction.END;
     }
 
-    public boolean isFillDirectionNON() {
+    public boolean isFillDirectionNone() {
         return mFillDirection == LayoutManager.Direction.NONE;
     }
 

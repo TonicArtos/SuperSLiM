@@ -22,7 +22,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section && lp.isHeader) {
+            } else if (section == lp.section) {
                 candidate = view;
             }
 
@@ -43,7 +43,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section && lp.isHeader) {
+            } else if (section == lp.section) {
                 candidate = view;
             }
             lookAt -= 1;
@@ -91,7 +91,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     @Override
     public FillResult fill(LayoutState state, SectionData section) {
         final int itemCount = state.recyclerState.getItemCount();
-        final int height = mLayoutManager.getHeight();
 
         FillResult fillResult;
         if (section.isFillDirectionStart()) {
@@ -167,10 +166,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     private FillResult fillSection(LayoutState state, SectionData section) {
-        final int itemCount = state.recyclerState.getItemCount();
-        final int endEdge = mLayoutManager.getHeight();
-        final int startEdge = 0;
-
         /*
          * First fill section to end from anchor position. Then fill to start from position above
          * anchor position. Then check minimum height requirement is met, if not offset the section
@@ -232,10 +227,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     private FillResult fillToStart(LayoutState state, SectionData section) {
-        final int itemCount = state.recyclerState.getItemCount();
-        final int endEdge = mLayoutManager.getHeight();
-        final int startEdge = 0;
-
         /*
          * First fill section to start from anchor position. Then check minimum height requirement
          * is met, if not offset all children added by the required margin.

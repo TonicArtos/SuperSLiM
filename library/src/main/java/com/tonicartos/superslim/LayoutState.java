@@ -8,10 +8,6 @@ import android.util.SparseArray;
  */
 public class LayoutState {
 
-    public static final int NO_HEADER_OFFSET = -1;
-
-    private static final int MARGIN_AUTO = -1;
-
     public final RecyclerView.Recycler recycler;
 
     public final RecyclerView.State recyclerState;
@@ -22,7 +18,7 @@ public class LayoutState {
 
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
             RecyclerView.State recyclerState) {
-        viewCache = new SparseArray<android.view.View>(layoutManager.getChildCount());
+        viewCache = new SparseArray<>(layoutManager.getChildCount());
         this.recyclerState = recyclerState;
         this.recycler = recycler;
         mLayoutManager = layoutManager;

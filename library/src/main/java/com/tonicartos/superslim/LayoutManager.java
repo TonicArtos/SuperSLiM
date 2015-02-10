@@ -496,17 +496,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
 
-    /**
-     * Check to see if, after fill in the views, the parent area cannot be filled by all the child
-     * views.
-     *
-     * @return True if the parent cannot be filled.
-     */
-    private boolean cannotFillParent(LayoutState state) {
-
-        return false;
-    }
-
     private boolean dataSetFullyLaidOut(LayoutState state, int finalStartPosition,
             int finalEndPosition) {
         final boolean fillFromFirst = finalStartPosition == 0;
