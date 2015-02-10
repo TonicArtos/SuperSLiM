@@ -59,7 +59,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int height = getDecoratedMeasuredHeight(header.view);
 
         // Adjust marker line if needed.
-        if (params.isHeaderInline()) {
+        if (params.isHeaderInline() && !params.isHeaderOverlay()) {
             fillResult.markerStart -= height;
         }
 
@@ -486,10 +486,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int unavailableWidth = 0;
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
         int recyclerWidth = getWidth() - getPaddingLeft() - getPaddingRight();
-        if (lp.headerAlignment == LayoutParams.HEADER_ALIGN_START && !lp.headerStartMarginIsAuto) {
-            unavailableWidth = recyclerWidth - lp.headerStartMargin;
-        } else if (lp.headerAlignment == LayoutParams.HEADER_ALIGN_END && !lp.headerEndMarginIsAuto) {
-            unavailableWidth = recyclerWidth - lp.headerEndMargin;
+        if (!lp.isHeaderOverlay()) {
+            if (lp.isHeaderStartAligned() && !lp.headerStartMarginIsAuto) {
+                unavailableWidth = recyclerWidth - lp.headerStartMargin;
+            } else if (lp.isHeaderEndAligned() && !lp.headerEndMarginIsAuto) {
+                unavailableWidth = recyclerWidth - lp.headerEndMargin;
+            }
         }
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
@@ -737,14 +739,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private Rect setHeaderRectSides(LayoutState state, SectionData section, int width,
             LayoutParams params, Rect r) {
-        if (params.isHeaderOverlay()) {
-            if (params.isHeaderStartAligned()) {
-                r.left = getPaddingLeft();
-                r.right = r.left + width;
-            } else if (params.isHeaderEndAligned()) {
-                r.right = getWidth() - getPaddingRight();
-                r.left = r.right - width;
-            }
+        if (params.areHeaderFlagsSet(
+                LayoutParams.HEADER_ALIGN_START | LayoutParams.HEADER_OVERLAY)) {
+            r.left = getPaddingLeft();
+            r.right = r.left + width;
+        } else if (params.areHeaderFlagsSet(
+                LayoutParams.HEADER_ALIGN_END | LayoutParams.HEADER_OVERLAY)) {
+            r.right = getWidth() - getPaddingRight();
+            r.left = r.right - width;
         } else if (params.isHeaderEndAligned()) {
             // Align header with end margin or end edge of recycler view.
             if (!params.headerEndMarginIsAuto && section.getHeaderEndMargin() > 0) {
@@ -801,11 +803,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     public static class LayoutParams extends RecyclerView.LayoutParams {
 
-        public static final int HEADER_ALIGN_START = 0x01;
+        public static final int HEADER_INLINE = 0x01;
 
-        public static final int HEADER_ALIGN_END = 0x02;
+        public static final int HEADER_ALIGN_START = 0x02;
 
-        public static final int HEADER_OVERLAY = 0x04;
+        public static final int HEADER_ALIGN_END = 0x04;
+
+        public static final int HEADER_OVERLAY = 0x08;
 
         private static final boolean DEFAULT_IS_HEADER = false;
 
@@ -814,6 +818,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         private static final int HEADER_NONE = -0x01;
 
         private static final int DEFAULT_HEADER_MARGIN = -0x01;
+
+        private static final int DEFAULT_HEADER_ALIGNMENT = HEADER_INLINE;
 
         public boolean isHeader;
 
@@ -826,10 +832,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         public int section;
 
         public int headerEndMargin;
-
-        public static final int HEADER_INLINE = 0x00;
-
-        private static final int DEFAULT_HEADER_ALIGNMENT = HEADER_INLINE;
 
         public int headerStartMargin;
 
@@ -908,7 +910,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public boolean areHeaderFlagsSet(int flags) {
-            return (headerAlignment & flags) != 0;
+            return (headerAlignment & flags) == flags;
         }
 
         public boolean isHeaderEndAligned() {
@@ -916,7 +918,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public boolean isHeaderInline() {
-            return headerAlignment == HEADER_INLINE;
+            return (headerAlignment & HEADER_INLINE) != 0;
         }
 
         public boolean isHeaderOverlay() {

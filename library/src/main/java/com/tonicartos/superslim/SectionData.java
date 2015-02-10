@@ -65,13 +65,13 @@ public class SectionData {
                     mHeaderEndMargin = 0;
                 }
             }
-            if (params.isHeaderInline() && (direction == LayoutManager.Direction.END ||
+            if (params.isHeaderInline() && !params.isHeaderOverlay() && (direction == LayoutManager.Direction.END ||
                             (direction == LayoutManager.Direction.NONE &&
                                     mAnchorPosition == mFirstPosition))) {
                 mMarkerLine += mHeaderHeight;
             }
 
-            if (params.isHeaderInline()) {
+            if (params.isHeaderInline() && !params.isHeaderOverlay()) {
                 mMinimumHeight = 0;
             } else {
                 mMinimumHeight = mHeaderHeight;

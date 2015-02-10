@@ -3,10 +3,10 @@
     <declare-styleable name="superslim_LayoutManager">
         <attr name="slm_isHeader" format="boolean"/>
         <attr name="slm_alignHeader">
-            <flag name="inline" value="0x00"/>
-            <flag name="start" value="0x01"/>
-            <flag name="end" value="0x02"/>
-            <flag name="overlay" value="0x04"/>
+            <flag name="inline" value="0x01"/>
+            <flag name="start" value="0x02"/>
+            <flag name="end" value="0x04"/>
+            <flag name="overlay" value="0x08"/>
         </attr>
         <attr name="slm_isSticky" format="boolean"/>
         <attr name="slm_sectionFirstPosition" format="integer"/>
