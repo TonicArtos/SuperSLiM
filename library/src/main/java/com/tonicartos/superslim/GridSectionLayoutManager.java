@@ -219,6 +219,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                     if (height > rowHeight) {
                         rowHeight = height;
                     }
+
+                    state.recycleView(child);
                 }
             } else {
                 // Run into an item that is displayed, indicating header overlap.
@@ -241,7 +243,9 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
         LayoutManager.LayoutParams params = startChild.getLayoutParams();
         int sectionFirst = params.sectionFirstPosition;
-        LayoutManager.LayoutParams firstParams = state.getView(sectionFirst).getLayoutParams();
+        LayoutState.View sectionFirstView = state.getView(sectionFirst);
+        LayoutManager.LayoutParams firstParams = sectionFirstView.getLayoutParams();
+        state.recycleView(sectionFirstView);
         int sectionStart = firstParams.isHeader ? sectionFirst + 1 : sectionFirst;
         int startColumn = (startPosition - sectionStart) % mNumColumns;
 
@@ -274,6 +278,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 int height = mLayoutManager.getDecoratedMeasuredHeight(next.view);
                 rowHeight = height > rowHeight ? height : rowHeight;
             } else {
+                state.recycleView(next);
                 next = null;
             }
             rowViews[i] = next;
@@ -417,6 +422,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
             LayoutManager.LayoutParams params = child.getLayoutParams();
             if (params.isHeader || params.section != section.getSection()) {
+                state.recycleView(child);
                 break;
             }
             AddData r = fillRow(state, section, child, direction, currentPosition, markerLine);
@@ -455,6 +461,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 final LayoutState.View child = state.getView(fillResult.positionStart - i + col);
                 measureChild(section, child);
                 final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                state.recycleView(child);
                 if (height > rowHeight) {
                     rowHeight = height;
                 }

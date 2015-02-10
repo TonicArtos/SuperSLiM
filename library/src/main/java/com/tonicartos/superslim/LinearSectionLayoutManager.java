@@ -158,6 +158,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             }
 
             headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            state.recycleView(child);
 
             position += 1;
         }
@@ -192,6 +193,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                     LayoutState.View child = state.getView(fillResult.positionStart - i);
                     measureChild(section, child);
                     viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                    state.recycleView(child);
                 }
             }
 
@@ -252,6 +254,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                     LayoutState.View child = state.getView(fillResult.positionStart - i);
                     measureChild(section, child);
                     viewSpan += mLayoutManager.getDecoratedMeasuredHeight(child.view);
+                    state.recycleView(child);
                 }
             }
 
