@@ -33,7 +33,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
         mHeaderDisplay = headerMode;
 
-        mItems = new ArrayList<LineItem>();
+        mItems = new ArrayList<>();
 
         //Insert headers into list of items.
         String lastHeader = "";

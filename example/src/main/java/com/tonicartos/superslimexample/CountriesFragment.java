@@ -1,6 +1,5 @@
 package com.tonicartos.superslimexample;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
@@ -49,7 +48,6 @@ public class CountriesFragment extends Fragment {
             int sectionKind = section % 2;
             final SectionLayoutManager slm;
             if (sectionKind == 0) {
-                GridSectionLayoutManager grid = mGridSectionLayoutManager;
                 slm = mGridSectionLayoutManager;
             } else {
                 slm = mLinearSectionLayoutManager;
@@ -110,7 +108,7 @@ public class CountriesFragment extends Fragment {
         lm.setSlmFactory(mSlmFactory);
 
         mViews = new ViewHolder(view);
-        mViews.initViews(getActivity(), lm);
+        mViews.initViews(lm);
         mAdapter = new CountryNamesAdapter(getActivity(), mHeaderDisplay);
         mAdapter.setMarginsFixed(mAreMarginsFixed);
         mAdapter.setHeaderDisplay(mHeaderDisplay);
@@ -181,7 +179,7 @@ public class CountriesFragment extends Fragment {
             mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
         }
 
-        public void initViews(Context context, LayoutManager lm) {
+        public void initViews(LayoutManager lm) {
             mRecyclerView.setLayoutManager(lm);
         }
 
