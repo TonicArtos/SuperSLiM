@@ -5,12 +5,11 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="action_sticky">Sticky headers</string>
-    <string name="menu_header_mode">Header style</string>
-    <string name="action_header_left">Left</string>
+    <string name="menu_header_mode">Header position</string>
     <string name="action_header_inline">Inline</string>
-    <string name="action_header_right">Right</string>
-    <string name="action_header_overlay_left">Overlay left</string>
-    <string name="action_header_overlay_right">Overlay right</string>
+    <string name="action_header_start">Left</string>
+    <string name="action_header_end">Right</string>
+    <string name="action_header_overlay">Overlay headers</string>
     <string name="menu_fixed_margins">Fixed margins</string>
     <string name="menu_random_scroll">Random scroll</string>
     <string name="menu_random_smooth_scroll">Random smooth scroll</string>

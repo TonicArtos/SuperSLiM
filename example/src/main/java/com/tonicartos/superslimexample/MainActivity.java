@@ -37,7 +37,7 @@ public class MainActivity extends ActionBarActivity {
         MenuItem item = null;
 
         CountriesFragment countriesFragment = getCountriesFragment();
-        final int headerMode = countriesFragment.getHeaderMode();
+        final int headerMode = countriesFragment.getHeaderPositioning();
         if (headerMode == LayoutManager.LayoutParams.HEADER_INLINE) {
             item = menu.findItem(R.id.action_header_inline);
 
@@ -48,22 +48,13 @@ public class MainActivity extends ActionBarActivity {
         } else if ((headerMode & LayoutManager.LayoutParams.HEADER_ALIGN_END)
                 == LayoutManager.LayoutParams.HEADER_ALIGN_END) {
             item = menu.findItem(R.id.action_header_end);
-
-        } else if ((headerMode & (
-                LayoutManager.LayoutParams.HEADER_ALIGN_START | LayoutManager.LayoutParams.HEADER_OVERLAY))
-                != 0) {
-            item = menu.findItem(R.id.action_header_overlay_start);
-
-        } else if ((headerMode & (
-                LayoutManager.LayoutParams.HEADER_ALIGN_END | LayoutManager.LayoutParams.HEADER_OVERLAY))
-                != 0) {
-            item = menu.findItem(R.id.action_header_overlay_end);
-
         }
+
         if (item != null) {
             item.setChecked(true);
         }
 
+        menu.findItem(R.id.action_overlay).setChecked(countriesFragment.areHeadersOverlaid());
         menu.findItem(R.id.action_sticky).setChecked(countriesFragment.areHeadersSticky());
         menu.findItem(R.id.action_fixed_margins).setChecked(countriesFragment.areMarginsFixed());
 
@@ -79,6 +70,13 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         boolean checked = item.isChecked();
+        if (id == R.id.action_overlay) {
+            CountriesFragment f = getCountriesFragment();
+            f.setHeadersOverlaid(!checked);
+            item.setChecked(!checked);
+            return true;
+        }
+
         if (id == R.id.action_sticky) {
             CountriesFragment f = getCountriesFragment();
             f.setHeadersSticky(!checked);
@@ -117,24 +115,6 @@ public class MainActivity extends ActionBarActivity {
             return true;
         }
 
-        if (id == R.id.action_header_overlay_start) {
-            if (!checked) {
-                item.setChecked(true);
-                updateHeaderMode(
-                        LayoutManager.LayoutParams.HEADER_OVERLAY | LayoutManager.LayoutParams.HEADER_ALIGN_START);
-            }
-            return true;
-        }
-
-        if (id == R.id.action_header_overlay_end) {
-            if (!checked) {
-                item.setChecked(true);
-                updateHeaderMode(
-                        LayoutManager.LayoutParams.HEADER_OVERLAY | LayoutManager.LayoutParams.HEADER_ALIGN_END);
-            }
-            return true;
-        }
-
         if (id == R.id.action_random_scroll) {
             getCountriesFragment().scrollToRandomPosition();
         }
@@ -148,7 +128,7 @@ public class MainActivity extends ActionBarActivity {
 
     private void updateHeaderMode(int mode) {
         CountriesFragment fragment = getCountriesFragment();
-        fragment.setHeaderMode(mode);
+        fragment.setHeaderPositioning(mode);
     }
 
     private CountriesFragment getCountriesFragment() {
