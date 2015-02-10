@@ -3,7 +3,6 @@ package com.tonicartos.superslimexample;
 import com.tonicartos.superslim.LayoutManager;
 
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -15,23 +14,6 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG_COUNTRIES_FRAGMENT = "tag_countries_fragment";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
-                    .commit();
-        }
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-        }
-    }
-
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -39,27 +21,23 @@ public class MainActivity extends ActionBarActivity {
 
         CountriesFragment countriesFragment = getCountriesFragment();
         final int headerMode = countriesFragment.getHeaderMode();
-        switch (headerMode) {
-            case LayoutManager.HEADER_INLINE:
-                item = menu.findItem(R.id.action_header_inline);
-                break;
-            case LayoutManager.HEADER_ALIGN_START:
-                item = menu.findItem(R.id.action_header_start);
-                break;
-            case LayoutManager.HEADER_ALIGN_END:
-                item = menu.findItem(R.id.action_header_end);
-                break;
-            case LayoutManager.HEADER_OVERLAY_START:
-                item = menu.findItem(R.id.action_header_overlay_start);
-                break;
-            case LayoutManager.HEADER_OVERLAY_END:
-                item = menu.findItem(R.id.action_header_overlay_end);
-                break;
+        if (headerMode == LayoutManager.LayoutParams.HEADER_INLINE) {
+            item = menu.findItem(R.id.action_header_inline);
+
+        } else if ((headerMode & LayoutManager.LayoutParams.HEADER_ALIGN_START)
+                == LayoutManager.LayoutParams.HEADER_ALIGN_START) {
+            item = menu.findItem(R.id.action_header_start);
+
+        } else if ((headerMode & LayoutManager.LayoutParams.HEADER_ALIGN_END)
+                == LayoutManager.LayoutParams.HEADER_ALIGN_END) {
+            item = menu.findItem(R.id.action_header_end);
         }
+
         if (item != null) {
             item.setChecked(true);
         }
 
+        menu.findItem(R.id.action_overlay).setChecked(countriesFragment.areHeadersOverlaid());
         menu.findItem(R.id.action_sticky).setChecked(countriesFragment.areHeadersSticky());
         menu.findItem(R.id.action_fixed_margins).setChecked(countriesFragment.areMarginsFixed());
 
@@ -75,6 +53,13 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         boolean checked = item.isChecked();
+        if (id == R.id.action_overlay) {
+            CountriesFragment f = getCountriesFragment();
+            f.setHeadersOverlaid(!checked);
+            item.setChecked(!checked);
+            return true;
+        }
+
         if (id == R.id.action_sticky) {
             CountriesFragment f = getCountriesFragment();
             f.setHeadersSticky(!checked);
@@ -92,7 +77,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_inline) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_INLINE);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_INLINE);
             }
             return true;
         }
@@ -100,7 +85,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_start) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_ALIGN_START);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_ALIGN_START);
             }
             return true;
         }
@@ -108,23 +93,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_header_end) {
             if (!checked) {
                 item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_ALIGN_END);
-            }
-            return true;
-        }
-
-        if (id == R.id.action_header_overlay_start) {
-            if (!checked) {
-                item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_OVERLAY_START);
-            }
-            return true;
-        }
-
-        if (id == R.id.action_header_overlay_end) {
-            if (!checked) {
-                item.setChecked(true);
-                updateHeaderMode(LayoutManager.HEADER_OVERLAY_END);
+                updateHeaderMode(LayoutManager.LayoutParams.HEADER_ALIGN_END);
             }
             return true;
         }
@@ -140,13 +109,29 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void updateHeaderMode(int mode) {
-        CountriesFragment fragment = getCountriesFragment();
-        fragment.setHeaderMode(mode);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
+                    .commit();
+        }
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+        }
     }
 
     private CountriesFragment getCountriesFragment() {
         return (CountriesFragment) getSupportFragmentManager()
                 .findFragmentByTag(TAG_COUNTRIES_FRAGMENT);
+    }
+
+    private void updateHeaderMode(int mode) {
+        CountriesFragment fragment = getCountriesFragment();
+        fragment.setHeaderMode(mode);
     }
 }

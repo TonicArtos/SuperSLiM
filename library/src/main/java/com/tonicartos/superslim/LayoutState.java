@@ -8,10 +8,6 @@ import android.util.SparseArray;
  */
 public class LayoutState {
 
-    public static final int NO_HEADER_OFFSET = -1;
-
-    private static final int MARGIN_AUTO = -1;
-
     public final RecyclerView.Recycler recycler;
 
     public final RecyclerView.State recyclerState;
@@ -22,30 +18,10 @@ public class LayoutState {
 
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
             RecyclerView.State recyclerState) {
-        viewCache = new SparseArray<android.view.View>(layoutManager.getChildCount());
+        viewCache = new SparseArray<>(layoutManager.getChildCount());
         this.recyclerState = recyclerState;
         this.recycler = recycler;
         mLayoutManager = layoutManager;
-    }
-
-    public void cacheView(int position, android.view.View view) {
-        viewCache.put(position, view);
-    }
-
-    public void decacheView(int position) {
-        viewCache.remove(position);
-    }
-
-    public void recycleCache() {
-        for (int i = 0; i < viewCache.size(); i++) {
-            recycler.recycleView(viewCache.valueAt(i));
-        }
-    }
-
-    public void detachCachedViews() {
-        for (int i = 0; i < viewCache.size(); i++) {
-            mLayoutManager.detachView(viewCache.valueAt(i));
-        }
     }
 
     public void cacheAllViews() {
@@ -56,9 +32,23 @@ public class LayoutState {
         }
     }
 
+    public void cacheView(int position, android.view.View view) {
+        viewCache.put(position, view);
+    }
+
+    public void decacheView(int position) {
+        viewCache.remove(position);
+    }
+
     public void detachAndCacheAllViews() {
         cacheAllViews();
         detachCachedViews();
+    }
+
+    public void detachCachedViews() {
+        for (int i = 0; i < viewCache.size(); i++) {
+            mLayoutManager.detachView(viewCache.valueAt(i));
+        }
     }
 
     public android.view.View getCachedView(int position) {
@@ -73,6 +63,12 @@ public class LayoutState {
         }
 
         return new View(child, wasCached);
+    }
+
+    public void recycleCache() {
+        for (int i = 0; i < viewCache.size(); i++) {
+            recycler.recycleView(viewCache.valueAt(i));
+        }
     }
 
     public static class View {

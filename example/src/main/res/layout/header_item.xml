@@ -2,7 +2,7 @@
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:app="http://schemas.android.com/apk/res-auto"
           app:slm_isHeader="true"
-          app:slm_isSticky="true"
+          app:slm_headerDisplay="inline|sticky"
           app:slm_headerStartMargin="56dip"
           app:slm_headerEndMargin="auto"
           android:gravity="start"

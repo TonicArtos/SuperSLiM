@@ -25,17 +25,15 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private final ArrayList<LineItem> mItems;
 
-    private int mHeaderMode;
+    private int mHeaderDisplay;
 
     private boolean mMarginsFixed;
 
-    private boolean mHeadersSticky;
-
     public CountryNamesAdapter(Context context, int headerMode) {
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
-        mHeaderMode = headerMode;
+        mHeaderDisplay = headerMode;
 
-        mItems = new ArrayList<LineItem>();
+        mItems = new ArrayList<>();
 
         //Insert headers into list of items.
         String lastHeader = "";
@@ -56,6 +54,14 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         mContext = context;
     }
 
+    public boolean isItemHeader(int position) {
+        return mItems.get(position).isHeader;
+    }
+
+    public String itemToString(int position) {
+        return mItems.get(position).text;
+    }
+
     @Override
     public CountryViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         TextView view;
@@ -70,16 +76,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
     }
 
     @Override
-    public int getItemViewType(int position) {
-        return mItems.get(position).isHeader ? VIEW_TYPE_HEADER : VIEW_TYPE_CONTENT;
-    }
-
-    @Override
-    public int getItemCount() {
-        return mItems.size();
-    }
-
-    @Override
     public void onBindViewHolder(CountryViewHolder holder, int position) {
         final LineItem item = mItems.get(position);
         final View itemView = holder.itemView;
@@ -90,32 +86,38 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 .getLayoutParams();
         // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
-            lp.headerAlignment = mHeaderMode;
-            if (mHeaderMode == LayoutManager.HEADER_INLINE) {
+            lp.headerDisplay = mHeaderDisplay;
+            if (lp.isHeaderInline() || (mMarginsFixed && !lp.isHeaderOverlay())) {
                 lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            } else {
+                lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
 
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
-            if (mMarginsFixed) {
-                if (mHeaderMode == LayoutManager.HEADER_OVERLAY_END || mHeaderMode == LayoutManager.HEADER_OVERLAY_START) {
-                    lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-                } else {
-                    lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                }
-            } else if (mHeaderMode != LayoutManager.HEADER_INLINE) {
-                lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-            }
-
-            lp.isSticky = mHeadersSticky;
         }
         lp.section = item.section;
         lp.sectionFirstPosition = item.sectionFirstPosition;
         itemView.setLayoutParams(lp);
     }
 
-    public void setHeaderMode(int mode) {
-        mHeaderMode = mode;
+    @Override
+    public int getItemViewType(int position) {
+        return mItems.get(position).isHeader ? VIEW_TYPE_HEADER : VIEW_TYPE_CONTENT;
+    }
+
+    @Override
+    public int getItemCount() {
+        return mItems.size();
+    }
+
+    public void setHeaderDisplay(int headerDisplay) {
+        mHeaderDisplay = headerDisplay;
+        notifyHeaderChanges();
+    }
+
+    public void setMarginsFixed(boolean marginsFixed) {
+        mMarginsFixed = marginsFixed;
         notifyHeaderChanges();
     }
 
@@ -126,24 +128,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 notifyItemChanged(i);
             }
         }
-    }
-
-    public void setMarginsFixed(boolean marginsFixed) {
-        mMarginsFixed = marginsFixed;
-        notifyHeaderChanges();
-    }
-
-    public void setHeadersSticky(boolean headersSticky) {
-        mHeadersSticky = headersSticky;
-        notifyHeaderChanges();
-    }
-
-    public String itemToString(int position) {
-        return mItems.get(position).text;
-    }
-
-    public boolean isItemHeader(int position) {
-        return mItems.get(position).isHeader;
     }
 
     private static class LineItem {

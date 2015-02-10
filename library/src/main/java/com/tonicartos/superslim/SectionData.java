@@ -1,8 +1,5 @@
 package com.tonicartos.superslim;
 
-/**
- * Created by tonic on 18/12/14.
- */
 public class SectionData {
 
     private final int mMinimumHeight;
@@ -52,27 +49,27 @@ public class SectionData {
             lm.measureHeader(mSectionHeader);
             mHeaderHeight = lm.getDecoratedMeasuredHeight(mSectionHeader.view);
             if (params.headerStartMarginIsAuto) {
-                if (params.headerAlignment == LayoutManager.HEADER_ALIGN_START) {
+                if (params.isHeaderStartAligned() && !params.isHeaderOverlay()) {
                     mHeaderStartMargin = lm.getDecoratedMeasuredWidth(mSectionHeader.view);
                 } else {
                     mHeaderStartMargin = 0;
                 }
             }
             if (params.headerEndMarginIsAuto) {
-                if (params.headerAlignment == LayoutManager.HEADER_ALIGN_END) {
+                if (params.isHeaderEndAligned() && !params.isHeaderOverlay()) {
                     mHeaderEndMargin = lm.getDecoratedMeasuredWidth(mSectionHeader.view);
                 } else {
                     mHeaderEndMargin = 0;
                 }
             }
-            if (params.headerAlignment == LayoutManager.HEADER_INLINE &&
-                    (direction == LayoutManager.Direction.END ||
+            if (params.isHeaderInline() && !params.isHeaderOverlay() && (
+                    direction == LayoutManager.Direction.END ||
                             (direction == LayoutManager.Direction.NONE &&
                                     mAnchorPosition == mFirstPosition))) {
                 mMarkerLine += mHeaderHeight;
             }
 
-            if (params.headerAlignment == LayoutManager.HEADER_INLINE) {
+            if (params.isHeaderInline() && !params.isHeaderOverlay()) {
                 mMinimumHeight = 0;
             } else {
                 mMinimumHeight = mHeaderHeight;
@@ -91,40 +88,60 @@ public class SectionData {
         mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
     }
 
+    public int getAnchorPosition() {
+        return mAnchorPosition;
+    }
+
+    public int getContentEndMargin() {
+        return mContentEndMargin;
+    }
+
+    public int getContentStartMargin() {
+        return mContentStartMargin;
+    }
+
     public int getFirstPosition() {
         return mFirstPosition;
     }
 
-    public int getSection() {
-        return mSection;
+    public int getHeaderEndMargin() {
+        return mHeaderEndMargin;
     }
 
     public int getHeaderHeight() {
         return mHeaderHeight;
     }
 
-    public int getMinimumHeight() {
-        return mMinimumHeight;
-    }
-
-    public int getAnchorPosition() {
-        return mAnchorPosition;
+    public int getHeaderStartMargin() {
+        return mHeaderStartMargin;
     }
 
     public int getMarkerLine() {
         return mMarkerLine;
     }
 
-    public boolean isFillDirectionStart() {
-        return mFillDirection == LayoutManager.Direction.START;
+    public int getMinimumHeight() {
+        return mMinimumHeight;
+    }
+
+    public int getSection() {
+        return mSection;
+    }
+
+    public LayoutState.View getSectionHeader() {
+        return mSectionHeader;
     }
 
     public boolean isFillDirectionEnd() {
         return mFillDirection == LayoutManager.Direction.END;
     }
 
-    public boolean isFillDirectionNON() {
+    public boolean isFillDirectionNone() {
         return mFillDirection == LayoutManager.Direction.NONE;
+    }
+
+    public boolean isFillDirectionStart() {
+        return mFillDirection == LayoutManager.Direction.START;
     }
 
     public SectionLayoutManager loadManager(LayoutManager lm, LayoutManager.SlmFactory slmFactory) {
@@ -148,26 +165,6 @@ public class SectionData {
         mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
 
         return sectionManager;
-    }
-
-    public LayoutState.View getSectionHeader() {
-        return mSectionHeader;
-    }
-
-    public int getContentEndMargin() {
-        return mContentEndMargin;
-    }
-
-    public int getContentStartMargin() {
-        return mContentStartMargin;
-    }
-
-    public int getHeaderEndMargin() {
-        return mHeaderEndMargin;
-    }
-
-    public int getHeaderStartMargin() {
-        return mHeaderStartMargin;
     }
 
     @Override

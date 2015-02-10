@@ -16,12 +16,12 @@ class CountryViewHolder extends RecyclerView.ViewHolder {
         mTextView = view;
     }
 
+    public void bindItem(String text) {
+        mTextView.setText(text);
+    }
+
     @Override
     public String toString() {
         return mTextView.getText().toString();
-    }
-
-    public void bindItem(String text) {
-        mTextView.setText(text);
     }
 }
