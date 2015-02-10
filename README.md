@@ -16,7 +16,16 @@ SuperSLiM is a configurable layout manager for the RecyclerView. It provides a v
 See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
 
 ## Getting Started
-Please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
+### Including in your project
+Add the following to your build.gradle file.
+```
+dependencies {
+    compile 'com.tonicartos:superslim:+'
+}
+```
+You can replace the '+' with the exact version if you do not want to always sync to the latest version.
+
+For further information please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
 
 ## Support
 - [Google+ Community](https://plus.google.com/communities/104097089134643994744)
