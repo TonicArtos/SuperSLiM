@@ -485,7 +485,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // header is being laid out adjacent to the mSection.
         int unavailableWidth = 0;
         LayoutParams lp = (LayoutParams) header.view.getLayoutParams();
-        int recyclerWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+        int recyclerWidth = getWidth() - getPaddingStart() - getPaddingEnd();
         if (!lp.isHeaderOverlay()) {
             if (lp.isHeaderStartAligned() && !lp.headerStartMarginIsAuto) {
                 unavailableWidth = recyclerWidth - lp.headerStartMargin;
@@ -728,33 +728,45 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private Rect setHeaderRectSides(LayoutState state, SectionData section, int width,
             LayoutParams params, Rect r) {
-        if (params.areHeaderFlagsSet(
-                LayoutParams.HEADER_ALIGN_START | LayoutParams.HEADER_OVERLAY)) {
-            r.left = getPaddingLeft();
-            r.right = r.left + width;
-        } else if (params.areHeaderFlagsSet(
-                LayoutParams.HEADER_ALIGN_END | LayoutParams.HEADER_OVERLAY)) {
-            r.right = getWidth() - getPaddingRight();
-            r.left = r.right - width;
-        } else if (params.isHeaderEndAligned()) {
-            // Align header with end margin or end edge of recycler view.
-            if (!params.headerEndMarginIsAuto && section.getHeaderEndMargin() > 0) {
-                r.left = getWidth() - section.getHeaderEndMargin() - getPaddingLeft();
-                r.right = r.left + width;
-            } else {
-                r.right = getWidth() - getPaddingRight();
+
+        if (params.isHeaderEndAligned()) {
+            // Position header from end edge.
+            if (!params.isHeaderOverlay() && !params.headerEndMarginIsAuto && section.getHeaderEndMargin() > 0) {
+                // Position inside end margin.
+                if (state.isLTR) {
+                    r.left = getWidth() - section.getHeaderEndMargin() - getPaddingEnd();
+                    r.right = r.left + width;
+                } else {
+                    r.right = section.getHeaderEndMargin() + getPaddingEnd();
+                    r.left = r.right - width;
+                }
+            } else if (state.isLTR) {
+                r.right = getWidth() - getPaddingEnd();
                 r.left = r.right - width;
+            } else {
+                r.left = getPaddingEnd();
+                r.right = r.left + width;
             }
         } else if (params.isHeaderStartAligned()) {
-            // Align header with start margin or start edge of recycler view.
-            if (!params.headerStartMarginIsAuto && section.getHeaderStartMargin() > 0) {
-                r.right = section.getHeaderStartMargin() + getPaddingLeft();
-                r.left = r.right - width;
-            } else {
-                r.left = getPaddingLeft();
+            // Position header from start edge.
+            if (!params.isHeaderOverlay() && !params.headerStartMarginIsAuto && section.getHeaderStartMargin() > 0) {
+                // Position inside start margin.
+                if (state.isLTR) {
+                    r.right = section.getHeaderStartMargin() + getPaddingStart();
+                    r.left = r.right - width;
+                } else {
+                    r.left = getWidth() - section.getHeaderStartMargin() - getPaddingStart();
+                    r.right = r.left + width;
+                }
+            } else if (state.isLTR) {
+                r.left = getPaddingStart();
                 r.right = r.left + width;
+            } else {
+                r.right = getWidth() - getPaddingStart();
+                r.left = r.right - width;
             }
         } else {
+            // Header is not aligned to a directed edge and assumed to fill the width available.
             r.left = getPaddingLeft();
             r.right = r.left + width;
         }

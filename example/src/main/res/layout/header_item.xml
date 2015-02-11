@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:app="http://schemas.android.com/apk/res-auto"
-          app:slm_isHeader="true"
-          app:slm_headerDisplay="inline|sticky"
-          app:slm_headerStartMargin="56dip"
-          app:slm_headerEndMargin="auto"
-          android:gravity="start"
-          android:padding="16dip"
-          android:textSize="24sp"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"/>
-        <!--app:slm_headerEndMargin="56dip"-->
+<TextView
+    android:id="@+id/text"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="start"
+    android:padding="16dip"
+    android:textDirection="locale"
+    android:textSize="24sp"
+    app:slm_headerDisplay="inline|sticky"
+    app:slm_headerEndMargin="auto"
+    app:slm_headerStartMargin="56dip"
+    app:slm_isHeader="true"
+    tools:text="Header Item"
+    /><!--app:slm_headerEndMargin="56dip"-->

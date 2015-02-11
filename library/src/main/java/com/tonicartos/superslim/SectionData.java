@@ -36,8 +36,8 @@ public class SectionData {
         mFirstPosition = params.sectionFirstPosition;
         mHeaderStartMargin = params.headerStartMargin;
         mHeaderEndMargin = params.headerEndMargin;
-        mContentStartMargin = mHeaderStartMargin + lm.getPaddingLeft();
-        mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
+        mContentStartMargin = mHeaderStartMargin + lm.getPaddingStart();
+        mContentEndMargin = mHeaderEndMargin + lm.getPaddingEnd();
 
         mMarkerLine = markerLine;
         mAnchorPosition = anchorPosition;
@@ -83,9 +83,6 @@ public class SectionData {
             // Bump past header.
             mAnchorPosition += 1;
         }
-
-        mContentStartMargin = mHeaderStartMargin + lm.getPaddingLeft();
-        mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
     }
 
     public int getAnchorPosition() {
@@ -161,8 +158,8 @@ public class SectionData {
             mHeaderEndMargin = endMargin;
         }
 
-        mContentStartMargin = mHeaderStartMargin + lm.getPaddingLeft();
-        mContentEndMargin = mHeaderEndMargin + lm.getPaddingRight();
+        mContentStartMargin = mHeaderStartMargin + lm.getPaddingStart();
+        mContentEndMargin = mHeaderEndMargin + lm.getPaddingEnd();
 
         return sectionManager;
     }
