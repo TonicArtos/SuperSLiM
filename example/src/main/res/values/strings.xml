@@ -7,8 +7,8 @@
     <string name="action_sticky">Sticky headers</string>
     <string name="menu_header_mode">Header position</string>
     <string name="action_header_inline">Inline</string>
-    <string name="action_header_start">Left</string>
-    <string name="action_header_end">Right</string>
+    <string name="action_header_start">Start</string>
+    <string name="action_header_end">End</string>
     <string name="action_header_overlay">Overlay headers</string>
     <string name="menu_fixed_margins">Fixed margins</string>
     <string name="menu_random_scroll">Random scroll</string>

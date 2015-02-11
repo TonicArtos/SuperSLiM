@@ -8,7 +8,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -20,8 +19,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
     private static final int VIEW_TYPE_HEADER = 0x01;
 
     private static final int VIEW_TYPE_CONTENT = 0x00;
-
-    private final Context mContext;
 
     private final ArrayList<LineItem> mItems;
 
@@ -51,7 +48,6 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             }
             mItems.add(new LineItem(countryNames[i], false, sectionCount, sectionFirstPosition));
         }
-        mContext = context;
     }
 
     public boolean isItemHeader(int position) {
@@ -64,12 +60,12 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     @Override
     public CountryViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        TextView view;
+        View view;
         if (viewType == VIEW_TYPE_HEADER) {
-            view = (TextView) LayoutInflater.from(mContext).inflate(
-                    R.layout.header_item, parent, false);
+            view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.header_item, parent, false);
         } else {
-            view = (TextView) LayoutInflater.from(mContext)
+            view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.text_line_item, parent, false);
         }
         return new CountryViewHolder(view);
