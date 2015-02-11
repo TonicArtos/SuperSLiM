@@ -1,5 +1,6 @@
 package com.tonicartos.superslim;
 
+import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 
@@ -16,12 +17,15 @@ public class LayoutState {
 
     private final RecyclerView.LayoutManager mLayoutManager;
 
+    public final boolean isLTR;
+
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
             RecyclerView.State recyclerState) {
         viewCache = new SparseArray<>(layoutManager.getChildCount());
         this.recyclerState = recyclerState;
         this.recycler = recycler;
         mLayoutManager = layoutManager;
+        isLTR = layoutManager.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
     }
 
     public void cacheAllViews() {

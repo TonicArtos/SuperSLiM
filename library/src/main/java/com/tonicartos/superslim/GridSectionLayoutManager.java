@@ -41,7 +41,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section && lp.isHeader) {
+            } else if (section == lp.section) {
                 candidate = view;
             }
 
@@ -62,7 +62,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
             if (section == lp.section && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section && lp.isHeader) {
+            } else if (section == lp.section) {
                 candidate = view;
             }
             lookAt -= 1;
@@ -181,7 +181,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         }
         mColumnWidth = availableWidth / mNumColumns;
         if (mColumnWidth == 0) {
-            Log.e("GridSectionLayoutManager",
+            Log.e("GridSection",
                     "Too many columns (" + mNumColumns + ") for available width" + availableWidth
                             + ".");
         }
@@ -298,7 +298,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             if (child == null) {
                 continue;
             }
-            layoutChild(child, section, col, top);
+            layoutChild(child, section, state, state.isLTR ? col : mNumColumns - 1 - col, top);
             int attachIndex = addView(state, child, mLayoutManager.getPosition(child.view),
                     direction);
             addData.numChildrenAdded += 1;
@@ -471,7 +471,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return viewSpan;
     }
 
-    private void layoutChild(LayoutState.View child, SectionData section, int col, int top) {
+    private void layoutChild(LayoutState.View child, SectionData section, LayoutState state,
+            int col, int top) {
         if (child.wasCached) {
             return;
         }
@@ -479,7 +480,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
         int bottom = top + height;
-        int left = section.getContentStartMargin() + col * mColumnWidth;
+        int left = (state.isLTR ? section.getContentStartMargin() : section.getContentEndMargin())
+                + col * mColumnWidth;
         int right = left + width;
 
         mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);

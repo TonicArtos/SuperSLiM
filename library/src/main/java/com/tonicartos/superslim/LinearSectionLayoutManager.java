@@ -319,7 +319,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
             final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-            int left = section.getContentStartMargin();
+            int left = state.isLTR ? section.getContentStartMargin() : section.getContentEndMargin();
             int right = left + width;
             int top;
             int bottom;
