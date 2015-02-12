@@ -1,18 +1,24 @@
-SuperSLiM
+[SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
 ![Maven central version](https://img.shields.io/maven-central/v/com.tonicartos/superslim.svg?style=flat-square)
 
 SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.
 
-## Features
-- Section Headers
-  - Sticky headers
-  - Headers in content margins
-  - Header overlays
-- Section Layouts
-  - Linear
-  - Grid
-  - Staggered Grid *not yet implemented*
+SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/wiki) with guides and documentation to help you out.
+
+## Feature Overview
+**Section Headers**  
+- Sticky headers
+- Headers in content margins - *like Google Calendar with Material Design*
+- Header overlays
+
+**Section Layouts**  
+- Linear
+- Grid
+- Staggered Grid - *not yet implemented*
+- or create your own
+ 
+**Support for RTL languages**  
 
 See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
 
@@ -26,16 +32,17 @@ dependencies {
 ```
 You can replace the '+' with the exact version if you do not want to always sync to the latest version.
 
-For further information please refer to the [user guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide).
+For more detail please refer to the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) and [User Guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide) wiki pages.
 
 ## Support
+- [Wiki](https://github.com/TonicArtos/SuperSLiM/wiki)
 - [Google+ Community](https://plus.google.com/communities/104097089134643994744)
-- [Stack Overflow](https://stackoverflow.com/questions/tagged/superslim) (Please tag questions with superslim).
+- [Stack Overflow](https://stackoverflow.com/questions/tagged/superslim) *(Please tag questions with superslim)*.
  
 ## Samples
-All included in the repository.
+Included in the repository.
 
-![Example App Animation](https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif)
+[![Example App](https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif)](https://github.com/TonicArtos/SuperSLiM/tree/master/example)
 
 ## Acknowledgements
 Thanks to Dave Smith for his introduction to writing a RecyclerView LayoutManager over at [Wires are Obsolete](http://wiresareobsolete.com/), and to Lucas Rocha for his [TwoWayView Library](http://github.com/lucasr/twoway-view/) which is worth checking out too.
