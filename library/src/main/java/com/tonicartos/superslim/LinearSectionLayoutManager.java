@@ -20,9 +20,9 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
             android.view.View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (section == lp.section && !lp.isHeader) {
+            if (section == lp.layoutId && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section) {
+            } else if (section == lp.layoutId) {
                 candidate = view;
             }
 
@@ -41,9 +41,9 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
             android.view.View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (section == lp.section && !lp.isHeader) {
+            if (section == lp.layoutId && !lp.isHeader) {
                 return view;
-            } else if (section == lp.section) {
+            } else if (section == lp.layoutId) {
                 candidate = view;
             }
             lookAt -= 1;
@@ -57,7 +57,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.section != section) {
+            if (params.layoutId != section) {
                 break;
             }
             if (params.isHeader) {
@@ -76,7 +76,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.section != section) {
+            if (params.layoutId != section) {
                 break;
             }
             if (params.isHeader) {
@@ -285,7 +285,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             LayoutState.View child = state.getView(currentPosition);
 
             LayoutManager.LayoutParams params = child.getLayoutParams();
-            if (params.isHeader || params.section != section.getSection()) {
+            if (params.isHeader || params.layoutId != section.getLayoutId()) {
                 break;
             }
             measureChild(section, child);
@@ -319,7 +319,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
             final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-            int left = state.isLTR ? section.getContentStartMargin() : section.getContentEndMargin();
+            int left = state.isLTR ? section.getContentMarginStart() : section.getContentMarginEnd();
             int right = left + width;
             int top;
             int bottom;
@@ -350,7 +350,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         }
 
         mLayoutManager.measureChildWithMargins(child.view,
-                section.getHeaderStartMargin() + section.getHeaderEndMargin(), 0);
+                section.getHeaderMarginStart() + section.getHeaderMarginEnd(), 0);
     }
 
     class AddData {
