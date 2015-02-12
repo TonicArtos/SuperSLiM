@@ -40,22 +40,6 @@ public class CountriesFragment extends Fragment {
 
     private SectionLayoutManager mLinearSectionLayoutManager;
 
-    private LayoutManager.SlmFactory mSlmFactory = new LayoutManager.SlmFactory() {
-
-        @Override
-        public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
-                int section) {
-            int sectionKind = section % 2;
-            final SectionLayoutManager slm;
-            if (sectionKind == 0) {
-                slm = mGridSectionLayoutManager;
-            } else {
-                slm = mLinearSectionLayoutManager;
-            }
-            return slm;
-        }
-    };
-
     public boolean areHeadersOverlaid() {
         return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) != 0;
     }
@@ -101,11 +85,13 @@ public class CountriesFragment extends Fragment {
         }
 
         LayoutManager lm = new LayoutManager();
+        mLinearSectionLayoutManager = new LinearSectionLayoutManager(lm);
+        lm.registerSectionLayoutManager(0, mLinearSectionLayoutManager);
+
         mGridSectionLayoutManager = new GridSectionLayoutManager(lm, getActivity());
         mGridSectionLayoutManager.setColumnMinimumWidth((int) getResources()
                 .getDimension(R.dimen.grid_column_width));
-        mLinearSectionLayoutManager = new LinearSectionLayoutManager(lm);
-        lm.setSlmFactory(mSlmFactory);
+        lm.registerSectionLayoutManager(1, mGridSectionLayoutManager);
 
         mViews = new ViewHolder(view);
         mViews.initViews(lm);

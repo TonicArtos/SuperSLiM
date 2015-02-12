@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v4.util.SparseArrayCompat;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -18,8 +19,7 @@ import android.view.ViewGroup;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
- * sections
- * to view layout managers to layout items.
+ * sections to view layout managers to layout items.
  */
 public class LayoutManager extends RecyclerView.LayoutManager {
 
@@ -27,19 +27,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int mRequestPosition = NO_POSITION_REQUEST;
 
-    private SlmFactory mSlmFactory = new SlmFactory() {
-        @Override
-        public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
-                int section) {
-            return new LinearSectionLayoutManager(layoutManager);
-        }
-    };
-
     private Rect mRect = new Rect();
 
     private int mRequestPositionOffset = 0;
 
     private boolean mDisableStickyHeaderDisplay = false;
+
+    private SparseArrayCompat<SectionLayoutManager> mSectionLayouts = new SparseArrayCompat<>();
 
     private boolean mSmoothScrollEnabled = false;
 
@@ -174,23 +168,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          */
 
         // Get start views.
-        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
-        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
+        LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
 
-        View startSectionFirstView = manager.getFirstView(startSection);
-        View startHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
-                Direction.END);
-        int startSectionHighestEdge = manager.getHighestEdge(startSection, getPaddingTop());
+        int startSectionFirstPosition = lp.getTestedFirstPosition();
+        View startSectionFirstView = manager.getFirstView(startSectionFirstPosition);
+        View startHeaderView = findAttachedHeaderForSection(
+                state.getItemCount(), startSectionFirstPosition, Direction.END);
+        int startSectionHighestEdge = manager.getHighestEdge(
+                startSectionFirstPosition, getPaddingTop());
 
         // Get end views.
-        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
-        manager = mSlmFactory.getSectionLayoutManager(this, endSection);
+        lp = (LayoutParams) getChildAt(getChildCount() - 1)
+                .getLayoutParams();
+        int endSectionFirstPosition = lp.getTestedFirstPosition();
+        manager = getSectionLayoutManager(lp.layoutId);
 
-        View endSectionLastView = manager.getLastView(endSection);
-        View endHeaderView = findAttachedHeaderForSection(state.getItemCount(), endSection,
-                Direction.START);
-        int endSectionLowestEdge = manager
-                .getLowestEdge(endSection, getHeight() - getPaddingBottom());
+        View endSectionLastView = manager.getLastView(endSectionFirstPosition);
+        View endHeaderView = findAttachedHeaderForSection(
+                state.getItemCount(), endSectionFirstPosition, Direction.START);
+        int endSectionLowestEdge = manager.getLowestEdge(
+                endSectionFirstPosition, getHeight() - getPaddingBottom());
 
         //Work out if reached start.
         final boolean startDisplayed;
@@ -371,13 +369,28 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
+    @Override
+    public Parcelable onSaveInstanceState() {
+        SavedState state = new SavedState();
+        View view = getAnchorChild(getItemCount());
+        if (view == null) {
+            state.anchorPosition = 0;
+            state.anchorOffset = 0;
+        } else {
+            state.anchorPosition = getPosition(view);
+            state.anchorOffset = getDecoratedTop(view);
+        }
+        return state;
+    }
+
 //    @Override
 //    public int computeVerticalScrollExtent(RecyclerView.State state) {
 //        if (!mSmoothScrollEnabled) {
 //            return getChildCount();
 //        }
 //
-//        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams()).section;
+//        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams())
+// .section;
 //        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
 //        View endView = manager.getLastView(endSection);
 //
@@ -452,28 +465,20 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 //    }
 
     @Override
-    public Parcelable onSaveInstanceState() {
-        SavedState state = new SavedState();
-        View view = getAnchorChild(getItemCount());
-        if (view == null) {
-            state.anchorPosition = 0;
-            state.anchorOffset = 0;
-        } else {
-            state.anchorPosition = getPosition(view);
-            state.anchorOffset = getDecoratedTop(view);
-        }
-        return state;
-    }
-
-    @Override
     public void onRestoreInstanceState(Parcelable state) {
         mRequestPosition = ((SavedState) state).anchorPosition;
         mRequestPositionOffset = ((SavedState) state).anchorOffset;
         requestLayout();
     }
 
-    public void setSlmFactory(SlmFactory factory) {
-        mSlmFactory = factory;
+    /**
+     * Register a SectionLayoutManager.
+     *
+     * @param layoutId Id of layout. Referenced by first section view.
+     * @param manager  SectionLayoutManager to register.
+     */
+    public void registerSectionLayoutManager(int layoutId, SectionLayoutManager manager) {
+        mSectionLayouts.put(layoutId, manager);
     }
 
     void measureHeader(LayoutState.View header) {
@@ -488,9 +493,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int recyclerWidth = getWidth() - getPaddingStart() - getPaddingEnd();
         if (!lp.isHeaderOverlay()) {
             if (lp.isHeaderStartAligned() && !lp.headerStartMarginIsAuto) {
-                unavailableWidth = recyclerWidth - lp.headerStartMargin;
+                unavailableWidth = recyclerWidth - lp.headerMarginStart;
             } else if (lp.isHeaderEndAligned() && !lp.headerEndMarginIsAuto) {
-                unavailableWidth = recyclerWidth - lp.headerEndMargin;
+                unavailableWidth = recyclerWidth - lp.headerMarginEnd;
             }
         }
         measureChildWithMargins(header.view, unavailableWidth, 0);
@@ -523,7 +528,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Prepare anchor section.
         SectionData section = new SectionData(this, state, Direction.NONE, anchorPosition,
                 borderline);
-        SectionLayoutManager sectionManager = section.loadManager(this, mSlmFactory);
+        SectionLayoutManager sectionManager = getSectionLayoutManager(section.getLayoutId());
+        section.loadMargins(this, sectionManager);
 
         // Fill anchor section.
         FillResult anchorResult = sectionManager.fill(state, section);
@@ -568,7 +574,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         fillState.markerStart);
             }
 
-            SectionLayoutManager sectionManager = section.loadManager(this, mSlmFactory);
+            SectionLayoutManager sectionManager = getSectionLayoutManager(section.getLayoutId());
+            section.loadMargins(this, sectionManager);
             fillState = sectionManager.fill(layoutState, section);
             fillState = layoutAndAddHeader(layoutState, section, fillState);
         }
@@ -579,15 +586,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * Find a view that is the header for the specified section. Looks in direction specified from
      * opposite end.
      *
-     * @param itemCount Current number of items in adapter.
-     * @param section   Section to look for header inside of. Search is expected to start inside
-     *                  the
-     *                  section so it must be at the matching end specified by the direction.
-     * @param direction Direction to look in. Direction.END means to look from the start to the
-     *                  end.
+     * @param itemCount            Current number of items in adapter.
+     * @param sectionFirstPosition Section to look for header inside of. Search is expected to start
+     *                             inside the section so it must be at the matching end specified by
+     *                             the direction.
+     * @param direction            Direction to look in. Direction.END means to look from the start
+     *                             to the end.
      * @return Null if no header found, otherwise the header view.
      */
-    private View findAttachedHeaderForSection(final int itemCount, final int section,
+    private View findAttachedHeaderForSection(final int itemCount, final int sectionFirstPosition,
             final Direction direction) {
         int position = direction == Direction.END ? 0 : getChildCount() - 1;
         int nextStep = direction == Direction.END ? 1 : -1;
@@ -597,7 +604,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 continue;
             }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
-            if (params.section != section) {
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
                 break;
             } else if (params.isHeader) {
                 return child;
@@ -719,11 +726,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getDirectionToPosition(int targetPosition) {
-        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
-        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
-
-        View startSectionFirstView = manager.getFirstView(startSection);
+        LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        final View startSectionFirstView = getSectionLayoutManager(lp.layoutId)
+                .getFirstView(lp.getTestedFirstPosition());
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
+    }
+
+    private SectionLayoutManager getSectionLayoutManager(int layoutId) {
+        SectionLayoutManager manager = mSectionLayouts.get(layoutId);
+        if (manager == null) {
+            throw new UnknownSectionLayoutException(layoutId);
+        }
+        return manager;
     }
 
     private Rect setHeaderRectSides(LayoutState state, SectionData section, int width,
@@ -731,13 +745,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         if (params.isHeaderEndAligned()) {
             // Position header from end edge.
-            if (!params.isHeaderOverlay() && !params.headerEndMarginIsAuto && section.getHeaderEndMargin() > 0) {
+            if (!params.isHeaderOverlay() && !params.headerEndMarginIsAuto
+                    && section.getHeaderMarginEnd() > 0) {
                 // Position inside end margin.
                 if (state.isLTR) {
-                    r.left = getWidth() - section.getHeaderEndMargin() - getPaddingEnd();
+                    r.left = getWidth() - section.getHeaderMarginEnd() - getPaddingEnd();
                     r.right = r.left + width;
                 } else {
-                    r.right = section.getHeaderEndMargin() + getPaddingEnd();
+                    r.right = section.getHeaderMarginEnd() + getPaddingEnd();
                     r.left = r.right - width;
                 }
             } else if (state.isLTR) {
@@ -749,13 +764,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         } else if (params.isHeaderStartAligned()) {
             // Position header from start edge.
-            if (!params.isHeaderOverlay() && !params.headerStartMarginIsAuto && section.getHeaderStartMargin() > 0) {
+            if (!params.isHeaderOverlay() && !params.headerStartMarginIsAuto
+                    && section.getHeaderMarginStart() > 0) {
                 // Position inside start margin.
                 if (state.isLTR) {
-                    r.right = section.getHeaderStartMargin() + getPaddingStart();
+                    r.right = section.getHeaderMarginStart() + getPaddingStart();
                     r.left = r.right - width;
                 } else {
-                    r.left = getWidth() - section.getHeaderStartMargin() - getPaddingStart();
+                    r.left = getWidth() - section.getHeaderMarginStart() - getPaddingStart();
                     r.right = r.left + width;
                 }
             } else if (state.isLTR) {
@@ -816,7 +832,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         private static final boolean DEFAULT_IS_HEADER = false;
 
-        private static final int HEADER_NONE = -0x01;
+        private static final int NO_FIRST_POSITION = -0x01;
 
         private static final int DEFAULT_HEADER_MARGIN = -0x01;
 
@@ -826,17 +842,17 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public int headerDisplay;
 
-        public int sectionFirstPosition;
+        public int layoutId;
 
-        public int section;
+        public int headerMarginEnd;
 
-        public int headerEndMargin;
-
-        public int headerStartMargin;
+        public int headerMarginStart;
 
         public boolean headerStartMarginIsAuto;
 
         public boolean headerEndMarginIsAuto;
+
+        private int mFirstPosition;
 
         public LayoutParams(int width, int height) {
             super(width, height);
@@ -856,43 +872,46 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             headerDisplay = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_headerDisplay,
                     DEFAULT_HEADER_DISPLAY);
-            sectionFirstPosition = a.getInt(
-                    R.styleable.superslim_LayoutManager_slm_sectionFirstPosition,
-                    HEADER_NONE);
-            section = a.getInt(
-                    R.styleable.superslim_LayoutManager_slm_section,
+            mFirstPosition = a.getInt(
+                    R.styleable.superslim_LayoutManager_slm_section_firstPosition,
+                    NO_FIRST_POSITION);
+            layoutId = a.getInt(
+                    R.styleable.superslim_LayoutManager_slm_section_layoutId,
                     0);
 
             // Header margin types can be dimension or integer (enum).
             boolean isDimension;
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 TypedValue value = new TypedValue();
-                a.getValue(R.styleable.superslim_LayoutManager_slm_headerStartMargin, value);
+                a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginStart,
+                        value);
                 isDimension = value.type == TypedValue.TYPE_DIMENSION;
             } else {
-                isDimension = a.getType(R.styleable.superslim_LayoutManager_slm_headerStartMargin)
-                        == TypedValue.TYPE_DIMENSION;
+                isDimension =
+                        a.getType(R.styleable.superslim_LayoutManager_slm_section_headerMarginStart)
+                                == TypedValue.TYPE_DIMENSION;
             }
             if (isDimension) {
                 headerStartMarginIsAuto = false;
-                headerStartMargin = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_headerStartMargin, 0);
+                headerMarginStart = a.getDimensionPixelSize(
+                        R.styleable.superslim_LayoutManager_slm_section_headerMarginStart, 0);
             } else {
                 headerStartMarginIsAuto = true;
             }
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 TypedValue value = new TypedValue();
-                a.getValue(R.styleable.superslim_LayoutManager_slm_headerEndMargin, value);
+                a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, value);
                 isDimension = value.type == TypedValue.TYPE_DIMENSION;
             } else {
-                isDimension = a.getType(R.styleable.superslim_LayoutManager_slm_headerEndMargin)
-                        == TypedValue.TYPE_DIMENSION;
+                isDimension =
+                        a.getType(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd)
+                                == TypedValue.TYPE_DIMENSION;
             }
             if (isDimension) {
                 headerEndMarginIsAuto = false;
-                headerEndMargin = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_headerEndMargin, 0);
+                headerMarginEnd = a.getDimensionPixelSize(
+                        R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, 0);
             } else {
                 headerEndMarginIsAuto = true;
             }
@@ -907,6 +926,41 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
+        }
+
+        /**
+         * Get the first position for the section to which this param's item belongs.
+         *
+         * @return A value >= 0.
+         */
+        public int getFirstPosition() {
+            return mFirstPosition;
+        }
+
+        /**
+         * Set the first position for the section to which this param's item belongs.
+         *
+         * @param firstPosition First position of section for this param's item. Must be >= 0 or an
+         *                      InvalidFirstPositionException runtime exception will be thrown.
+         */
+        public void setFirstPosition(int firstPosition) {
+            if (firstPosition < 0) {
+                throw new InvalidFirstPositionException();
+            }
+            mFirstPosition = firstPosition;
+        }
+
+        /**
+         * Get the first position for the section to which this param's item belongs. Will throw a
+         * MissingFirstPositionException runtime exception if the value is < 0.
+         *
+         * @return A value >= 0.
+         */
+        public int getTestedFirstPosition() {
+            if (mFirstPosition == NO_FIRST_POSITION) {
+                throw new MissingFirstPositionException();
+            }
+            return mFirstPosition;
         }
 
         public boolean isHeaderEndAligned() {
@@ -934,29 +988,35 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 final LayoutParams lp = (LayoutParams) other;
                 isHeader = lp.isHeader;
                 headerDisplay = lp.headerDisplay;
-                sectionFirstPosition = lp.sectionFirstPosition;
-                section = lp.section;
-                headerEndMargin = lp.headerEndMargin;
-                headerStartMargin = lp.headerStartMargin;
+                mFirstPosition = lp.mFirstPosition;
+                layoutId = lp.layoutId;
+                headerMarginEnd = lp.headerMarginEnd;
+                headerMarginStart = lp.headerMarginStart;
                 headerEndMarginIsAuto = lp.headerEndMarginIsAuto;
                 headerStartMarginIsAuto = lp.headerStartMarginIsAuto;
             } else {
                 isHeader = DEFAULT_IS_HEADER;
                 headerDisplay = DEFAULT_HEADER_DISPLAY;
-                headerEndMargin = DEFAULT_HEADER_MARGIN;
-                headerStartMargin = DEFAULT_HEADER_MARGIN;
+                headerMarginEnd = DEFAULT_HEADER_MARGIN;
+                headerMarginStart = DEFAULT_HEADER_MARGIN;
                 headerStartMarginIsAuto = true;
                 headerEndMarginIsAuto = true;
             }
         }
 
+        private class MissingFirstPositionException extends RuntimeException {
 
-    }
+            MissingFirstPositionException() {
+                super("Missing section first position.");
+            }
+        }
 
-    public static abstract class SlmFactory {
+        private class InvalidFirstPositionException extends RuntimeException {
 
-        abstract public SectionLayoutManager getSectionLayoutManager(LayoutManager layoutManager,
-                int section);
+            InvalidFirstPositionException() {
+                super("Invalid section first position given.");
+            }
+        }
     }
 
     protected static class SavedState implements Parcelable {
@@ -995,6 +1055,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         public void writeToParcel(Parcel out, int flags) {
             out.writeInt(anchorPosition);
             out.writeInt(anchorOffset);
+        }
+    }
+
+    private class UnknownSectionLayoutException extends RuntimeException {
+
+        public UnknownSectionLayoutException(int layoutId) {
+            super("No registered layout for id " + layoutId + ".");
         }
     }
 }
