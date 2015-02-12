@@ -19,8 +19,7 @@ import android.view.ViewGroup;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
- * sections
- * to view layout managers to layout items.
+ * sections to view layout managers to layout items.
  */
 public class LayoutManager extends RecyclerView.LayoutManager {
 
@@ -169,24 +168,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          */
 
         // Get start views.
-        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).layoutId;
-        SectionLayoutManager manager = getSectionLayoutManager(startSection);
+        LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
 
-        View startSectionFirstView = manager.getFirstView(startSection);
-        View startHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
-                Direction.END);
-        int startSectionHighestEdge = manager.getHighestEdge(startSection, getPaddingTop());
+        int startSectionFirstPosition = lp.getTestedFirstPosition();
+        View startSectionFirstView = manager.getFirstView(startSectionFirstPosition);
+        View startHeaderView = findAttachedHeaderForSection(
+                state.getItemCount(), startSectionFirstPosition, Direction.END);
+        int startSectionHighestEdge = manager.getHighestEdge(
+                startSectionFirstPosition, getPaddingTop());
 
         // Get end views.
-        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1)
-                .getLayoutParams()).layoutId;
-        manager = getSectionLayoutManager(endSection);
+        lp = (LayoutParams) getChildAt(getChildCount() - 1)
+                .getLayoutParams();
+        int endSectionFirstPosition = lp.getTestedFirstPosition();
+        manager = getSectionLayoutManager(lp.layoutId);
 
-        View endSectionLastView = manager.getLastView(endSection);
-        View endHeaderView = findAttachedHeaderForSection(state.getItemCount(), endSection,
-                Direction.START);
-        int endSectionLowestEdge = manager
-                .getLowestEdge(endSection, getHeight() - getPaddingBottom());
+        View endSectionLastView = manager.getLastView(endSectionFirstPosition);
+        View endHeaderView = findAttachedHeaderForSection(
+                state.getItemCount(), endSectionFirstPosition, Direction.START);
+        int endSectionLowestEdge = manager.getLowestEdge(
+                endSectionFirstPosition, getHeight() - getPaddingBottom());
 
         //Work out if reached start.
         final boolean startDisplayed;
@@ -584,15 +586,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * Find a view that is the header for the specified section. Looks in direction specified from
      * opposite end.
      *
-     * @param itemCount Current number of items in adapter.
-     * @param section   Section to look for header inside of. Search is expected to start inside
-     *                  the
-     *                  section so it must be at the matching end specified by the direction.
-     * @param direction Direction to look in. Direction.END means to look from the start to the
-     *                  end.
+     * @param itemCount            Current number of items in adapter.
+     * @param sectionFirstPosition Section to look for header inside of. Search is expected to start
+     *                             inside the section so it must be at the matching end specified by
+     *                             the direction.
+     * @param direction            Direction to look in. Direction.END means to look from the start
+     *                             to the end.
      * @return Null if no header found, otherwise the header view.
      */
-    private View findAttachedHeaderForSection(final int itemCount, final int section,
+    private View findAttachedHeaderForSection(final int itemCount, final int sectionFirstPosition,
             final Direction direction) {
         int position = direction == Direction.END ? 0 : getChildCount() - 1;
         int nextStep = direction == Direction.END ? 1 : -1;
@@ -602,7 +604,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 continue;
             }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
-            if (params.layoutId != section) {
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
                 break;
             } else if (params.isHeader) {
                 return child;
@@ -724,8 +726,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getDirectionToPosition(int targetPosition) {
-        final int layoutId = ((LayoutParams) getChildAt(0).getLayoutParams()).layoutId;
-        final View startSectionFirstView = getSectionLayoutManager(layoutId).getFirstView(layoutId);
+        LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        final View startSectionFirstView = getSectionLayoutManager(lp.layoutId)
+                .getFirstView(lp.getTestedFirstPosition());
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 

@@ -28,7 +28,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public View getFirstView(int section) {
+    public View getFirstView(int sectionFirstPosition) {
         int lookAt = 0;
         int childCount = mLayoutManager.getChildCount();
         View candidate = null;
@@ -39,10 +39,12 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
             View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (section == lp.layoutId && !lp.isHeader) {
-                return view;
-            } else if (section == lp.layoutId) {
-                candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (!lp.isHeader) {
+                    return view;
+                } else {
+                    candidate = view;
+                }
             }
 
             lookAt += 1;
@@ -50,7 +52,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public View getLastView(int section) {
+    public View getLastView(int sectionFirstPosition) {
         int lookAt = mLayoutManager.getChildCount() - 1;
         View candidate = null;
         while (true) {
@@ -60,23 +62,25 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
             View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (section == lp.layoutId && !lp.isHeader) {
-                return view;
-            } else if (section == lp.layoutId) {
-                candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (!lp.isHeader) {
+                    return view;
+                } else {
+                    candidate = view;
+                }
             }
             lookAt -= 1;
         }
     }
 
     @Override
-    public int getHighestEdge(int section, int startEdge) {
+    public int getHighestEdge(int sectionFirstPosition, int startEdge) {
         // Look from start to find children that are the highest.
         for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.layoutId != section) {
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
                 break;
             }
             if (params.isHeader) {
@@ -89,7 +93,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int getLowestEdge(int section, int endEdge) {
+    public int getLowestEdge(int sectionFirstPosition, int endEdge) {
         // Look from end to find children that are the lowest.
         int bottomMostEdge = 0;
         int leftPosition = mLayoutManager.getWidth();
@@ -97,7 +101,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.layoutId != section) {
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
                 break;
             }
             if (params.isHeader) {
@@ -268,7 +272,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             LayoutState.View next = state.getView(nextPosition);
             LayoutManager.LayoutParams nextParams = next.getLayoutParams();
             // Only measure and keep children belonging to the section.
-            if (nextParams.layoutId == section.getLayoutId()) {
+            if (nextParams.getTestedFirstPosition() == section.getFirstPosition()) {
                 measureChild(section, next);
                 // Detect already attached children and adjust effective markerline from it.
                 if (!rowAlreadyPositioned && next.wasCached) {
@@ -421,7 +425,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             LayoutState.View child = state.getView(currentPosition);
 
             LayoutManager.LayoutParams params = child.getLayoutParams();
-            if (params.isHeader || params.layoutId != section.getLayoutId()) {
+            if (params.isHeader || params.getTestedFirstPosition() != section.getFirstPosition()) {
                 state.recycleView(child);
                 break;
             }

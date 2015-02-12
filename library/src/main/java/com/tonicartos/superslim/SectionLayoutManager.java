@@ -22,10 +22,10 @@ public abstract class SectionLayoutManager {
     /**
      * Locate the view which has the earliest adapter position.
      *
-     * @param section Section id.
+     * @param sectionFirstPosition Section id.
      * @return View.
      */
-    public abstract View getFirstView(int section);
+    public abstract View getFirstView(int sectionFirstPosition);
 
     public int getHeaderEndMargin() {
         return MARGIN_UNSET;
@@ -39,21 +39,21 @@ public abstract class SectionLayoutManager {
      * Find the highest displayed edge of the section. If there is no member found then return the
      * start edge instead.
      */
-    public abstract int getHighestEdge(int section, int startEdge);
+    public abstract int getHighestEdge(int sectionFirstPosition, int startEdge);
 
     /**
      * Locate the view which has the latest adapter position.
      *
-     * @param section Section id.
+     * @param sectionFirstPosition Section id.
      * @return View.
      */
-    public abstract View getLastView(int section);
+    public abstract View getLastView(int sectionFirstPosition);
 
     /**
      * Find the lowest displayed edge of the section. IF there is no member found then return the
      * end edge instead.
      */
-    public abstract int getLowestEdge(int section, int endEdge);
+    public abstract int getLowestEdge(int sectionFirstPosition, int endEdge);
 
 
 }
