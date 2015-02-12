@@ -3,65 +3,96 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
     <title>SuperSLiM by TonicArtos</title>
   </head>
 
   <body>
-    <div id="container">
+    <header>
       <div class="inner">
+        <h1>SuperSLiM</h1>
+        <h2>A highly configurable section based layout manager with headers and all that.</h2>
+        <a href="https://github.com/TonicArtos/SuperSLiM" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
 
-        <header>
-          <h1>SuperSLiM</h1>
-          <h2>A highly configurable section based layout manager with headers and all that.</h2>
-        </header>
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <p><img src="https://img.shields.io/maven-central/v/com.tonicartos/superslim.svg?style=flat-square" alt="Maven central version"></p>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/TonicArtos/SuperSLiM/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/TonicArtos/SuperSLiM/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/TonicArtos/SuperSLiM" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+<p>SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.</p>
 
-        <hr>
-
-        <section id="main_content">
-
-<p>SuperSLiM is a layout manager for the RecyclerView with interchangeable linear, grid, and staggered displays of views, all with configurable section headers including the sticky variety as specified in the material design docs.</p>
+<p>SuperSLiM also has a maintained <a href="https://github.com/TonicArtos/SuperSLiM/wiki">wiki</a> with guides and documentation to help you out.</p>
 
 <h2>
-<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+<a id="feature-overview" class="anchor" href="#feature-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Feature Overview</h2>
 
-<ul>
-<li>Section Headers
+<p><strong>Section Headers</strong>  </p>
 
 <ul>
 <li>Sticky headers</li>
-<li>Headers in content margins</li>
+<li>Headers in content margins - <em>like Google Calendar with Material Design</em>
+</li>
 <li>Header overlays</li>
 </ul>
-</li>
-<li>Individual layouts for each section at the same time
+
+<p><strong>Section Layouts</strong>  </p>
 
 <ul>
 <li>Linear</li>
 <li>Grid</li>
-<li>Staggered Grid <em>not yet implemented</em></li>
-</ul>
+<li>Staggered Grid - <em>not yet implemented</em>
 </li>
+<li>or create your own</li>
 </ul>
+
+<p><strong>Support for RTL languages</strong>  </p>
+
 <p>See the <a href="https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap">Roadmap</a> for more details and future development.</p>
-<p><img src="https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif" alt="SuperSLiM layout animation."></p>
 
 <h2>
 <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
 
-<p>Please refer to the <a href="https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide">user guide</a>.</p>
+<h3>
+<a id="including-in-your-project" class="anchor" href="#including-in-your-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Including in your project</h3>
+
+<p>Add the following to your build.gradle file.</p>
+
+<pre><code>dependencies {
+    compile 'com.tonicartos:superslim:+'
+}
+</code></pre>
+
+<p>You can replace the '+' with the exact version if you do not want to always sync to the latest version.</p>
+
+<p>For more detail please refer to the <a href="https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started">Getting Started</a> and <a href="https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide">User Guide</a> wiki pages.</p>
+
+<h2>
+<a id="support" class="anchor" href="#support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support</h2>
+
+<ul>
+<li><a href="https://github.com/TonicArtos/SuperSLiM/wiki">Wiki</a></li>
+<li><a href="https://plus.google.com/communities/104097089134643994744">Google+ Community</a></li>
+<li>
+<a href="https://stackoverflow.com/questions/tagged/superslim">Stack Overflow</a> <em>(Please tag questions with superslim)</em>.</li>
+</ul>
+
+<h2>
+<a id="samples" class="anchor" href="#samples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Samples</h2>
+
+<p>Included in the repository.</p>
+
+<p><a href="https://github.com/TonicArtos/SuperSLiM/tree/master/example"><img src="https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif" alt="Example App"></a></p>
 
 <h2>
 <a id="acknowledgements" class="anchor" href="#acknowledgements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Acknowledgements</h2>
@@ -93,12 +124,24 @@ limitations under the License.
 </code></pre>
         </section>
 
-        <footer>
-          SuperSLiM is maintained by <a href="https://github.com/TonicArtos">TonicArtos</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
+        <aside id="sidebar">
+          <a href="https://github.com/TonicArtos/SuperSLiM/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/TonicArtos/SuperSLiM/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
 
-                  <script type="text/javascript">
+          <p class="repo-owner"><a href="https://github.com/TonicArtos/SuperSLiM"></a> is maintained by <a href="https://github.com/TonicArtos">TonicArtos</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+            <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -109,7 +152,5 @@ limitations under the License.
             } catch(err) {}
           </script>
 
-      </div>
-    </div>
   </body>
 </html>
