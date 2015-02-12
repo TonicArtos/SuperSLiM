@@ -11,11 +11,11 @@
         </attr>
         <attr name="slm_sectionFirstPosition" format="integer"/>
         <attr name="slm_section" format="integer"/>
-        <attr name="slm_headerStartMargin" format="enum|dimension">
-            <enum name="auto" value="-1"/>
+        <attr name="slm_section_headerMarginStart" format="enum|dimension">
+            <enum name="match_header" value="-1" />
         </attr>
-        <attr name="slm_headerEndMargin" format="enum|dimension">
-            <enum name="auto" value="-1"/>
+        <attr name="slm_section_headerMarginEnd" format="enum|dimension">
+            <enum name="match_header" value="-1" />
         </attr>
     </declare-styleable>
 </resources>
