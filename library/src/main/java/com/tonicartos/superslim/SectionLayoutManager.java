@@ -19,6 +19,11 @@ public abstract class SectionLayoutManager {
      */
     public abstract FillResult fill(LayoutState state, SectionData sectionData);
 
+    public int getAnchorPosition(LayoutState state, SectionData params,
+            int position) {
+        return position;
+    }
+
     /**
      * Locate the view which has the earliest adapter position.
      *

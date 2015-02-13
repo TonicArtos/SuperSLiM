@@ -28,6 +28,41 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public FillResult fill(LayoutState state, SectionData section) {
+        final int itemCount = state.recyclerState.getItemCount();
+        final int height = mLayoutManager.getHeight();
+
+        calculateColumnWidthValues(section);
+
+        FillResult fillResult;
+        if (section.isFillDirectionStart()) {
+            fillResult = fillToStart(state, section);
+        } else if (section.isFillDirectionEnd()) {
+            fillResult = fillToEnd(state, section);
+        } else {
+            fillResult = fillSection(state, section);
+        }
+
+        fillResult.headerOffset = calculateHeaderOffset(state, section, itemCount,
+                fillResult.positionStart);
+
+        return fillResult;
+    }
+
+    @Override
+    public int getAnchorPosition(LayoutState state, SectionData section, int position) {
+        calculateColumnWidthValues(section);
+
+        int firstPosition = section.getFirstPosition();
+        LayoutState.View firstView = state.getView(firstPosition);
+        if (firstView.getLayoutParams().isHeader) {
+            firstPosition += 1;
+        }
+        state.recycleView(firstView);
+        return position - ((position - firstPosition) % mNumColumns);
+    }
+
+    @Override
     public View getFirstView(int sectionFirstPosition) {
         int lookAt = 0;
         int childCount = mLayoutManager.getChildCount();
@@ -52,6 +87,25 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public int getHighestEdge(int sectionFirstPosition, int startEdge) {
+        // Look from start to find children that are the highest.
+        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
+            View child = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                    .getLayoutParams();
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+                break;
+            }
+            if (params.isHeader) {
+                continue;
+            }
+            // A more interesting layout would have to do something more here.
+            return mLayoutManager.getDecoratedTop(child);
+        }
+        return startEdge;
+    }
+
+    @Override
     public View getLastView(int sectionFirstPosition) {
         int lookAt = mLayoutManager.getChildCount() - 1;
         View candidate = null;
@@ -71,25 +125,6 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             }
             lookAt -= 1;
         }
-    }
-
-    @Override
-    public int getHighestEdge(int sectionFirstPosition, int startEdge) {
-        // Look from start to find children that are the highest.
-        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
-            View child = mLayoutManager.getChildAt(i);
-            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
-                    .getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
-                break;
-            }
-            if (params.isHeader) {
-                continue;
-            }
-            // A more interesting layout would have to do something more here.
-            return mLayoutManager.getDecoratedTop(child);
-        }
-        return startEdge;
     }
 
     @Override
@@ -120,28 +155,6 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             }
         }
         return bottomMostEdge;
-    }
-
-    @Override
-    public FillResult fill(LayoutState state, SectionData section) {
-        final int itemCount = state.recyclerState.getItemCount();
-        final int height = mLayoutManager.getHeight();
-
-        calculateColumnWidthValues(section);
-
-        FillResult fillResult;
-        if (section.isFillDirectionStart()) {
-            fillResult = fillToStart(state, section);
-        } else if (section.isFillDirectionEnd()) {
-            fillResult = fillToEnd(state, section);
-        } else {
-            fillResult = fillSection(state, section);
-        }
-
-        fillResult.headerOffset = calculateHeaderOffset(state, section, itemCount,
-                fillResult.positionStart);
-
-        return fillResult;
     }
 
     public void setColumnMinimumWidth(int minimumWidth) {
@@ -419,6 +432,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
         int markerLine = anchorLine;
         int currentPosition = anchorPosition;
+
         while ((direction == LayoutManager.Direction.START && currentPosition >= 0
                 && markerLine >= 0) || (direction == LayoutManager.Direction.END
                 && currentPosition < itemCount && markerLine < parentHeight)) {
