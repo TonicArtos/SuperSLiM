@@ -108,21 +108,25 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-        final int anchorPosition;
+        final int requestedPosition;
         final int borderLine;
 
         if (mRequestPosition != NO_POSITION_REQUEST) {
-            anchorPosition = mRequestPosition;
+            requestedPosition = mRequestPosition;
             mRequestPosition = NO_POSITION_REQUEST;
             borderLine = mRequestPositionOffset;
             mRequestPositionOffset = 0;
         } else {
             View anchorView = getAnchorChild(itemCount);
-            anchorPosition = anchorView == null ? 0 : getPosition(anchorView);
+            requestedPosition = anchorView == null ? 0 : getPosition(anchorView);
             borderLine = getBorderLine(anchorView, Direction.END);
         }
 
         detachAndScrapAttachedViews(recycler);
+
+        final int anchorPosition = determineAnchorPosition(
+                new LayoutState(this, recycler, state), requestedPosition);
+
         fill(recycler, state, anchorPosition, borderLine, true);
     }
 
@@ -383,6 +387,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return state;
     }
 
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        mRequestPosition = ((SavedState) state).anchorPosition;
+        mRequestPositionOffset = ((SavedState) state).anchorOffset;
+        requestLayout();
+    }
+
 //    @Override
 //    public int computeVerticalScrollExtent(RecyclerView.State state) {
 //        if (!mSmoothScrollEnabled) {
@@ -464,13 +475,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 //        return state.getItemCount() * 10;
 //    }
 
-    @Override
-    public void onRestoreInstanceState(Parcelable state) {
-        mRequestPosition = ((SavedState) state).anchorPosition;
-        mRequestPositionOffset = ((SavedState) state).anchorOffset;
-        requestLayout();
-    }
-
     /**
      * Register a SectionLayoutManager.
      *
@@ -506,6 +510,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final boolean fillFromFirst = finalStartPosition == 0;
         final boolean filledToLast = finalEndPosition == state.recyclerState.getItemCount() - 1;
         return fillFromFirst && filledToLast;
+    }
+
+    private int determineAnchorPosition(LayoutState state, int position) {
+        SectionData section = new SectionData(this, state, Direction.NONE, position, 0);
+        return mSectionLayouts.get(section.getLayoutId())
+                .getAnchorPosition(state, section, position);
     }
 
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State rvs,

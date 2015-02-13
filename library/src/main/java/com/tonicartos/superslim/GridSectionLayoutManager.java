@@ -412,6 +412,19 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return fillResult;
     }
 
+    @Override
+    public int getAnchorPosition(LayoutState state, SectionData section, int position) {
+        calculateColumnWidthValues(section);
+
+        int firstPosition = section.getFirstPosition();
+        LayoutState.View firstView = state.getView(firstPosition);
+        if (firstView.getLayoutParams().isHeader) {
+            firstPosition += 1;
+        }
+        state.recycleView(firstView);
+        return position - ((position - firstPosition) % mNumColumns);
+    }
+
     private FillResult fillViews(LayoutState state, SectionData section, FillResult fillResult,
             int anchorPosition, final int anchorLine, LayoutManager.Direction direction) {
         final int itemCount = state.recyclerState.getItemCount();
@@ -419,6 +432,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
         int markerLine = anchorLine;
         int currentPosition = anchorPosition;
+
         while ((direction == LayoutManager.Direction.START && currentPosition >= 0
                 && markerLine >= 0) || (direction == LayoutManager.Direction.END
                 && currentPosition < itemCount && markerLine < parentHeight)) {
