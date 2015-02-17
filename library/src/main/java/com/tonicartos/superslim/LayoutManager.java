@@ -306,11 +306,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
+        final int anchorPosition;
+        LayoutState layoutState = new LayoutState(this, recycler, state);
         if (delta > 0) {
-            fill(recycler, state, getPosition(startSectionFirstView), 0, false);
+            anchorPosition = determineAnchorPosition(
+                    layoutState, getPosition(startSectionFirstView));
         } else {
-            fill(recycler, state, getPosition(endSectionLastView), 0, false);
+            anchorPosition = determineAnchorPosition(
+                    layoutState, getPosition(endSectionLastView));
         }
+        fill(recycler, state, anchorPosition, 0, false);
 
         return -delta;
     }
