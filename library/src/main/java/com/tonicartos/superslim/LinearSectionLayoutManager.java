@@ -244,6 +244,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
             LayoutManager.LayoutParams params = child.getLayoutParams();
             if (params.isHeader || params.getTestedFirstPosition() != section.getFirstPosition()) {
+                state.recycleView(child);
                 break;
             }
             measureChild(section, child);
