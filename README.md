@@ -1,6 +1,7 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-[![GitHub release](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](../releases/latest)![Maven central version](https://img.shields.io/maven-central/v/com.tonicartos/superslim.svg?style=flat-square)
+[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](../releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
+
 
 SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.
 
