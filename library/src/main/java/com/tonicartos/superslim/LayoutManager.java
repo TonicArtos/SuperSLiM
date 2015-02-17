@@ -95,7 +95,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     public FillResult layoutAndAddHeader(LayoutState state, SectionData section,
             FillResult fillResult) {
-        final LayoutState.View header = section.getSectionHeader();
+        final LayoutState.View header = section.getSectionHeader(state);
         final LayoutParams params = header.getLayoutParams();
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
@@ -306,11 +306,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         offsetChildrenVertical(delta);
 
+        final int anchorPosition;
+        LayoutState layoutState = new LayoutState(this, recycler, state);
         if (delta > 0) {
-            fill(recycler, state, getPosition(startSectionFirstView), 0, false);
+            anchorPosition = determineAnchorPosition(
+                    layoutState, getPosition(startSectionFirstView));
         } else {
-            fill(recycler, state, getPosition(endSectionLastView), 0, false);
+            anchorPosition = determineAnchorPosition(
+                    layoutState, getPosition(endSectionLastView));
         }
+        fill(recycler, state, anchorPosition, 0, false);
 
         return -delta;
     }

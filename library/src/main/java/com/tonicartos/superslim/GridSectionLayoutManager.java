@@ -213,6 +213,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         addData.earliestIndexAddedTo = -1;
 
         LayoutManager.LayoutParams params = startChild.getLayoutParams();
+        state.recycleView(startChild);
         int sectionFirst = params.getTestedFirstPosition();
         LayoutState.View sectionFirstView = state.getView(sectionFirst);
         LayoutManager.LayoutParams firstParams = sectionFirstView.getLayoutParams();
@@ -236,6 +237,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 rowViews[i] = null;
                 continue;
             }
+
             LayoutState.View next = state.getView(nextPosition);
             LayoutManager.LayoutParams nextParams = next.getLayoutParams();
             // Only measure and keep children belonging to the section.
@@ -250,7 +252,10 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 rowHeight = height > rowHeight ? height : rowHeight;
             } else {
                 state.recycleView(next);
-                next = null;
+                for (;i < mNumColumns; i++) {
+                    rowViews[i] = null;
+                }
+                break;
             }
             rowViews[i] = next;
         }
