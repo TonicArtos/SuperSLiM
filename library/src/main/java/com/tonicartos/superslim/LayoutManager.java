@@ -941,7 +941,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         /**
          * Get the first position for the section to which this param's item belongs.
          *
-         * @return A value >= 0.
+         * @return A value {@literal <=} 0.
          */
         public int getFirstPosition() {
             return mFirstPosition;
@@ -950,7 +950,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         /**
          * Set the first position for the section to which this param's item belongs.
          *
-         * @param firstPosition First position of section for this param's item. Must be >= 0 or an
+         * @param firstPosition First position of section for this param's item. Must be {@literal <=} 0 or an
          *                      InvalidFirstPositionException runtime exception will be thrown.
          */
         public void setFirstPosition(int firstPosition) {
@@ -962,9 +962,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         /**
          * Get the first position for the section to which this param's item belongs. Will throw a
-         * MissingFirstPositionException runtime exception if the value is < 0.
+         * MissingFirstPositionException runtime exception if the value is {@literal <} 0.
          *
-         * @return A value >= 0.
+         * @return A value {@literal >=} 0.
          */
         public int getTestedFirstPosition() {
             if (mFirstPosition == NO_FIRST_POSITION) {
