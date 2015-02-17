@@ -9,52 +9,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public View getFirstView(int sectionFirstPosition) {
-        int lookAt = 0;
-        int childCount = mLayoutManager.getChildCount();
-        View candidate = null;
-        while (true) {
-            if (lookAt >= childCount) {
-                return candidate;
-            }
-
-            android.view.View view = mLayoutManager.getChildAt(lookAt);
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
-                if (!lp.isHeader) {
-                    return view;
-                } else {
-                    candidate = view;
-                }
-            }
-
-            lookAt += 1;
-        }
-    }
-
-    @Override
-    public android.view.View getLastView(int sectionFirstPosition) {
-        int lookAt = mLayoutManager.getChildCount() - 1;
-        View candidate = null;
-        while (true) {
-            if (lookAt < 0) {
-                return candidate;
-            }
-
-            android.view.View view = mLayoutManager.getChildAt(lookAt);
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
-                if (!lp.isHeader) {
-                    return view;
-                } else {
-                    candidate = view;
-                }
-            }
-            lookAt -= 1;
-        }
-    }
-
-    @Override
     public int getHighestEdge(int sectionFirstPosition, int startEdge) {
         // Look from start to find children that are the highest.
         for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
