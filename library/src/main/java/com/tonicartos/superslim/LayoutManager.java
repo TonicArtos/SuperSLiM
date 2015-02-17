@@ -37,6 +37,54 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mSmoothScrollEnabled = false;
 
+    /**
+     * Find the position of the first completely visible item.
+     *
+     * @return Position of first completely visible item.
+     */
+    public int findFirstCompletelyVisibleItemPosition() {
+        final LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+
+        return manager.findFirstCompletelyVisibleItemPosition(lp.getTestedFirstPosition());
+    }
+
+    /**
+     * Find the position of the first visible item.
+     *
+     * @return Position of first visible item.
+     */
+    public int findFirstVisibleItemPosition() {
+        final LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+
+        return manager.findFirstVisibleItemPosition(lp.getTestedFirstPosition());
+    }
+
+    /**
+     * Find the position of the last completely visible item.
+     *
+     * @return Position of last completely visible item.
+     */
+    public int findLastCompletelyVisibleItemPosition() {
+        final LayoutParams lp = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+
+        return manager.findLastCompletelyVisibleItemPosition(lp.getTestedFirstPosition());
+    }
+
+    /**
+     * Find the position of the last visible item.
+     *
+     * @return Position of last visible item.
+     */
+    public int findLastVisibleItemPosition() {
+        final LayoutParams lp = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+
+        return manager.findLastVisibleItemPosition(lp.getTestedFirstPosition());
+    }
+
     public boolean isSmoothScrollEnabled() {
         return mSmoothScrollEnabled;
     }
@@ -176,7 +224,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
 
         int startSectionFirstPosition = lp.getTestedFirstPosition();
-        View startSectionFirstView = manager.getFirstView(startSectionFirstPosition);
+        View startSectionFirstView = manager.getFirstVisibleView(startSectionFirstPosition, true);
         View startHeaderView = findAttachedHeaderForSection(
                 state.getItemCount(), startSectionFirstPosition, Direction.END);
         int startSectionHighestEdge = manager.getHighestEdge(
@@ -188,7 +236,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int endSectionFirstPosition = lp.getTestedFirstPosition();
         manager = getSectionLayoutManager(lp.layoutId);
 
-        View endSectionLastView = manager.getLastView(endSectionFirstPosition);
+        View endSectionLastView = manager.getLastVisibleView(endSectionFirstPosition);
         View endHeaderView = findAttachedHeaderForSection(
                 state.getItemCount(), endSectionFirstPosition, Direction.START);
         int endSectionLowestEdge = manager.getLowestEdge(
@@ -403,7 +451,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 //        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams())
 // .section;
 //        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
-//        View endView = manager.getLastView(endSection);
+//        View endView = manager.getLastVisibleView(endSection);
 //
 //        int topOffset = computeVerticalScrollOffset(state);
 //
@@ -429,7 +477,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 //
 //        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
 //        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
-//        View firstContentView = manager.getFirstView(startSection);
+//        View firstContentView = manager.getFirstVisibleView(startSection);
 //        View firstHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
 //                Direction.END);
 //
@@ -738,7 +786,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private int getDirectionToPosition(int targetPosition) {
         LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
         final View startSectionFirstView = getSectionLayoutManager(lp.layoutId)
-                .getFirstView(lp.getTestedFirstPosition());
+                .getFirstVisibleView(lp.getTestedFirstPosition(), true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
@@ -950,8 +998,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         /**
          * Set the first position for the section to which this param's item belongs.
          *
-         * @param firstPosition First position of section for this param's item. Must be {@literal <=} 0 or an
-         *                      InvalidFirstPositionException runtime exception will be thrown.
+         * @param firstPosition First position of section for this param's item. Must be {@literal
+         *                      <=} 0 or an InvalidFirstPositionException runtime exception will be
+         *                      thrown.
          */
         public void setFirstPosition(int firstPosition) {
             if (firstPosition < 0) {
