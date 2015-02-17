@@ -1,6 +1,7 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-![Maven central version](https://img.shields.io/maven-central/v/com.tonicartos/superslim.svg?style=flat-square)
+[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](../releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
+
 
 SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.
 
@@ -45,6 +46,9 @@ Included in the repository.
 [![Example App](https://4.bp.blogspot.com/-ep46JKpGa84/VJhX1plWWCI/AAAAAAAAXZY/9A1ArrV3a3k/s1600/SuperSLiM-Demo-small.gif)](https://github.com/TonicArtos/SuperSLiM/tree/master/example)
 
 ## Acknowledgements
+Android Arsenal for its indexing of third party libraries.  
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-SuperSLiM-blue.svg?style=flat-square)](https://android-arsenal.com/details/1/1319)
+
 Thanks to Dave Smith for his introduction to writing a RecyclerView LayoutManager over at [Wires are Obsolete](http://wiresareobsolete.com/), and to Lucas Rocha for his [TwoWayView Library](http://github.com/lucasr/twoway-view/) which is worth checking out too.
 
 ## License
