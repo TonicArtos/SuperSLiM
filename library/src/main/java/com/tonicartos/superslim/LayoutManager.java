@@ -96,6 +96,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public FillResult layoutAndAddHeader(LayoutState state, SectionData section,
             FillResult fillResult) {
         final LayoutState.View header = section.getSectionHeader(state);
+        if (header == null) {
+            return fillResult;
+        }
+
         final LayoutParams params = header.getLayoutParams();
         final int width = getDecoratedMeasuredWidth(header.view);
         final int height = getDecoratedMeasuredHeight(header.view);
