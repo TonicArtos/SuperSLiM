@@ -431,6 +431,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
+    public int computeVerticalScrollExtent(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            return getChildCount();
+        }
+
+        return getChildCount();
+    }
+
+    @Override
+    public int computeVerticalScrollOffset(RecyclerView.State state) {
+//        if (!mSmoothScrollEnabled) {
+            final View v = getChildAt(0);
+            final int p = getPosition(v);
+            return p;
+//        }
+
+    }
+
+    @Override
+    public int computeVerticalScrollRange(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            return state.getItemCount();
+        }
+        return state.getItemCount();
+    }
+
+    @Override
     public Parcelable onSaveInstanceState() {
         SavedState state = new SavedState();
         View view = getAnchorChild(getItemCount());
@@ -451,92 +478,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         requestLayout();
     }
 
-//    @Override
-//    public int computeVerticalScrollExtent(RecyclerView.State state) {
-//        if (!mSmoothScrollEnabled) {
-//            return getChildCount();
-//        }
-//
-//        int endSection = ((LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams())
-// .section;
-//        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, endSection);
-//        View endView = manager.getLastVisibleView(endSection);
-//
-//        int topOffset = computeVerticalScrollOffset(state);
-//
-//        int lastContentPosition = getPosition(endView) + 1;
-//        int lastBottom = getDecoratedBottom(endView);
-//        int lastHeight = getDecoratedMeasuredHeight(endView);
-//        int bottomOffset = lastContentPosition * 10 - (lastBottom >= getHeight() ?
-//                (lastBottom - getHeight())
-//                        / (lastHeight / 10) : 0);
-//
-//        return bottomOffset - topOffset;
-//    }
-//
-//    @Override
-//    public int computeVerticalScrollOffset(RecyclerView.State state) {
-//        if (!mSmoothScrollEnabled) {
-//            final View v = getChildAt(0);
-//            final View v2 = getChildAt(2);
-//            final int p = getPosition(v);
-//            final int p2 = getPosition(v2);
-//            return p2 - p == 1 ? p : p2;
-//        }
-//
-//        int startSection = ((LayoutParams) getChildAt(0).getLayoutParams()).section;
-//        SectionLayoutManager manager = mSlmFactory.getSectionLayoutManager(this, startSection);
-//        View firstContentView = manager.getFirstVisibleView(startSection);
-//        View firstHeaderView = findAttachedHeaderForSection(state.getItemCount(), startSection,
-//                Direction.END);
-//
-//        int firstContentPosition = getPosition(firstContentView);
-//        int contentTop = getDecoratedTop(firstContentView);
-//        int contentHeight = getDecoratedMeasuredHeight(firstContentView);
-//
-//        if (firstHeaderView == null) {
-//            return (int) (firstContentPosition * 10
-//                    - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
-//        }
-//
-//        int headerPosition = getPosition(firstHeaderView);
-//        if (firstContentPosition - headerPosition == 1) {
-//            int i = 0;
-//            for (; i < getItemCount(); i++) {
-//                if (getChildAt(i) == firstContentView) {
-//                    break;
-//                }
-//            }
-//            if (i + 1 < getItemCount()) {
-//                View next = getChildAt(i + 1);
-//                LayoutParams nextParams = (LayoutParams) next.getLayoutParams();
-//                if (next == firstHeaderView || nextParams.section != startSection) {
-//                    int headerTop = getDecoratedTop(firstHeaderView);
-//                    int headerHeight = getDecoratedMeasuredHeight(firstHeaderView);
-//                    return (int) (headerPosition * 10
-//                            - (headerTop < 0 ? headerTop / (headerHeight / 20f) : 0));
-//                }
-//            }
-//            return (int) (headerPosition * 10
-//                    - (contentTop < 0 ? contentTop / (contentHeight / 20f) : 0));
-//        }
-//        return (int) (firstContentPosition * 10
-//                - (contentTop < 0 ? contentTop / (contentHeight / 10f) : 0));
-//    }
-//
-//    @Override
-//    public int computeVerticalScrollRange(RecyclerView.State state) {
-//        if (!mSmoothScrollEnabled) {
-//            return state.getItemCount();
-//        }
-//        return state.getItemCount() * 10;
-//    }
-
     /**
      * Register a SectionLayoutManager.
      *
-     * @param id Id of layout. Referenced by first section view.
-     * @param manager  SectionLayoutManager to register.
+     * @param id      Id of layout. Referenced by first section view.
+     * @param manager SectionLayoutManager to register.
      */
     public void registerSectionLayoutManager(int id, SectionLayoutManager manager) {
         mSectionLayouts.put(id, manager);
