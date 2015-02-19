@@ -13,9 +13,12 @@ import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+
+import java.util.ArrayList;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
@@ -770,14 +773,23 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private float getFractionOfContentAbove(RecyclerView.State state, boolean ignorePosition) {
+        float fractionOffscreen = 0;
+
         View child = getChildAt(0);
 
         final int anchorPosition = getPosition(child);
-        int countEarlier = 0;
+        int numBeforeAnchor = 0;
 
-        float height = getDecoratedMeasuredHeight(child);
         float top = getDecoratedTop(child);
-        float fractionOffscreen = top < 0 ? -top / height : 0;
+        float bottom = getDecoratedBottom(child);
+        if (bottom < 0) {
+            fractionOffscreen = 1;
+        } else if (0 <= top) {
+            fractionOffscreen = 0;
+        } else {
+            float height = getDecoratedMeasuredHeight(child);
+            fractionOffscreen = -top / height;
+        }
         LayoutParams params = (LayoutParams) child.getLayoutParams();
         if (params.isHeader && params.isHeaderInline()) {
             // Header must not be stickied as it is not attached after section items.
@@ -785,61 +797,89 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Run through all views in the section and add up values offscreen.
+        int firstPosition = -1;
+        SparseArray<Boolean> positionsOffscreen = new SparseArray<>();
         for (int i = 1; i < getChildCount(); i++) {
             child = getChildAt(i);
-            if (((LayoutParams) child.getLayoutParams()).sectionManager != params.sectionManager) {
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            if (lp.sectionManager != params.sectionManager) {
                 break;
             }
 
-            if (!ignorePosition && getPosition(child) < anchorPosition) {
-                countEarlier += 1;
+            final int position = getPosition(child);
+            if (!ignorePosition && position < anchorPosition) {
+                numBeforeAnchor += 1;
             }
 
             top = getDecoratedTop(child);
-            if (top >= 0) {
+            bottom = getDecoratedBottom(child);
+            if (bottom < 0) {
+                fractionOffscreen += 1;
+            } else if (0 <= top) {
                 continue;
+            } else {
+                float height = getDecoratedMeasuredHeight(child);
+                fractionOffscreen += -top / height;
             }
 
-            height = getDecoratedMeasuredHeight(child);
-            fractionOffscreen += -top / height;
+            if (!lp.isHeader) {
+                if (firstPosition == -1) {
+                    firstPosition = position;
+                }
+                positionsOffscreen.put(position, true);
+            }
         }
 
-        return fractionOffscreen - countEarlier;
+        return fractionOffscreen - numBeforeAnchor - getSectionLayoutManager(params.sectionManager)
+                .howManyMissingAbove(firstPosition, positionsOffscreen);
     }
 
     private float getFractionOfContentBelow(RecyclerView.State state, boolean ignorePosition) {
         final float parentHeight = getHeight();
-        View child = getChildAt(getChildCount() -1);
+        View child = getChildAt(getChildCount() - 1);
 
         final int anchorPosition = getPosition(child);
         int countAfter = 0;
 
         LayoutParams params = (LayoutParams) child.getLayoutParams();
-        float height = getDecoratedMeasuredHeight(child);
-        float bottom = getDecoratedBottom(child);
-        float fractionOffscreen = bottom > parentHeight ? (bottom - parentHeight) / height : 0;
 
+        float fractionOffscreen = 0;
+        int lastPosition = -1;
+        SparseArray<Boolean> positionsOffscreen = new SparseArray<>();
         // Run through all views in the section and add up values offscreen.
-        for (int i = 2; i <= getChildCount(); i++) {
+        for (int i = 1; i <= getChildCount(); i++) {
             child = getChildAt(getChildCount() - i);
-            if (((LayoutParams) child.getLayoutParams()).sectionManager != params.sectionManager) {
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            if (lp.sectionManager != params.sectionManager) {
                 break;
             }
 
-            if (!ignorePosition && getPosition(child) > anchorPosition) {
+            int position = getPosition(child);
+            if (!lp.isHeader && !ignorePosition && position > anchorPosition) {
                 countAfter += 1;
             }
 
-            bottom = getDecoratedBottom(child);
+            float bottom = getDecoratedBottom(child);
+            float top = getDecoratedTop(child);
             if (bottom <= parentHeight) {
                 continue;
+            } else if (parentHeight < top) {
+                fractionOffscreen += 1;
+            } else {
+                float height = getDecoratedMeasuredHeight(child);
+                fractionOffscreen += (bottom - parentHeight) / height;
             }
 
-            height = getDecoratedMeasuredHeight(child);
-            fractionOffscreen += (bottom - parentHeight) / height;
+            if (!lp.isHeader) {
+                if (lastPosition == -1) {
+                    lastPosition = position;
+                }
+                positionsOffscreen.put(position, true);
+            }
         }
 
-        return fractionOffscreen - countAfter;
+        return fractionOffscreen - countAfter - getSectionLayoutManager(params.sectionManager)
+                .howManyMissingBelow(lastPosition, positionsOffscreen);
     }
 
     private SectionLayoutManager getSectionLayoutManager(int sectionManager) {
