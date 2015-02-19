@@ -44,7 +44,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     public int findFirstCompletelyVisibleItemPosition() {
         final LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
-        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
 
         return manager.findFirstCompletelyVisibleItemPosition(lp.getTestedFirstPosition());
     }
@@ -56,7 +56,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     public int findFirstVisibleItemPosition() {
         final LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
-        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
 
         return manager.findFirstVisibleItemPosition(lp.getTestedFirstPosition());
     }
@@ -68,7 +68,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     public int findLastCompletelyVisibleItemPosition() {
         final LayoutParams lp = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
-        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
 
         return manager.findLastCompletelyVisibleItemPosition(lp.getTestedFirstPosition());
     }
@@ -80,7 +80,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     public int findLastVisibleItemPosition() {
         final LayoutParams lp = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
-        final SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+        final SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
 
         return manager.findLastVisibleItemPosition(lp.getTestedFirstPosition());
     }
@@ -225,7 +225,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Get start views.
         LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
-        SectionLayoutManager manager = getSectionLayoutManager(lp.layoutId);
+        SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
 
         int startSectionFirstPosition = lp.getTestedFirstPosition();
         View startSectionFirstView = manager.getFirstVisibleView(startSectionFirstPosition, true);
@@ -238,7 +238,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         lp = (LayoutParams) getChildAt(getChildCount() - 1)
                 .getLayoutParams();
         int endSectionFirstPosition = lp.getTestedFirstPosition();
-        manager = getSectionLayoutManager(lp.layoutId);
+        manager = getSectionLayoutManager(lp.sectionManager);
 
         View endSectionLastView = manager.getLastVisibleView(endSectionFirstPosition);
         View endHeaderView = findAttachedHeaderForSection(
@@ -535,11 +535,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     /**
      * Register a SectionLayoutManager.
      *
-     * @param layoutId Id of layout. Referenced by first section view.
+     * @param id Id of layout. Referenced by first section view.
      * @param manager  SectionLayoutManager to register.
      */
-    public void registerSectionLayoutManager(int layoutId, SectionLayoutManager manager) {
-        mSectionLayouts.put(layoutId, manager);
+    public void registerSectionLayoutManager(int id, SectionLayoutManager manager) {
+        mSectionLayouts.put(id, manager);
     }
 
     void measureHeader(LayoutState.View header) {
@@ -794,15 +794,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int getDirectionToPosition(int targetPosition) {
         LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
-        final View startSectionFirstView = getSectionLayoutManager(lp.layoutId)
+        final View startSectionFirstView = getSectionLayoutManager(lp.sectionManager)
                 .getFirstVisibleView(lp.getTestedFirstPosition(), true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
-    private SectionLayoutManager getSectionLayoutManager(int layoutId) {
-        SectionLayoutManager manager = mSectionLayouts.get(layoutId);
+    private SectionLayoutManager getSectionLayoutManager(int sectionManager) {
+        SectionLayoutManager manager = mSectionLayouts.get(sectionManager);
         if (manager == null) {
-            throw new UnknownSectionLayoutException(layoutId);
+            throw new UnknownSectionLayoutException(sectionManager);
         }
         return manager;
     }
@@ -909,7 +909,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public int headerDisplay;
 
-        public int layoutId;
+        public int sectionManager;
 
         public int headerMarginEnd;
 
@@ -942,8 +942,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mFirstPosition = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_section_firstPosition,
                     NO_FIRST_POSITION);
-            layoutId = a.getInt(
-                    R.styleable.superslim_LayoutManager_slm_section_layoutId,
+            sectionManager = a.getInt(
+                    R.styleable.superslim_LayoutManager_slm_section_sectionManager,
                     0);
 
             // Header margin types can be dimension or integer (enum).
@@ -1057,7 +1057,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 isHeader = lp.isHeader;
                 headerDisplay = lp.headerDisplay;
                 mFirstPosition = lp.mFirstPosition;
-                layoutId = lp.layoutId;
+                sectionManager = lp.sectionManager;
                 headerMarginEnd = lp.headerMarginEnd;
                 headerMarginStart = lp.headerMarginStart;
                 headerEndMarginIsAuto = lp.headerEndMarginIsAuto;
@@ -1128,8 +1128,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private class UnknownSectionLayoutException extends RuntimeException {
 
-        public UnknownSectionLayoutException(int layoutId) {
-            super("No registered layout for id " + layoutId + ".");
+        public UnknownSectionLayoutException(int id) {
+            super("No registered layout for id " + id + ".");
         }
     }
 }

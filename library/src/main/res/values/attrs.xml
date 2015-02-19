@@ -10,7 +10,7 @@
             <flag name="sticky" value="0x10" />
         </attr>
         <attr name="slm_section_firstPosition" format="integer" />
-        <attr name="slm_section_layoutId" format="integer" />
+        <attr name="slm_section_sectionManager" format="integer" />
         <attr name="slm_section_headerMarginStart" format="enum|dimension">
             <enum name="match_header" value="-1" />
         </attr>
