@@ -34,20 +34,20 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         //Insert headers into list of items.
         String lastHeader = "";
-        int layoutId = -1;
+        int sectionManager = -1;
         int headerCount = 0;
         int sectionFirstPosition = 0;
         for (int i = 0; i < countryNames.length; i++) {
             String header = countryNames[i].substring(0, 1);
             if (!TextUtils.equals(lastHeader, header)) {
                 // Insert new header view and update section data.
-                layoutId = (layoutId + 1) % 2;
+                sectionManager = (sectionManager + 1) % 2;
                 sectionFirstPosition = i + headerCount;
                 lastHeader = header;
                 headerCount += 1;
-                mItems.add(new LineItem(header, true, layoutId, sectionFirstPosition));
+                mItems.add(new LineItem(header, true, sectionManager, sectionFirstPosition));
             }
-            mItems.add(new LineItem(countryNames[i], false, layoutId, sectionFirstPosition));
+            mItems.add(new LineItem(countryNames[i], false, sectionManager, sectionFirstPosition));
         }
     }
 
@@ -93,7 +93,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
         }
-        lp.layoutId = item.layoutId;
+        lp.sectionManager = item.sectionManager;
         lp.setFirstPosition(item.sectionFirstPosition);
         itemView.setLayoutParams(lp);
     }
@@ -129,7 +129,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private static class LineItem {
 
-        public int layoutId;
+        public int sectionManager;
 
         public int sectionFirstPosition;
 
@@ -137,10 +137,10 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         public String text;
 
-        public LineItem(String text, boolean isHeader, int layoutId, int sectionFirstPosition) {
+        public LineItem(String text, boolean isHeader, int sectionManager, int sectionFirstPosition) {
             this.isHeader = isHeader;
             this.text = text;
-            this.layoutId = layoutId;
+            this.sectionManager = sectionManager;
             this.sectionFirstPosition = sectionFirstPosition;
         }
     }
