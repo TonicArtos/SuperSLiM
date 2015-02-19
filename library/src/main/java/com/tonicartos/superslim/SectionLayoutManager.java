@@ -59,8 +59,7 @@ public abstract class SectionLayoutManager {
         return mLayoutManager.getPosition(getLastVisibleView(sectionFirstPosition));
     }
 
-    public int getAnchorPosition(LayoutState state, SectionData params,
-            int position) {
+    public int getAnchorPosition(LayoutState state, SectionData params, int position) {
         return position;
     }
 
