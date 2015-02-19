@@ -26,7 +26,7 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 ## Getting Started
 ### Including in your project
 Add the following to your build.gradle file.
-```
+```groovy
 dependencies {
     compile 'com.tonicartos:superslim:+'
 }
