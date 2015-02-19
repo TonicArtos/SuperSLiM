@@ -46,7 +46,7 @@ public class SectionData {
         }
 
         LayoutManager.LayoutParams params = firstView.getLayoutParams();
-        mLayoutId = params.layoutId;
+        mLayoutId = params.sectionManager;
         mHeaderMarginStart = params.headerMarginStart;
         mHeaderMarginEnd = params.headerMarginEnd;
         mContentMarginStart = mHeaderMarginStart + lm.getPaddingStart();
