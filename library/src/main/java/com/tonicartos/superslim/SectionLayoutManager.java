@@ -1,7 +1,10 @@
 package com.tonicartos.superslim;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseArray;
 import android.view.View;
+
+import java.util.ArrayList;
 
 public abstract class SectionLayoutManager {
 
@@ -26,7 +29,8 @@ public abstract class SectionLayoutManager {
      * @return Position of first completely visible item.
      */
     public int findFirstCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getFirstCompletelyVisibleView(sectionFirstPosition, false));
+        return mLayoutManager
+                .getPosition(getFirstCompletelyVisibleView(sectionFirstPosition, false));
     }
 
     /**
@@ -232,4 +236,33 @@ public abstract class SectionLayoutManager {
      * end edge instead.
      */
     public abstract int getLowestEdge(int sectionFirstPosition, int endEdge);
+
+    public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
+        int itemsSkipped = 0;
+        int itemsFound = 0;
+        for (int i = firstPosition; itemsFound < positionsOffscreen.size(); i++) {
+            if (positionsOffscreen.get(i, false)) {
+                itemsFound += 1;
+            } else {
+                itemsSkipped += 1;
+            }
+        }
+
+        return itemsSkipped;
+    }
+
+    public int howManyMissingBelow(int lastPosition, SparseArray<Boolean> positionsOffscreen) {
+        int itemsSkipped = 0;
+        int itemsFound = 0;
+        for (int i = lastPosition;
+                itemsFound < positionsOffscreen.size(); i--) {
+            if (positionsOffscreen.get(i, false)) {
+                itemsFound += 1;
+            } else {
+                itemsSkipped += 1;
+            }
+        }
+
+        return itemsSkipped;
+    }
 }
