@@ -562,13 +562,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header.view, unavailableWidth, 0);
     }
 
-    private boolean dataSetFullyLaidOut(LayoutState state, int finalStartPosition,
-            int finalEndPosition) {
-        final boolean fillFromFirst = finalStartPosition == 0;
-        final boolean filledToLast = finalEndPosition == state.recyclerState.getItemCount() - 1;
-        return fillFromFirst && filledToLast;
-    }
-
     private int determineAnchorPosition(LayoutState state, int position) {
         SectionData section = new SectionData(this, state, Direction.NONE, position, 0);
 
@@ -619,9 +612,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         fillResult = fillSections(state, anchorResult, recyclerViewHeight, Direction.END);
         final int finalEndMarker = fillResult.markerEnd;
         final int finalEndPosition = fillResult.positionEnd;
-
-        fixOverscroll(state, finalStartMarker, finalStartPosition, finalEndMarker,
-                finalEndPosition);
 
         state.recycleCache();
     }
@@ -685,48 +675,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
         return null;
-    }
-
-    /**
-     * Make sure there is no over-scroll. This means the last section is not inappropriately above
-     * the end edge, and the start section is not below the start edge.
-     *
-     * @param state              Layout state.
-     * @param finalStartMarker   Marker line for start of filled out area.
-     * @param finalStartPosition Start position of filled out views.
-     * @param finalEndMarker     Marker line for end of filled out area.
-     * @param finalEndPosition   End position of filled out views.
-     */
-    private void fixOverscroll(LayoutState state, int finalStartMarker, int finalStartPosition,
-            int finalEndMarker, int finalEndPosition) {
-        final int recyclerViewHeight = getHeight();
-        final int recyclerPaddedStartEdge = getPaddingTop();
-        final int recyclerPaddedEndEdge = recyclerViewHeight - getPaddingBottom();
-
-        if (finalStartMarker > recyclerPaddedStartEdge) {
-            // Shunt all children up to the start edge and then refill from start to end.
-            offsetChildrenVertical(recyclerPaddedStartEdge - finalStartMarker);
-
-            state.detachAndCacheAllViews();
-            // Build a fake fill state to trigger new fill from start to end.
-            FillResult fakeIt = new FillResult();
-            fakeIt.markerEnd = recyclerPaddedStartEdge;
-            fakeIt.positionEnd = finalStartPosition - 1;
-
-            fillSections(state, fakeIt, recyclerViewHeight, Direction.END);
-        } else if (!dataSetFullyLaidOut(state, finalStartPosition, finalEndPosition)
-                && finalEndMarker < recyclerPaddedEndEdge) {
-            // Shunt all children to end edge and then refill from end to start.
-            offsetChildrenVertical(recyclerPaddedEndEdge - finalEndMarker);
-
-            state.detachAndCacheAllViews();
-            // Build a fake fill state to trigger new fill from end to start.
-            FillResult fakeIt = new FillResult();
-            fakeIt.markerStart = recyclerPaddedEndEdge;
-            fakeIt.positionStart = finalEndPosition + 1;
-
-            fillSections(state, fakeIt, recyclerViewHeight, Direction.START);
-        }
     }
 
     /**
