@@ -212,119 +212,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return 0;
         }
 
-        final int itemCount = state.getItemCount();
+        final Direction direction = dy > 0 ? Direction.END : Direction.START;
 
-        /*
-         * Strategy.
-         *
-         * The scroll has reached the start if the padded edge of the view is aligned with the top
-         * edge of the first section's header, the section's highest edge, and that the section's
-         * first view by adapter position is a child view.
-         *
-         * The end has been reached if the padded edge of the view is aligned with the bottom edge
-         * of the last section's header or the section's lowest edge, and that the last adapter
-         * position is a child view.
-         */
-
-        // Get start views.
-        LayoutParams lp = (LayoutParams) getChildAt(0).getLayoutParams();
-        SectionLayoutManager manager = getSectionLayoutManager(lp.sectionManager);
-
-        int startSectionFirstPosition = lp.getTestedFirstPosition();
-        View startSectionFirstView = manager.getFirstVisibleView(startSectionFirstPosition, true);
-        View startHeaderView = findAttachedHeaderForSection(
-                state.getItemCount(), startSectionFirstPosition, Direction.END);
-        int startSectionHighestEdge = manager.getHighestEdge(
-                startSectionFirstPosition, getPaddingTop());
-
-        // Get end views.
-        lp = (LayoutParams) getChildAt(getChildCount() - 1)
-                .getLayoutParams();
-        int endSectionFirstPosition = lp.getTestedFirstPosition();
-        manager = getSectionLayoutManager(lp.sectionManager);
-
-        View endSectionLastView = manager.getLastVisibleView(endSectionFirstPosition);
-        View endHeaderView = findAttachedHeaderForSection(
-                state.getItemCount(), endSectionFirstPosition, Direction.START);
-        int endSectionLowestEdge = manager.getLowestEdge(
-                endSectionFirstPosition, getHeight() - getPaddingBottom());
-
-        //Work out if reached start.
-        final boolean startDisplayed;
-        final int firstEdge;
-        final int recyclerViewStartEdge = getPaddingTop();
-        if (startHeaderView == null) {
-            startDisplayed = getPosition(startSectionFirstView) == 0;
-            firstEdge = startSectionHighestEdge;
+        final int leadingEdge = direction == Direction.END ? getHeight() + dy : dy;
+        final int fillEdge = scrollFillTo(leadingEdge, direction, recycler, state);
+        final int delta;
+        if (direction == Direction.END) {
+            // padding added here to allow extra scroll
+            int fillDelta = fillEdge - getHeight() + getPaddingBottom();
+            delta = fillDelta < dy ? fillDelta : dy;
         } else {
-            startDisplayed = getPosition(startSectionFirstView) == 1;
-            final int headerStartEdge = getDecoratedTop(startHeaderView);
-            firstEdge = startSectionHighestEdge < headerStartEdge ? startSectionHighestEdge
-                    : headerStartEdge;
-        }
-        final boolean reachedStart = startDisplayed && firstEdge >= recyclerViewStartEdge;
-
-        // Work out if reached end.
-        final boolean endDisplayed;
-        final int lastEdge;
-        final int recyclerViewEndEdge = getHeight() - getPaddingBottom();
-        if (endHeaderView == null) {
-            endDisplayed = getPosition(endSectionLastView) == itemCount - 1;
-            lastEdge = endSectionLowestEdge;
-        } else {
-            endDisplayed = getPosition(endSectionLastView) == itemCount - 1;
-            final int headerEndEdge = getDecoratedBottom(endHeaderView);
-            lastEdge = endSectionLowestEdge > headerEndEdge ? endSectionLowestEdge : headerEndEdge;
-        }
-        final boolean reachedEnd = endDisplayed && lastEdge <= recyclerViewEndEdge;
-
-        // Check if scrolling is possible.
-        if (reachedEnd && reachedStart) {
-            return 0;
+            int fillDelta = fillEdge - getPaddingTop();
+            delta = fillDelta > dy ? fillDelta : dy;
         }
 
-        // Work out how far to scroll.
-        int delta;
-        if (dy > 0) {
-            // Scrolling to end.
-            if (endDisplayed) {
-                delta = Math.max(-dy, recyclerViewEndEdge - lastEdge);
-            } else {
-                delta = -dy;
-            }
-        } else {
-            // Scrolling to top.
-            if (startDisplayed) {
-                if (startHeaderView != null) {
-                    LayoutParams params = (LayoutParams) startHeaderView.getLayoutParams();
-                    if (params.isHeaderInline()) {
-                        delta = Math.min(-dy, (recyclerViewStartEdge + getDecoratedMeasuredHeight(
-                                startHeaderView)) - startSectionHighestEdge);
-                    } else {
-                        delta = Math.min(-dy, recyclerViewStartEdge - firstEdge);
-                    }
-                } else {
-                    delta = Math.min(-dy, recyclerViewStartEdge - firstEdge);
-                }
-            } else {
-                delta = -dy;
-            }
+        if (delta != 0) {
+            offsetChildrenVertical(-delta);
+
+            scrollTrim(direction, recycler, state);
         }
 
-        offsetChildrenVertical(delta);
-
-        final int anchorPosition;
-        LayoutState layoutState = new LayoutState(this, recycler, state);
-        if (delta > 0) {
-            anchorPosition = determineAnchorPosition(
-                    layoutState, getPosition(startSectionFirstView));
-        } else {
-            anchorPosition = determineAnchorPosition(
-                    layoutState, getPosition(endSectionLastView));
-        }
-        fill(recycler, state, anchorPosition, 0, false);
-
-        return -delta;
+        return delta;
     }
 
     @Override
