@@ -3,7 +3,7 @@
 [![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__3-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_3)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
 
 
-SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or of your own creation.
+SuperSLiM is a configurable layout manager for a RecyclerView. It provides a vertical scrolling list of sections. Each section is a grouping of one or more views, arranged by a section layout manager (SLM). Sections may have a header, and each header can have its own unique layout. The SLM can be one of the provided (listed below), or of your own creation.
 
 SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/wiki) with guides and documentation to help you out.
 
@@ -13,7 +13,7 @@ SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/w
 - Material design style headers
 - Header overlays
 
-**Section Layouts**  
+**Section Layout Managers (SLM)**  
 - Linear (like ListView)
 - Grid (like GridView)
 - Staggered Grid - *not yet implemented*
