@@ -1,39 +1,43 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__2-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_2)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
+[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__3-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_3)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
 
 
-SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or can be of your own creation.
+SuperSLiM is a configurable layout manager for the RecyclerView. It provides a vertical scrolling list of sections. Each section may have a header, and can have its own unique layout. The section layouts can be one of the provided layouts, or of your own creation.
 
 SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/wiki) with guides and documentation to help you out.
 
 ## Feature Overview
 **Section Headers**  
 - Sticky headers
-- Headers in content margins - *like Google Calendar with Material Design*
+- Material design style headers
 - Header overlays
 
 **Section Layouts**  
-- Linear
-- Grid
+- Linear (like ListView)
+- Grid (like GridView)
 - Staggered Grid - *not yet implemented*
 - or create your own
  
-**Support for RTL languages**  
+**Misc**  
+- Support for RTL languages
+- Smooth scroll indicator
 
 See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
 
-## Getting Started
-### Including in your project
+## How do I get it?
 Add the following to your build.gradle file.
 ```groovy
 dependencies {
     compile 'com.tonicartos:superslim:+'
 }
 ```
-You can replace the '+' with the exact version if you do not want to always sync to the latest version.
+*+ is a wildcard, the latest version is displayed in the maven badge at the top of this page.*
 
-For more detail please refer to the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) and [User Guide](https://github.com/TonicArtos/SuperSLiM/wiki/User's%20Guide) wiki pages.
+## How do I use it?
+Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) wiki page for easy to follow instructions.
+
+SuperSLiM is documented in the [wiki](https://github.com/TonicArtos/SuperSLiM/wiki/) so you can easily get stuck in.
 
 ## Support
 - [Wiki](https://github.com/TonicArtos/SuperSLiM/wiki)
@@ -53,7 +57,7 @@ Thanks to Dave Smith for his introduction to writing a RecyclerView LayoutManage
 
 ## License
 ```
-Copyright (C) 2014 Tonic Artos
+Copyright (C) 2014, 2015 Tonic Artos
 
 SuperSLiM is largely original with some pieces from from Lucas Rocha's TwoWayView Library and the AOSP.
 
