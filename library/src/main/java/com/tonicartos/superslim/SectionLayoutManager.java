@@ -190,13 +190,9 @@ public abstract class SectionLayoutManager {
                 } else {
                     candidate = view;
                 }
-            } else {
-                // Skipped past section.
-                return candidate;
             }
 
             lookAt -= 1;
-            return null;
         }
     }
 
