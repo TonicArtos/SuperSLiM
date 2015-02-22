@@ -50,6 +50,17 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
+            LayoutState state) {
+        return 0;
+    }
+
+    @Override
+    public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
+        return 0;
+    }
+
+    @Override
     public int getAnchorPosition(LayoutState state, SectionData section, int position) {
         calculateColumnWidthValues(section);
 

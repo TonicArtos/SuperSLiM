@@ -23,6 +23,19 @@ public abstract class SectionLayoutManager {
     public abstract FillResult fill(LayoutState state, SectionData sectionData);
 
     /**
+     * Fill section content towards the end.
+     *
+     * @param leadingEdge    Line to fill up to. Content will not be wholly beyond this line.
+     * @param markerLine     Start of the section content area.
+     * @param anchorPosition Adapter position for the first content item in the section.
+     * @param sd             Section data.
+     * @param state          Layout state.
+     * @return Line to which content has been filled.
+     */
+    public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
+            SectionData2 sd, LayoutState state);
+
+    /**
      * Find the position of the first completely visible item of this section.
      *
      * @param sectionFirstPosition First position of section being queried.
@@ -62,6 +75,18 @@ public abstract class SectionLayoutManager {
     public int findLastVisibleItemPosition(int sectionFirstPosition) {
         return mLayoutManager.getPosition(getLastVisibleView(sectionFirstPosition));
     }
+
+    /**
+     * Finish filling an already partially filled section.
+     *
+     * @param leadingEdge Line to fill up to. Content will not be wholly beyond this line.
+     * @param anchor      Last attached content item in this section.
+     * @param sd          Section data.
+     * @param state       Layout state.
+     * @return Line to which content has been filled.
+     */
+    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd,
+            LayoutState state);
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {
         return position;
