@@ -52,12 +52,66 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     @Override
     public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
             LayoutState state) {
-        return 0;
+        final int itemCount = state.recyclerState.getItemCount();
+        if (anchorPosition >= itemCount) {
+            return markerLine;
+        }
+
+        LayoutState.View anchor = state.getView(anchorPosition);
+        if (anchor.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+            state.cacheView(anchorPosition, anchor.view);
+            return markerLine;
+        }
+
+        final int firstContentPosition = sd.hasHeader ? sd.firstPosition + 1 : sd.firstPosition;
+
+        // Ensure the anchor is the first item in the row.
+        final int col = (anchorPosition - firstContentPosition) % mNumColumns;
+        for (int i = 1; i <= col; i++) {
+            // Detach and scrap attached items in this row, so we can re-lay them again. The last
+            // child view in the index can be the header so we just skip past it if it last.
+            for (int j = 1; j <= mLayoutManager.getChildCount(); j++) {
+                View child = mLayoutManager.getChildAt(mLayoutManager.getChildCount() - j);
+                if (mLayoutManager.getPosition(child) == anchorPosition - i) {
+                    markerLine = mLayoutManager.getDecoratedTop(child);
+                    mLayoutManager.detachAndScrapViewAt(j, state.recycler);
+                    break;
+                }
+
+                LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                        .getLayoutParams();
+                if (params.getTestedFirstPosition() != sd.firstPosition) {
+                    break;
+                }
+            }
+        }
+        anchorPosition = anchorPosition - col;
+
+        // Lay out rows to end.
+        for (int i = anchorPosition; i < itemCount; i += mNumColumns) {
+            if (markerLine >= leadingEdge) {
+                break;
+            }
+
+            LayoutState.View view = state.getView(i);
+            if (view.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+                state.cacheView(i, view.view);
+                break;
+            }
+
+            int rowHeight = fillRow(markerLine, i, sd, state);
+            markerLine += rowHeight;
+        }
+
+        return markerLine;
     }
 
     @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
-        return 0;
+        final int anchorPosition = mLayoutManager.getPosition(anchor);
+        final int markerLine = getLowestEdge(sd.firstPosition, leadingEdge);
+
+        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
     }
 
     @Override
@@ -71,6 +125,14 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         }
         state.recycleView(firstView);
         return position - ((position - firstPosition) % mNumColumns);
+    }
+
+    public GridSectionLayoutManager init(SectionData2 sd) {
+        super.init(sd);
+
+        calculateColumnWidthValues(sd);
+
+        return this;
     }
 
     @Override
@@ -122,6 +184,46 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return bottomMostEdge;
     }
 
+    /**
+     * Fill a row.
+     *
+     * @param markerLine     Line indicating the top edge of the row.
+     * @param anchorPosition Position of the first view in the row.
+     * @param sd             Section data.
+     * @param state          Layout state.
+     * @return The height of the new row.
+     */
+    public int fillRow(int markerLine, int anchorPosition, SectionData2 sd, LayoutState state) {
+        int rowHeight = 0;
+        LayoutState.View[] views = new LayoutState.View[mNumColumns];
+        for (int i = 0; i < mNumColumns; i++) {
+            final int position = anchorPosition + i;
+            if (position >= state.recyclerState.getItemCount()) {
+                break;
+            }
+
+            LayoutState.View view = state.getView(position);
+            if (view.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+                state.cacheView(position, view.view);
+                break;
+            }
+
+            measureChild(view, sd);
+            rowHeight = Math.max(rowHeight, mLayoutManager.getDecoratedMeasuredHeight(view.view));
+            views[i] = view;
+        }
+
+        for (int i = 0; i < mNumColumns; i++) {
+            if (views[i] == null) {
+                break;
+            }
+            layoutChild(views[i], markerLine, i, rowHeight, sd, state);
+            addView(views[i], i + anchorPosition, LayoutManager.Direction.END, state);
+        }
+
+        return rowHeight;
+    }
+
     public void setColumnMinimumWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
@@ -146,6 +248,26 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         }
 
         return addIndex;
+    }
+
+    private void calculateColumnWidthValues(SectionData2 section) {
+        int availableWidth = mLayoutManager.getWidth() - section.marginStart - section.marginEnd;
+        if (!mColumnsSpecified) {
+            if (mMinimumWidth <= 0) {
+                mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
+                        mContext.getResources().getDisplayMetrics());
+            }
+            mNumColumns = availableWidth / Math.abs(mMinimumWidth);
+        }
+        if (mNumColumns < 1) {
+            mNumColumns = 1;
+        }
+        mColumnWidth = availableWidth / mNumColumns;
+        if (mColumnWidth == 0) {
+            Log.e("GridSection",
+                    "Too many columns (" + mNumColumns + ") for available width" + availableWidth
+                            + ".");
+        }
     }
 
     private void calculateColumnWidthValues(SectionData section) {
@@ -263,7 +385,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                 rowHeight = height > rowHeight ? height : rowHeight;
             } else {
                 state.recycleView(next);
-                for (;i < mNumColumns; i++) {
+                for (; i < mNumColumns; i++) {
                     rowViews[i] = null;
                 }
                 break;
@@ -459,6 +581,34 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return viewSpan;
     }
 
+    /**
+     * Layout out a view for the given column in a row. Views that have a height param of
+     * MATCH_PARENT are fixed to the height of the row.
+     *
+     * @param child      View to lay out.
+     * @param markerLine Line indicating the top edge of the row.
+     * @param col        Column view is being placed into.
+     * @param rowHeight  Height of the row.
+     * @param sd         Section data.
+     * @param state      Layout state.
+     */
+    private void layoutChild(LayoutState.View child, int markerLine, int col, int rowHeight,
+            SectionData2 sd, LayoutState state) {
+        final int height;
+        if (child.getLayoutParams().height == LayoutManager.LayoutParams.MATCH_PARENT) {
+            height = rowHeight;
+        } else {
+            height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+        }
+        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+
+        final int bottom = markerLine + height;
+        final int left = (state.isLTR ? sd.marginStart : sd.marginEnd) + col * mColumnWidth;
+        final int right = left + width;
+
+        mLayoutManager.layoutDecorated(child.view, left, markerLine, right, bottom);
+    }
+
     private void layoutChild(LayoutState.View child, SectionData section, LayoutState state,
             int col, int top) {
         if (child.wasCached) {
@@ -473,6 +623,19 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         int right = left + width;
 
         mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
+    }
+
+    /**
+     * Measure view. A view is given an area as wide as a single column with an undefined height.
+     *
+     * @param child View to measure.
+     * @param sd    Section data.
+     */
+    private void measureChild(LayoutState.View child, SectionData2 sd) {
+        int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
+        mLayoutManager.measureChildWithMargins(child.view,
+                sd.marginStart + sd.marginEnd + widthOtherColumns,
+                0);
     }
 
     private void measureChild(SectionData section, LayoutState.View child) {

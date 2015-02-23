@@ -290,4 +290,25 @@ public abstract class SectionLayoutManager {
 
         return itemsSkipped;
     }
+
+    public SectionLayoutManager init(SectionData2 sd) {
+        return this;
+    }
+
+    protected int addView(LayoutState.View child, int position, LayoutManager.Direction direction,
+            LayoutState state) {
+        int addIndex;
+        if (direction == LayoutManager.Direction.START) {
+            addIndex = 0;
+        } else {
+            addIndex = mLayoutManager.getChildCount();
+        }
+
+        if (child.wasCached) {
+            state.decacheView(position);
+        }
+        mLayoutManager.addView(child.view, addIndex);
+
+        return addIndex;
+    }
 }

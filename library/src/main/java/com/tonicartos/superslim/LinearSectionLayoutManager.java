@@ -1,6 +1,5 @@
 package com.tonicartos.superslim;
 
-import android.util.Log;
 import android.view.View;
 
 public class LinearSectionLayoutManager extends SectionLayoutManager {
@@ -34,21 +33,20 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         final int itemCount = state.recyclerState.getItemCount();
 
         for (int i = anchorPosition; i < itemCount; i++) {
+            if (markerLine >= leadingEdge) {
+                break;
+            }
+
             LayoutState.View next = state.getView(i);
             LayoutManager.LayoutParams params = next.getLayoutParams();
             if (params.getTestedFirstPosition() != sd.firstPosition) {
-                state.recycleView(next);
+                state.cacheView(i, next.view);
                 break;
             }
 
             measureChild(next, sd);
             markerLine = layoutChild(next, markerLine, LayoutManager.Direction.END, sd, state);
             addView(next, i, LayoutManager.Direction.END, state);
-            Log.d("DEBUG", "Add content " + i);
-
-            if (markerLine >= leadingEdge) {
-                break;
-            }
         }
 
         return markerLine;
@@ -100,24 +98,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return endEdge;
     }
 
-    private int addView(LayoutState.View child, int position, LayoutManager.Direction direction,
-            LayoutState state) {
-        int addIndex;
-        if (direction == LayoutManager.Direction.START) {
-            addIndex = 0;
-        } else {
-            addIndex = mLayoutManager.getChildCount();
-        }
-
-        if (child.wasCached) {
-            mLayoutManager.attachView(child.view, addIndex);
-            state.decacheView(position);
-        } else {
-            mLayoutManager.addView(child.view, addIndex);
-        }
-
-        return addIndex;
-    }
 
     /**
      * Work out by how much the header overlaps with the displayed content.

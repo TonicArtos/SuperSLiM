@@ -281,7 +281,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionData2 sd = new SectionData2(this, first);
 
         final SectionLayoutManager slm = getSectionLayoutManager(sd.sectionManager);
-        int markerLine = slm.finishFillToEnd(leadingEdge, anchor, sd, state);
+        int markerLine = slm.init(sd).finishFillToEnd(leadingEdge, anchor, sd, state);
         Log.d("finishFillToEnd", "markerLine " + markerLine);
 
         markerLine = updateHeaderForEnd(markerLine, sd);
@@ -318,9 +318,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionData2 sd = new SectionData2(this, header.view);
         if (sd.hasHeader) {
             Log.d("fillNextSectionToEnd", "found header");
-            if (!header.wasCached) {
-                measureHeader(header);
-            }
+            measureHeader(header);
             sd = new SectionData2(this, header.view);
             markerLine = layoutHeaderTowardsEnd(header.view, markerLine, sd, state);
             Log.d("fillNextSectionToEnd", "markerLine " + markerLine);
@@ -332,13 +330,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (anchorPosition < state.recyclerState.getItemCount()) {
             Log.d("fillNextSectionToEnd", "fill out section");
             SectionLayoutManager slm = getSectionLayoutManager(sd.sectionManager);
-            markerLine = slm.fillToEnd(leadingEdge, markerLine, anchorPosition, sd, state);
+            markerLine = slm.init(sd).fillToEnd(leadingEdge, markerLine, anchorPosition, sd, state);
             Log.d("fillNextSectionToEnd", "markerLine " + markerLine);
         }
 
         if (sd.hasHeader) {
             Log.d("fillNextSectionToEnd", "attaching header");
             addView(header.view);
+            if (header.wasCached) {
+                state.decacheView(sd.firstPosition);
+            }
             markerLine = Math.max(getDecoratedBottom(header.view), markerLine);
             Log.d("fillNextSectionToEnd", "markerLine " + markerLine);
         }
@@ -626,10 +627,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     void measureHeader(LayoutState.View header) {
-        if (header.wasCached) {
-            return;
-        }
-
         // Width to leave for the mSection to which this header belongs. Only applies if the
         // header is being laid out adjacent to the mSection.
         int unavailableWidth = 0;
@@ -732,29 +729,25 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     /**
      * Find header or, if it cannot be found, the first view for a section.
      *
-     * @param sectionFirstPosition Section to look for header inside of. Search is expected to start
+     * @param sfp Section to look for header inside of. Search is expected to start
      *                             inside the section so it must be at the matching end specified by
      *                             the direction.
-     * @param itemCount            Current number of items in adapter.
      * @param direction            Direction to look in. Direction.END means to look from the start
      *                             to the end.
      * @return Null if no header or first item found, otherwise the found view.
      */
-    private View findAttachedHeaderOrFirstViewForSection(final int sectionFirstPosition,
-            final int itemCount,
-            final Direction direction) {
-        int position = direction == Direction.END ? 0 : getChildCount() - 1;
-        int step = direction == Direction.END ? 1 : -1;
-        for (; 0 <= position && position < itemCount; position += step) {
-            View child = getChildAt(position);
-            if (child == null) {
-                continue;
+    private View findAttachedHeaderOrFirstViewForSection(final int sfp, final Direction direction) {
+        int childIndex = direction == Direction.START ? 0 : getChildCount() - 1;
+        int step = direction == Direction.START ? 1 : -1;
+        for (; 0 <= childIndex && childIndex < getChildCount(); childIndex += step) {
+            View child = getChildAt(childIndex);
+
+            if (getPosition(child) == sfp) {
+                return child;
             }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+            if (params.getTestedFirstPosition() != sfp) {
                 break;
-            } else {
-                return child;
             }
         }
 
@@ -762,8 +755,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private View getHeaderOrFirstViewForSection(int sfp, Direction direction, LayoutState state) {
-        View view = findAttachedHeaderOrFirstViewForSection(sfp,
-                state.recyclerState.getItemCount(), direction);
+        View view = findAttachedHeaderOrFirstViewForSection(sfp, direction);
         if (view == null) {
             LayoutState.View stateView = state.getView(sfp);
             view = stateView.view;
