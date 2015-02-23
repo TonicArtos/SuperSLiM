@@ -128,15 +128,6 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return position - ((position - firstPosition) % mNumColumns);
     }
 
-    public GridSectionLayoutManager init(SectionData2 sd) {
-        super.init(sd);
-
-        calculateColumnWidthValues(sd);
-
-        return this;
-    }
-
-
     @Override
     public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
         // Look from end to find children that are the lowest.
@@ -165,6 +156,14 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             }
         }
         return bottomMostEdge;
+    }
+
+    public GridSectionLayoutManager init(SectionData2 sd) {
+        super.init(sd);
+
+        calculateColumnWidthValues(sd);
+
+        return this;
     }
 
     /**

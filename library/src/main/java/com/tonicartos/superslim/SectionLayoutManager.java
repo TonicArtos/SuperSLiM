@@ -17,6 +17,19 @@ public abstract class SectionLayoutManager {
     }
 
     /**
+     * Compute the offset for side aligned headers. If the height of the non-visible area of the
+     * section is taller than the header, then the header should be offscreen, in that case return
+     * any +ve number.
+     *
+     * @param anchor View to compute offset against. The top of the view is the reference point.
+     * @param sd     Section data.
+     * @param state  Layout state.
+     * @return -ve number giving the distance the header should be offset before the anchor view. A
+     * +ve number indicates the header is offscreen.
+     */
+    public abstract int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state);
+
+    /**
      * Measure and layout children. Make sure to only lay out views belonging to this mSection,
      * excepting headers, which are laid out by the wrapping layout manager.
      */
@@ -33,6 +46,9 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
+            SectionData2 sd, LayoutState state);
+
+    public abstract int fillToStart(int leadingEdge, int markerLine, int anchorPosition,
             SectionData2 sd, LayoutState state);
 
     /**
@@ -86,6 +102,9 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd,
+            LayoutState state);
+
+    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd,
             LayoutState state);
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {

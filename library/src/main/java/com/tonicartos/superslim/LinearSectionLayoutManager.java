@@ -52,6 +52,28 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return markerLine;
     }
 
+    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
+            LayoutState state) {
+        for (int i = anchorPosition; i >= 0; i--) {
+            if (markerLine < leadingEdge) {
+                break;
+            }
+
+            LayoutState.View next = state.getView(i);
+            LayoutManager.LayoutParams params = next.getLayoutParams();
+            if (params.getTestedFirstPosition() != sd.firstPosition) {
+                state.cacheView(i, next.view);
+                break;
+            }
+
+            measureChild(next, sd);
+            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sd, state);
+            addView(next, i, LayoutManager.Direction.START, state);
+        }
+
+        return markerLine;
+    }
+
     @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
@@ -60,6 +82,13 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
     }
 
+    @Override
+    public int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
+        final int anchorPosition = mLayoutManager.getPosition(anchor);
+        final int markerLine = mLayoutManager.getDecoratedTop(anchor);
+
+        return fillToStart(leadingEdge, markerLine, anchorPosition - 1, sd, state);
+    }
 
     /**
      * Work out by how much the header overlaps with the displayed content.
