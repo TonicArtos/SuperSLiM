@@ -109,7 +109,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine = getLowestEdge(sd.firstPosition, leadingEdge);
+        final int markerLine =
+                getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1, leadingEdge);
 
         return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
     }
@@ -135,31 +136,13 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return this;
     }
 
-    @Override
-    public int getHighestEdge(int sectionFirstPosition, int startEdge) {
-        // Look from start to find children that are the highest.
-        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
-            View child = mLayoutManager.getChildAt(i);
-            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
-                    .getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
-                break;
-            }
-            if (params.isHeader) {
-                continue;
-            }
-            // A more interesting layout would have to do something more here.
-            return mLayoutManager.getDecoratedTop(child);
-        }
-        return startEdge;
-    }
 
     @Override
-    public int getLowestEdge(int sectionFirstPosition, int endEdge) {
+    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
         // Look from end to find children that are the lowest.
         int bottomMostEdge = 0;
         int leftPosition = mLayoutManager.getWidth();
-        for (int i = mLayoutManager.getChildCount() - 1; i >= 0; i--) {
+        for (int i = lastIndex; i >= 0; i--) {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();

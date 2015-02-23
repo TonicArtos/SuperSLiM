@@ -181,7 +181,23 @@ public abstract class SectionLayoutManager {
      * Find the highest displayed edge of the section. If there is no member found then return the
      * start edge instead.
      */
-    public abstract int getHighestEdge(int sectionFirstPosition, int startEdge);
+    public int getHighestEdge(int sectionFirstPosition, int firstIndex, int startEdge) {
+        // Look from start to find children that are the highest.
+        for (int i = firstIndex; i < mLayoutManager.getChildCount(); i++) {
+            View child = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                    .getLayoutParams();
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+                break;
+            }
+            if (params.isHeader) {
+                continue;
+            }
+            // A more interesting layout would have to do something more here.
+            return mLayoutManager.getDecoratedTop(child);
+        }
+        return startEdge;
+    }
 
     /**
      * Locate the last view in this section that is completely visible. Will skip headers unless
@@ -257,10 +273,26 @@ public abstract class SectionLayoutManager {
     }
 
     /**
-     * Find the lowest displayed edge of the section. IF there is no member found then return the
+     * Find the lowest displayed edge of the section. If there is no member found then return the
      * end edge instead.
      */
-    public abstract int getLowestEdge(int sectionFirstPosition, int endEdge);
+    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
+        // Look from end to find children that are the lowest.
+        for (int i = lastIndex; i >= 0; i--) {
+            View child = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                    .getLayoutParams();
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+                break;
+            }
+            if (params.isHeader) {
+                continue;
+            }
+            // A more interesting layout would have to do something more here.
+            return mLayoutManager.getDecoratedBottom(child);
+        }
+        return endEdge;
+    }
 
     public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
         int itemsSkipped = 0;
