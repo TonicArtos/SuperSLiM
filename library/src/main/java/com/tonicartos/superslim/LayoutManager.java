@@ -607,7 +607,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
         final int sfp = anchorParams.getTestedFirstPosition();
-        final View first = getHeaderOrFirstViewForSection(sfp, Direction.END, state);
+        final View first = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
         final SectionData2 sd = new SectionData2(this, first);
 
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
@@ -636,24 +636,29 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionLayoutManager slm = getSectionLayoutManager(sd);
         int sli = findLastIndexForSection(sd.firstPosition);
         int bottom = slm.getLowestEdge(sd.firstPosition, sli, getDecoratedBottom(getChildAt(sli)));
-        int offset = slm.computeHeaderOffset(getChildAt(0), sd, state);
+        int offset = 0;
+        if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
+            offset = slm.computeHeaderOffset(getChildAt(0), sd, state);
+        }
 
         markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, offset, bottom, sd,
                 state);
 
         attachHeaderForStart(header, sd, state);
+        for (int i = 0; i < getChildCount(); i++) {
+            Log.d("asdf", "Index " + i + " Position " + getPosition(getChildAt(i)));
+        }
 
         return markerLine;
     }
 
     private void attachHeaderForStart(View header, SectionData2 sd, LayoutState state) {
-        int attachIndex = findLastIndexForSection(sd.firstPosition) + 1;
         if (state.getCachedView(sd.firstPosition) != null) {
-            addView(header, attachIndex);
+            addView(header, findLastIndexForSection(sd.firstPosition) + 1);
             state.decacheView(sd.firstPosition);
         } else {
             detachView(header);
-            attachView(header, attachIndex);
+            attachView(header, findLastIndexForSection(sd.firstPosition) + 1);
         }
     }
 
@@ -666,20 +671,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Line content was filled up to.
      */
     private int fillNextSectionToStart(int leadingEdge, int markerLine, LayoutState state) {
-        if (markerLine >= leadingEdge) {
+        if (markerLine < leadingEdge) {
             return markerLine;
         }
 
         View first = getAnchorAtStart();
         int anchorPosition = getPosition(first) - 1;
 
-        if (anchorPosition >= state.recyclerState.getItemCount()) {
+        if (anchorPosition < 0) {
             return markerLine;
         }
 
         LayoutState.View anchor = state.getView(anchorPosition);
         LayoutParams anchorParams = anchor.getLayoutParams();
-        int sfp = anchorParams.sectionManager;
+        if (anchorParams.isHeader) {
+            return markerLine;
+        }
+
+        int sfp = anchorParams.getTestedFirstPosition();
 
         // Setup section data.
         View header = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
@@ -709,7 +718,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             attachHeaderForStart(header, sd, state);
         }
 
-        return fillNextSectionToEnd(leadingEdge, markerLine, state);
+        return fillNextSectionToStart(leadingEdge, markerLine, state);
     }
 
     /**
@@ -729,11 +738,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
             r.bottom = markerLine;
             r.top = r.bottom + sd.headerHeight;
-        } else if (sd.headerParams.isHeaderStartAligned() || sd.headerParams.isHeaderEndAligned()) {
-            r.top = markerLine + offset;
-            r.bottom = r.top + sd.headerHeight;
         } else {
-            r.top = markerLine;
+            r.top = markerLine + offset;
             r.bottom = r.top + sd.headerHeight;
         }
 
