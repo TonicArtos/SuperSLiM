@@ -330,7 +330,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int sectionTop = slm.getHighestEdge(sd.firstPosition, 0, 0);
 
         final int height = getDecoratedMeasuredHeight(header);
-        if ((sectionBottom - sectionTop) > height) {
+        if ((sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay())
+                || (sectionBottom - sectionTop) > height) {
             final int left = getDecoratedLeft(header);
             final int right = getDecoratedRight(header);
 
