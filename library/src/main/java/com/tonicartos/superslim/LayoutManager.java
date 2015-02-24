@@ -635,14 +635,22 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         SectionLayoutManager slm = getSectionLayoutManager(sd);
         int sli = findLastIndexForSection(sd.firstPosition);
-        int bottom = slm.getLowestEdge(sd.firstPosition, sli, getDecoratedBottom(getChildAt(sli)));
+        int sectionBottom = getHeight();
+        for (int i = sli == -1 ? 0 : sli; i < getChildCount(); i++) {
+            View view = getChildAt(i);
+            LayoutParams params = (LayoutParams) view.getLayoutParams();
+            if (params.getTestedFirstPosition() != sd.firstPosition) {
+                sectionBottom = getDecoratedTop(view);
+                break;
+            }
+        }
         int offset = 0;
         if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
             offset = slm.computeHeaderOffset(getChildAt(0), sd, state);
         }
 
-        markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, offset, bottom, sd,
-                state);
+        markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, offset,
+                sectionBottom, sd, state);
 
         attachHeaderForStart(header, sd, state);
         for (int i = 0; i < getChildCount(); i++) {

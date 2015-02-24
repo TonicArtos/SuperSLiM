@@ -14,8 +14,12 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
          */
-        int firstVisiblePosition =
-                mLayoutManager.getPosition(getFirstVisibleView(sd.firstPosition, true));
+        View firstVisibleView = getFirstVisibleView(sd.firstPosition, true);
+        if (firstVisibleView == null) {
+            return 0;
+        }
+
+        int firstVisiblePosition = mLayoutManager.getPosition(firstVisibleView);
 
         int areaAbove = 0;
         for (int position = sd.firstPosition + 1;
@@ -82,10 +86,61 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         return markerLine;
     }
 
+    @Override
     public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
             LayoutState state) {
+        // Check to see if we have to adjust for minimum section height. We don't if there is an
+        // attached non-header view in this section.
+        boolean applyMinHeight = false;
+        for (int i = 0; i < state.recyclerState.getItemCount(); i++) {
+            View check = mLayoutManager.getChildAt(0);
+            LayoutManager.LayoutParams checkParams =
+                    (LayoutManager.LayoutParams) check.getLayoutParams();
+            if (checkParams.getTestedFirstPosition() != sd.firstPosition) {
+                applyMinHeight = true;
+                break;
+            }
+
+            if (!checkParams.isHeader) {
+                applyMinHeight = false;
+                break;
+            }
+        }
+
+        // Work out offset to marker line by measuring items from the end. If section height is less
+        // than min height, then adjust marker line and then lay out items.
+        int measuredPositionsMarker = -1;
+        int sectionHeight = 0;
+        int minHeightOffset = 0;
+        if (applyMinHeight) {
+            for (int i = anchorPosition; i >= 0; i--) {
+                LayoutState.View measure = state.getView(i);
+                state.cacheView(i, measure.view);
+                LayoutManager.LayoutParams params = measure.getLayoutParams();
+                if (params.getTestedFirstPosition() != sd.firstPosition) {
+                    break;
+                }
+
+                if (params.isHeader) {
+                    continue;
+                }
+
+                measureChild(measure, sd);
+                sectionHeight += mLayoutManager.getDecoratedMeasuredHeight(measure.view);
+                measuredPositionsMarker = i;
+                if (sectionHeight >= sd.minimumHeight) {
+                    break;
+                }
+            }
+
+            if (sectionHeight < sd.minimumHeight) {
+                minHeightOffset = sectionHeight - sd.minimumHeight;
+                markerLine += minHeightOffset;
+            }
+        }
+
         for (int i = anchorPosition; i >= 0; i--) {
-            if (markerLine < leadingEdge) {
+            if (markerLine - minHeightOffset < leadingEdge) {
                 break;
             }
 
@@ -100,7 +155,11 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
                 break;
             }
 
-            measureChild(next, sd);
+            if (!applyMinHeight || i < measuredPositionsMarker) {
+                measureChild(next, sd);
+            } else {
+                state.decacheView(i);
+            }
             markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sd, state);
             addView(next, i, LayoutManager.Direction.START, state);
         }

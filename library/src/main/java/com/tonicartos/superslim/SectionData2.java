@@ -36,6 +36,12 @@ public class SectionData2 {
             headerWidth = lm.getDecoratedMeasuredWidth(first);
             headerHeight = lm.getDecoratedMeasuredHeight(first);
 
+            if (!headerParams.isHeaderInline() || headerParams.isHeaderOverlay()) {
+                minimumHeight = headerHeight;
+            } else {
+                minimumHeight = 0;
+            }
+
             if (headerParams.headerStartMarginIsAuto) {
                 if (headerParams.isHeaderStartAligned() && !headerParams.isHeaderOverlay()) {
                     marginStart = headerWidth;
@@ -55,6 +61,7 @@ public class SectionData2 {
                 marginEnd = headerParams.headerMarginEnd;
             }
         } else {
+            minimumHeight = 0;
             headerHeight = 0;
             headerWidth = 0;
             marginStart = headerParams.headerMarginStart;
@@ -66,7 +73,6 @@ public class SectionData2 {
 
         hasHeader = headerParams.isHeader;
 
-        minimumHeight = hasHeader ? headerHeight : 0;
 
         firstPosition = headerParams.getTestedFirstPosition();
 
