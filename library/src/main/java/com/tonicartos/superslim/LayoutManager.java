@@ -685,7 +685,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutState.View anchor = state.getView(anchorPosition);
         LayoutParams anchorParams = anchor.getLayoutParams();
         if (anchorParams.isHeader) {
-            return markerLine;
+            state.cacheView(anchorPosition, anchor.view);
+            anchorPosition = anchorPosition - 1;
+            if (anchorPosition < 0) {
+                return markerLine;
+            }
+            anchor = state.getView(anchorPosition);
+            anchorParams = anchor.getLayoutParams();
         }
 
         int sfp = anchorParams.getTestedFirstPosition();
@@ -696,7 +702,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (sd.hasHeader) {
             measureHeader(header);
             sd = new SectionData2(this, header);
-            anchorPosition += 1;
         }
 
         // Fill out section.
