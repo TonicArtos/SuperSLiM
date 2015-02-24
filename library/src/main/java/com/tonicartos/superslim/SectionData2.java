@@ -8,21 +8,28 @@ public class SectionData2 {
 
     public final boolean hasHeader;
 
-    public final int marginStart;
+    final int marginStart;
 
-    public final int marginEnd;
+    final int marginEnd;
 
     public final int minimumHeight;
 
     public final int sectionManager;
 
-    public int headerWidth;
+    public final int headerWidth;
 
-    public int headerHeight;
+    public final int headerHeight;
+
+    public final int contentEnd;
+
+    public final int contentStart;
 
     LayoutManager.LayoutParams headerParams;
 
     public SectionData2(LayoutManager lm, View first) {
+        final int paddingStart = lm.getPaddingStart();
+        final int paddingEnd = lm.getPaddingEnd();
+
         headerParams = (LayoutManager.LayoutParams) first.getLayoutParams();
 
         if (headerParams.isHeader) {
@@ -30,19 +37,32 @@ public class SectionData2 {
             headerHeight = lm.getDecoratedMeasuredHeight(first);
 
             if (headerParams.headerStartMarginIsAuto) {
-                marginStart = headerWidth + lm.getPaddingStart();
+                if (headerParams.isHeaderStartAligned() && !headerParams.isHeaderOverlay()) {
+                    marginStart = headerWidth;
+                } else {
+                    marginStart = 0;
+                }
             } else {
-                marginStart = headerParams.headerMarginStart + lm.getPaddingStart();
+                marginStart = headerParams.headerMarginStart;
             }
             if (headerParams.headerEndMarginIsAuto) {
-                marginEnd = headerWidth + lm.getPaddingEnd();
+                if (headerParams.isHeaderEndAligned() && !headerParams.isHeaderOverlay()) {
+                    marginEnd = headerWidth;
+                } else {
+                    marginEnd = 0;
+                }
             } else {
-                marginEnd = headerParams.headerMarginEnd + lm.getPaddingEnd();
+                marginEnd = headerParams.headerMarginEnd;
             }
         } else {
-            marginStart = lm.getPaddingStart();
-            marginEnd = lm.getPaddingEnd();
+            headerHeight = 0;
+            headerWidth = 0;
+            marginStart = headerParams.headerMarginStart;
+            marginEnd = headerParams.headerMarginEnd;
         }
+
+        contentEnd = marginEnd + paddingEnd;
+        contentStart = marginStart + paddingStart;
 
         hasHeader = headerParams.isHeader;
 
@@ -51,5 +71,9 @@ public class SectionData2 {
         firstPosition = headerParams.getTestedFirstPosition();
 
         sectionManager = headerParams.sectionManager;
+    }
+
+    public int getTotalMarginWidth() {
+        return marginEnd + marginStart;
     }
 }

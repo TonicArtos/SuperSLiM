@@ -746,14 +746,17 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         } else if (offset <= 0) {
             r.top = markerLine + offset;
             r.bottom = r.top + sd.headerHeight;
-        } else  {
-            r.bottom = markerLine;
+        } else {
+            r.bottom = leadingEdge;
             r.top = r.bottom - sd.headerHeight;
         }
 
         if (sd.headerParams.isHeaderSticky() && r.top < leadingEdge) {
             r.top = leadingEdge;
-            r.bottom = sd.headerHeight;
+            r.bottom = r.top + sd.headerHeight;
+            if (sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
+                markerLine -= sd.headerHeight;
+            }
         }
 
         if (r.bottom > sectionBottom) {
@@ -1358,23 +1361,26 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private Rect setHeaderRectSides(Rect r, SectionData2 sd, LayoutState state) {
+        final int paddingLeft = getPaddingLeft();
+        final int paddingRight = getPaddingRight();
+
         if (sd.headerParams.isHeaderEndAligned()) {
             // Position header from end edge.
             if (!sd.headerParams.isHeaderOverlay() && !sd.headerParams.headerEndMarginIsAuto
                     && sd.marginEnd > 0) {
                 // Position inside end margin.
                 if (state.isLTR) {
-                    r.left = getWidth() - sd.marginEnd - getPaddingEnd();
+                    r.left = getWidth() - sd.marginEnd - paddingRight;
                     r.right = r.left + sd.headerWidth;
                 } else {
-                    r.right = sd.marginEnd + getPaddingEnd();
+                    r.right = sd.marginEnd + paddingLeft;
                     r.left = r.right - sd.headerWidth;
                 }
             } else if (state.isLTR) {
-                r.right = getWidth() - getPaddingEnd();
+                r.right = getWidth() - paddingRight;
                 r.left = r.right - sd.headerWidth;
             } else {
-                r.left = getPaddingEnd();
+                r.left = paddingLeft;
                 r.right = r.left + sd.headerWidth;
             }
         } else if (sd.headerParams.isHeaderStartAligned()) {
@@ -1383,22 +1389,22 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     && sd.marginStart > 0) {
                 // Position inside start margin.
                 if (state.isLTR) {
-                    r.right = sd.marginStart + getPaddingStart();
+                    r.right = sd.marginStart + paddingLeft;
                     r.left = r.right - sd.headerWidth;
                 } else {
-                    r.left = getWidth() - sd.marginStart - getPaddingStart();
+                    r.left = getWidth() - sd.marginStart - paddingRight;
                     r.right = r.left + sd.headerWidth;
                 }
             } else if (state.isLTR) {
-                r.left = getPaddingStart();
+                r.left = paddingLeft;
                 r.right = r.left + sd.headerWidth;
             } else {
-                r.right = getWidth() - getPaddingStart();
+                r.right = getWidth() - paddingRight;
                 r.left = r.right - sd.headerWidth;
             }
         } else {
             // Header is not aligned to a directed edge and assumed to fill the width available.
-            r.left = getPaddingLeft();
+            r.left = paddingLeft;
             r.right = r.left + sd.headerWidth;
         }
 

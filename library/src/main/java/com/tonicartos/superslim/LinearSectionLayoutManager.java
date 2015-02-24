@@ -316,7 +316,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-        int left = state.isLTR ? sd.marginStart : sd.marginEnd;
+        int left = state.isLTR ? sd.contentStart : sd.contentEnd;
         int right = left + width;
         int top;
         int bottom;
@@ -377,7 +377,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             return;
         }
 
-        mLayoutManager.measureChildWithMargins(child.view, sd.marginStart + sd.marginEnd, 0);
+        mLayoutManager.measureChildWithMargins(child.view, sd.getTotalMarginWidth(), 0);
     }
 
     private void measureChild(SectionData section, LayoutState.View child) {
