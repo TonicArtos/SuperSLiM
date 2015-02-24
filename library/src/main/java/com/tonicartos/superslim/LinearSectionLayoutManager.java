@@ -14,33 +14,28 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
          */
-        int headerOffset = 0;
-
-        int position = sd.firstPosition + 1;
-        int itemCount = state.recyclerState.getItemCount();
-        int firstVisibleIndex =
+        int firstVisiblePosition =
                 mLayoutManager.getPosition(getFirstVisibleView(sd.firstPosition, true));
 
-        while (headerOffset > -sd.headerHeight && position < itemCount) {
+        int areaAbove = 0;
+        for (int position = sd.firstPosition + 1;
+                areaAbove < sd.headerHeight && position < firstVisiblePosition;
+                position++) {
             // Look to see if the header overlaps with the displayed area of the mSection.
-            LayoutState.View child;
+            LayoutState.View child = state.getView(position);
+            measureChild(child, sd);
 
-            if (position < firstVisibleIndex) {
-                // Make sure to measure current position if fill direction is to the start.
-                child = state.getView(position);
-                measureChild(child, sd);
-            } else {
-                // Run into an item that is displayed, indicating header overlap.
-                break;
-            }
-
-            headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            areaAbove += mLayoutManager.getDecoratedMeasuredHeight(child.view);
             state.recycleView(child);
-
-            position += 1;
         }
 
-        return headerOffset;
+        if (areaAbove == sd.headerHeight) {
+            return 0;
+        } else if (areaAbove > sd.headerHeight) {
+            return 1;
+        } else {
+            return -areaAbove;
+        }
     }
 
     @Override

@@ -714,7 +714,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Lay out and attach header.
         if (sd.hasHeader) {
             int headerOffset = 0;
-            if (!sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderSticky()) {
+            if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
                 headerOffset = slm.computeHeaderOffset(getChildAt(0), sd, state);
             }
             markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, headerOffset,
@@ -742,10 +742,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         if (sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
             r.bottom = markerLine;
-            r.top = r.bottom + sd.headerHeight;
-        } else {
+            r.top = r.bottom - sd.headerHeight;
+        } else if (offset <= 0) {
             r.top = markerLine + offset;
             r.bottom = r.top + sd.headerHeight;
+        } else  {
+            r.bottom = markerLine;
+            r.top = r.bottom - sd.headerHeight;
         }
 
         if (sd.headerParams.isHeaderSticky() && r.top < leadingEdge) {
