@@ -359,7 +359,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         View candidate = getChildAt(mid);
         LayoutParams params = (LayoutParams) candidate.getLayoutParams();
-        if (params.getTestedFirstPosition() != sfp || params.isHeader) {
+        if (params.getTestedFirstPosition() < sfp) {
+            return binarySearchForLastPosition(mid + 1, max, sfp);
+        }
+
+        if (params.getTestedFirstPosition() > sfp || params.isHeader) {
             return binarySearchForLastPosition(min, mid - 1, sfp);
         }
 
@@ -640,6 +644,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             View view = getChildAt(i);
             LayoutParams params = (LayoutParams) view.getLayoutParams();
             if (params.getTestedFirstPosition() != sd.firstPosition) {
+                view = findAttachedHeaderOrFirstViewForSection(params.getTestedFirstPosition(), i,
+                        Direction.START);
                 sectionBottom = getDecoratedTop(view);
                 break;
             }
@@ -1067,8 +1073,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param from Edge to start looking from.
      * @return Null if no header or first item found, otherwise the found view.
      */
-    private View findAttachedHeaderOrFirstViewForSection(final int sfp, final Direction from) {
-        int childIndex = from == Direction.START ? 0 : getChildCount() - 1;
+    private View findAttachedHeaderOrFirstViewForSection(final int sfp, int start,
+            final Direction from) {
+        int childIndex = start;
         int step = from == Direction.START ? 1 : -1;
         for (; 0 <= childIndex && childIndex < getChildCount(); childIndex += step) {
             View child = getChildAt(childIndex);
@@ -1086,7 +1093,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private View getHeaderOrFirstViewForSection(int sfp, Direction direction, LayoutState state) {
-        View view = findAttachedHeaderOrFirstViewForSection(sfp, direction);
+        View view = findAttachedHeaderOrFirstViewForSection(sfp,
+                direction == Direction.START ? 0 : getChildCount() - 1, direction);
         if (view == null) {
             LayoutState.View stateView = state.getView(sfp);
             view = stateView.view;
