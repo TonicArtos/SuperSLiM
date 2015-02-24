@@ -28,6 +28,11 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state) {
+        return 0;
+    }
+
+    @Override
     public FillResult fill(LayoutState state, SectionData section) {
         final int itemCount = state.recyclerState.getItemCount();
         final int height = mLayoutManager.getHeight();
@@ -107,12 +112,23 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
+            LayoutState state) {
+        return 0;
+    }
+
+    @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine =
                 getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1, leadingEdge);
 
         return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
+    }
+
+    @Override
+    public int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
+        return 0;
     }
 
     @Override

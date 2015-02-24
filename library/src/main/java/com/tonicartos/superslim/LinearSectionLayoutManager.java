@@ -9,6 +9,41 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state) {
+        /*
+         * Work from an assumed overlap and add heights from the start until the overlap is zero or
+         * less, or the current position (or max items) is reached.
+         */
+        int headerOffset = 0;
+
+        int position = sd.firstPosition + 1;
+        int itemCount = state.recyclerState.getItemCount();
+        int firstVisibleIndex =
+                mLayoutManager.getPosition(getFirstVisibleView(sd.firstPosition, true));
+
+        while (headerOffset > -sd.headerHeight && position < itemCount) {
+            // Look to see if the header overlaps with the displayed area of the mSection.
+            LayoutState.View child;
+
+            if (position < firstVisibleIndex) {
+                // Make sure to measure current position if fill direction is to the start.
+                child = state.getView(position);
+                measureChild(child, sd);
+            } else {
+                // Run into an item that is displayed, indicating header overlap.
+                break;
+            }
+
+            headerOffset -= mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            state.recycleView(child);
+
+            position += 1;
+        }
+
+        return headerOffset;
+    }
+
+    @Override
     public FillResult fill(LayoutState state, SectionData section) {
         final int itemCount = state.recyclerState.getItemCount();
 
@@ -61,6 +96,10 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
 
             LayoutState.View next = state.getView(i);
             LayoutManager.LayoutParams params = next.getLayoutParams();
+            if (params.isHeader) {
+                state.cacheView(i, next.view);
+                break;
+            }
             if (params.getTestedFirstPosition() != sd.firstPosition) {
                 state.cacheView(i, next.view);
                 break;
