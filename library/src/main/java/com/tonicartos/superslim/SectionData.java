@@ -53,7 +53,7 @@ public class SectionData {
         mContentMarginEnd = mHeaderMarginEnd + lm.getPaddingEnd();
 
         if (params.isHeader) {
-            lm.measureHeader(firstView);
+            lm.measureHeader(firstView.view);
             mHeaderHeight = lm.getDecoratedMeasuredHeight(firstView.view);
             if (params.headerStartMarginIsAuto) {
                 if (params.isHeaderStartAligned() && !params.isHeaderOverlay()) {
