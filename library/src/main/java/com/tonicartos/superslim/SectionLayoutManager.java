@@ -28,12 +28,6 @@ public abstract class SectionLayoutManager {
     public abstract int computeHeaderOffset(View anchor, SectionData sd, LayoutState state);
 
     /**
-     * Measure and layout children. Make sure to only lay out views belonging to this mSection,
-     * excepting headers, which are laid out by the wrapping layout manager.
-     */
-    public abstract FillResult fill(LayoutState state, SectionData sectionData);
-
-    /**
      * Fill section content towards the end.
      *
      * @param leadingEdge    Line to fill up to. Content will not be wholly beyond this line.
@@ -184,14 +178,6 @@ public abstract class SectionLayoutManager {
 
             lookAt += 1;
         }
-    }
-
-    public int getHeaderEndMargin() {
-        return MARGIN_UNSET;
-    }
-
-    public int getHeaderStartMargin() {
-        return MARGIN_UNSET;
     }
 
     /**
