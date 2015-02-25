@@ -217,7 +217,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
                     }
 
                     measureChild(measure, sd);
-                    rowHeight += mLayoutManager.getDecoratedMeasuredHeight(measure.view);
+                    rowHeight = Math.max(rowHeight,
+                            mLayoutManager.getDecoratedMeasuredHeight(measure.view));
                 }
 
                 sectionHeight += rowHeight;
@@ -268,6 +269,10 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     public int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine = mLayoutManager.getDecoratedTop(anchor);
+
+        if (anchorPosition - 1 == sd.firstPosition && sd.hasHeader) {
+            return markerLine;
+        }
 
         return fillToStart(leadingEdge, markerLine, anchorPosition - 1, sd, state);
     }
@@ -401,7 +406,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     private void calculateColumnWidthValues(SectionData2 section) {
-        int availableWidth = mLayoutManager.getWidth() - section.marginStart - section.marginEnd;
+        int availableWidth = mLayoutManager.getWidth() - section.contentStart - section.contentEnd;
         if (!mColumnsSpecified) {
             if (mMinimumWidth <= 0) {
                 mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
@@ -735,14 +740,14 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
      * Layout out a view for the given column in a row. Views that have a height param of
      * MATCH_PARENT are fixed to the height of the row.
      *
-     * @param child      View to lay out.
-     * @param markerLine Line indicating the top edge of the row.
-     * @param col        Column view is being placed into.
-     * @param rowHeight  Height of the row.
-     * @param sd         Section data.
-     * @param state      Layout state.
+     * @param child     View to lay out.
+     * @param top       Line indicating the top edge of the row.
+     * @param col       Column view is being placed into.
+     * @param rowHeight Height of the row.
+     * @param sd        Section data.
+     * @param state     Layout state.
      */
-    private void layoutChild(LayoutState.View child, int markerLine, int col, int rowHeight,
+    private void layoutChild(LayoutState.View child, int top, int col, int rowHeight,
             SectionData2 sd, LayoutState state) {
         final int height;
         if (child.getLayoutParams().height == LayoutManager.LayoutParams.MATCH_PARENT) {
@@ -752,11 +757,11 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         }
         final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
-        final int bottom = markerLine + height;
-        final int left = (state.isLTR ? sd.marginStart : sd.marginEnd) + col * mColumnWidth;
+        final int bottom = top + height;
+        final int left = (state.isLTR ? sd.contentStart : sd.contentEnd) + col * mColumnWidth;
         final int right = left + width;
 
-        mLayoutManager.layoutDecorated(child.view, left, markerLine, right, bottom);
+        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
     }
 
     private void layoutChild(LayoutState.View child, SectionData section, LayoutState state,

@@ -432,10 +432,6 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     private void measureChild(LayoutState.View child, SectionData2 sd) {
-        if (child.wasCached) {
-            return;
-        }
-
         mLayoutManager.measureChildWithMargins(child.view, sd.getTotalMarginWidth(), 0);
     }
 

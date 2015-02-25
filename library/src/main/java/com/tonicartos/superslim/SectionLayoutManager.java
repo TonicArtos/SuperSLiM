@@ -355,9 +355,7 @@ public abstract class SectionLayoutManager {
             addIndex = mLayoutManager.getChildCount();
         }
 
-        if (child.wasCached) {
-            state.decacheView(position);
-        }
+        state.decacheView(position);
         mLayoutManager.addView(child.view, addIndex);
 
         return addIndex;
