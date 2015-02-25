@@ -30,7 +30,7 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
             measureChild(child, sd);
 
             areaAbove += mLayoutManager.getDecoratedMeasuredHeight(child.view);
-            state.recycleView(child);
+            state.cacheView(position, child.view);
         }
 
         if (areaAbove == sd.headerHeight) {

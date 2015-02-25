@@ -17,23 +17,12 @@ public class LayoutState {
 
     public final boolean isLTR;
 
-    private final RecyclerView.LayoutManager mLayoutManager;
-
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
             RecyclerView.State recyclerState) {
         viewCache = new SparseArray<>(layoutManager.getChildCount());
         this.recyclerState = recyclerState;
         this.recycler = recycler;
-        mLayoutManager = layoutManager;
         isLTR = layoutManager.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
-    }
-
-    public void cacheAllViews() {
-        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
-            final android.view.View child = mLayoutManager.getChildAt(i);
-            final int childPosition = mLayoutManager.getPosition(child);
-            cacheView(childPosition, child);
-        }
     }
 
     public void cacheView(int position, android.view.View view) {
@@ -42,17 +31,6 @@ public class LayoutState {
 
     public void decacheView(int position) {
         viewCache.remove(position);
-    }
-
-    public void detachAndCacheAllViews() {
-        cacheAllViews();
-        detachCachedViews();
-    }
-
-    public void detachCachedViews() {
-        for (int i = 0; i < viewCache.size(); i++) {
-            mLayoutManager.detachView(viewCache.valueAt(i));
-        }
     }
 
     public android.view.View getCachedView(int position) {
@@ -72,12 +50,6 @@ public class LayoutState {
     public void recycleCache() {
         for (int i = 0; i < viewCache.size(); i++) {
             recycler.recycleView(viewCache.valueAt(i));
-        }
-    }
-
-    public void recycleView(View child) {
-        if (!child.wasCached) {
-            recycler.recycleView(child.view);
         }
     }
 
