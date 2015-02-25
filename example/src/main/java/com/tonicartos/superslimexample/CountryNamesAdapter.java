@@ -93,7 +93,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
         }
-        lp.sectionManager = 0; //item.sectionManager;
+        lp.sectionManager = item.sectionManager;
         lp.setFirstPosition(item.sectionFirstPosition);
         itemView.setLayoutParams(lp);
     }
