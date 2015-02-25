@@ -15,9 +15,9 @@ public class LayoutState {
 
     public final SparseArray<android.view.View> viewCache;
 
-    private final RecyclerView.LayoutManager mLayoutManager;
-
     public final boolean isLTR;
+
+    private final RecyclerView.LayoutManager mLayoutManager;
 
     public LayoutState(RecyclerView.LayoutManager layoutManager, RecyclerView.Recycler recycler,
             RecyclerView.State recyclerState) {

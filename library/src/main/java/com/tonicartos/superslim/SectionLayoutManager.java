@@ -17,10 +17,39 @@ public abstract class SectionLayoutManager {
     }
 
     /**
+     * Compute the offset for side aligned headers. If the height of the non-visible area of the
+     * section is taller than the header, then the header should be offscreen, in that case return
+     * any +ve number.
+     *
+     * @param anchor View to compute offset against. The top of the view is the reference point.
+     * @param sd     Section data.
+     * @param state  Layout state.
+     * @return -ve number giving the distance the header should be offset before the anchor view. A
+     * +ve number indicates the header is offscreen.
+     */
+    public abstract int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state);
+
+    /**
      * Measure and layout children. Make sure to only lay out views belonging to this mSection,
      * excepting headers, which are laid out by the wrapping layout manager.
      */
     public abstract FillResult fill(LayoutState state, SectionData sectionData);
+
+    /**
+     * Fill section content towards the end.
+     *
+     * @param leadingEdge    Line to fill up to. Content will not be wholly beyond this line.
+     * @param markerLine     Start of the section content area.
+     * @param anchorPosition Adapter position for the first content item in the section.
+     * @param sd             Section data.
+     * @param state          Layout state.
+     * @return Line to which content has been filled.
+     */
+    public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
+            SectionData2 sd, LayoutState state);
+
+    public abstract int fillToStart(int leadingEdge, int markerLine, int anchorPosition,
+            SectionData2 sd, LayoutState state);
 
     /**
      * Find the position of the first completely visible item of this section.
@@ -62,6 +91,21 @@ public abstract class SectionLayoutManager {
     public int findLastVisibleItemPosition(int sectionFirstPosition) {
         return mLayoutManager.getPosition(getLastVisibleView(sectionFirstPosition));
     }
+
+    /**
+     * Finish filling an already partially filled section.
+     *
+     * @param leadingEdge Line to fill up to. Content will not be wholly beyond this line.
+     * @param anchor      Last attached content item in this section.
+     * @param sd          Section data.
+     * @param state       Layout state.
+     * @return Line to which content has been filled.
+     */
+    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd,
+            LayoutState state);
+
+    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd,
+            LayoutState state);
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {
         return position;
@@ -156,7 +200,23 @@ public abstract class SectionLayoutManager {
      * Find the highest displayed edge of the section. If there is no member found then return the
      * start edge instead.
      */
-    public abstract int getHighestEdge(int sectionFirstPosition, int startEdge);
+    public int getHighestEdge(int sectionFirstPosition, int firstIndex, int startEdge) {
+        // Look from start to find children that are the highest.
+        for (int i = firstIndex; i < mLayoutManager.getChildCount(); i++) {
+            View child = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                    .getLayoutParams();
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+                break;
+            }
+            if (params.isHeader) {
+                continue;
+            }
+            // A more interesting layout would have to do something more here.
+            return mLayoutManager.getDecoratedTop(child);
+        }
+        return startEdge;
+    }
 
     /**
      * Locate the last view in this section that is completely visible. Will skip headers unless
@@ -232,10 +292,26 @@ public abstract class SectionLayoutManager {
     }
 
     /**
-     * Find the lowest displayed edge of the section. IF there is no member found then return the
+     * Find the lowest displayed edge of the section. If there is no member found then return the
      * end edge instead.
      */
-    public abstract int getLowestEdge(int sectionFirstPosition, int endEdge);
+    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
+        // Look from end to find children that are the lowest.
+        for (int i = lastIndex; i >= 0; i--) {
+            View child = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
+                    .getLayoutParams();
+            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+                break;
+            }
+            if (params.isHeader) {
+                continue;
+            }
+            // A more interesting layout would have to do something more here.
+            return mLayoutManager.getDecoratedBottom(child);
+        }
+        return endEdge;
+    }
 
     public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
         int itemsSkipped = 0;
@@ -264,5 +340,24 @@ public abstract class SectionLayoutManager {
         }
 
         return itemsSkipped;
+    }
+
+    public SectionLayoutManager init(SectionData2 sd) {
+        return this;
+    }
+
+    protected int addView(LayoutState.View child, int position, LayoutManager.Direction direction,
+            LayoutState state) {
+        int addIndex;
+        if (direction == LayoutManager.Direction.START) {
+            addIndex = 0;
+        } else {
+            addIndex = mLayoutManager.getChildCount();
+        }
+
+        state.decacheView(position);
+        mLayoutManager.addView(child.view, addIndex);
+
+        return addIndex;
     }
 }
