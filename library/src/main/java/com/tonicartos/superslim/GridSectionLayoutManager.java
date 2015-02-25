@@ -259,8 +259,8 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine =
-                getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1, leadingEdge);
+        final int markerLine = getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1,
+                mLayoutManager.getDecoratedBottom(anchor));
 
         return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
     }
@@ -293,32 +293,32 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
     @Override
     public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
-        // Look from end to find children that are the lowest.
         int bottomMostEdge = 0;
         int leftPosition = mLayoutManager.getWidth();
+        boolean foundItems = false;
+        // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
-            View child = mLayoutManager.getChildAt(i);
-            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
-                    .getLayoutParams();
+            View look = mLayoutManager.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
             if (params.getTestedFirstPosition() != sectionFirstPosition) {
                 break;
             }
+
             if (params.isHeader) {
                 continue;
             }
 
-            if (child.getLeft() >= leftPosition) {
-                // Last one in row already checked.
-                return bottomMostEdge;
+            if (look.getLeft() < leftPosition) {
+                leftPosition = look.getLeft();
             } else {
-                leftPosition = child.getLeft();
+                break;
             }
-            int bottomEdge = mLayoutManager.getDecoratedBottom(child);
-            if (bottomMostEdge < bottomEdge) {
-                bottomMostEdge = bottomEdge;
-            }
+
+            foundItems = true;
+            bottomMostEdge = Math.max(bottomMostEdge, mLayoutManager.getDecoratedBottom(look));
         }
-        return bottomMostEdge;
+
+        return foundItems ? bottomMostEdge : endEdge;
     }
 
     public GridSectionLayoutManager init(SectionData2 sd) {
