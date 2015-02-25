@@ -258,9 +258,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param state Layout state.
      */
     private void trimEnd(LayoutState state) {
+        int height = getHeight();
         for (int i = getChildCount() - 1; i >= 0; i--) {
             View view = getChildAt(i);
-            if (getDecoratedTop(view) >= getHeight()) {
+            if (getDecoratedTop(view) >= height) {
                 removeAndRecycleView(view, state.recycler);
             } else {
                 break;
