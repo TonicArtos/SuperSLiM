@@ -8,10 +8,6 @@ public class SectionData {
 
     public final boolean hasHeader;
 
-    final int marginStart;
-
-    final int marginEnd;
-
     public final int minimumHeight;
 
     public final int sectionManager;
@@ -23,6 +19,10 @@ public class SectionData {
     public final int contentEnd;
 
     public final int contentStart;
+
+    final int marginStart;
+
+    final int marginEnd;
 
     LayoutManager.LayoutParams headerParams;
 
@@ -72,7 +72,6 @@ public class SectionData {
         contentStart = marginStart + paddingStart;
 
         hasHeader = headerParams.isHeader;
-
 
         firstPosition = headerParams.getTestedFirstPosition();
 
