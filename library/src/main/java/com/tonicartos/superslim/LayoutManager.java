@@ -94,65 +94,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         mSmoothScrollEnabled = smoothScrollEnabled;
     }
 
-    public FillResult layoutAndAddHeader(LayoutState state, SectionData section,
-            FillResult fillResult) {
-        final LayoutState.View header = section.getSectionHeader(state);
-        if (header == null) {
-            return fillResult;
-        }
-
-        final LayoutParams params = header.getLayoutParams();
-        final int width = getDecoratedMeasuredWidth(header.view);
-        final int height = getDecoratedMeasuredHeight(header.view);
-
-        // Adjust marker line if needed.
-        if (params.isHeaderInline() && !params.isHeaderOverlay()) {
-            fillResult.markerStart -= height;
-        }
-
-        // Check header if header is stuck.
-        final boolean isStuck = params.isHeaderSticky() && fillResult.markerStart < 0
-                && !mDisableStickyHeaderDisplay;
-
-        // Attach after section children if overlay, otherwise before.
-        final int attachIndex;
-        if (isStuck || params.isHeaderOverlay()) {
-            attachIndex = fillResult.firstChildIndex + fillResult.addedChildCount;
-        } else {
-            attachIndex = fillResult.firstChildIndex;
-        }
-
-        // Attach header.
-        if (header.wasCached) {
-            if ((params.isHeaderSticky() && !mDisableStickyHeaderDisplay)
-                    || getDecoratedBottom(header.view) >= 0) {
-                attachView(header.view, attachIndex);
-                state.decacheView(section.getFirstPosition());
-                fillResult.positionStart -= 1;
-            }
-            if (!params.isHeaderSticky() || mDisableStickyHeaderDisplay) {
-                // Layout unneeded if the header is not sticky and was cached.
-                return fillResult;
-            }
-        }
-
-        // Do Layout
-
-        Rect rect = setHeaderRectSides(state, section, width, params, mRect);
-        rect = setHeaderRectTopAndBottom(state, fillResult, height, params, rect);
-        if (rect.bottom < 0) {
-            // Header is offscreen.
-            return fillResult;
-        } else if (!header.wasCached) {
-            fillResult.positionStart -= 1;
-            addView(header.view, attachIndex);
-        }
-
-        layoutDecorated(header.view, rect.left, rect.top, rect.right, rect.bottom);
-
-        return fillResult;
-    }
-
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int itemCount = state.getItemCount();
@@ -180,7 +121,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int anchorPosition = determineAnchorPosition(
                 new LayoutState(this, recycler, state), requestedPosition);
 
-        fill(recycler, state, anchorPosition, borderLine, true);
     }
 
     @Override
@@ -436,12 +376,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header, unavailableWidth, 0);
     }
 
-    private void adjustHeaderAttachPoint(View header, int sfp) {
-        detachView(header);
-        int sectionLastPosition = findLastIndexForSection(sfp);
-        attachView(header, sectionLastPosition + 1);
-    }
-
     private void attachHeaderForStart(View header, SectionData2 sd, LayoutState state) {
         if (state.getCachedView(sd.firstPosition) != null) {
             addView(header, findLastIndexForSection(sd.firstPosition) + 1);
@@ -494,14 +428,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return binarySearchForLastPosition(mid + 1, max, sfp);
     }
 
-    private int computeMarkerLine(Direction direction, SectionLayoutManager slm, int sectionId) {
-        if (direction == Direction.END) {
-            return slm.getLowestEdge(sectionId, getChildCount() - 1, getHeight());
-        } else {
-            return slm.getHighestEdge(sectionId, 0, 0);
-        }
-    }
-
     private int determineAnchorPosition(LayoutState state, int position) {
         SectionData section = new SectionData(this, state, Direction.NONE, position, 0);
 
@@ -513,47 +439,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         return mSectionLayouts.get(section.getLayoutId())
                 .getAnchorPosition(state, section, position);
-    }
-
-    private void fill(RecyclerView.Recycler recycler, RecyclerView.State rvs,
-            final int anchorPosition, int scrappedBorderLine, boolean scrapped) {
-
-        LayoutState state = new LayoutState(this, recycler, rvs);
-        final int itemCount = state.recyclerState.getItemCount();
-        final int recyclerViewHeight = getHeight();
-
-        if (anchorPosition >= itemCount || anchorPosition < 0) {
-            return;
-        }
-
-        state.detachAndCacheAllViews();
-
-        // Borderline
-        int borderline = scrapped ? scrappedBorderLine
-                : getBorderLine(state, anchorPosition, Direction.END);
-
-        // Prepare anchor section.
-        SectionData section = new SectionData(this, state, Direction.NONE, anchorPosition,
-                borderline);
-        SectionLayoutManager sectionManager = getSectionLayoutManager(section.getLayoutId());
-        section.loadMargins(this, sectionManager);
-
-        // Fill anchor section.
-        FillResult anchorResult = sectionManager.fill(state, section);
-        anchorResult = layoutAndAddHeader(state, section, anchorResult);
-
-        // Fill sections before anchor to start.
-        FillResult fillResult;
-        fillResult = fillSections(state, anchorResult, recyclerViewHeight, Direction.START);
-        final int finalStartMarker = fillResult.markerStart;
-        final int finalStartPosition = fillResult.positionStart;
-
-        // Fill sections after anchor to end.
-        fillResult = fillSections(state, anchorResult, recyclerViewHeight, Direction.END);
-        final int finalEndMarker = fillResult.markerEnd;
-        final int finalEndPosition = fillResult.positionEnd;
-
-        state.recycleCache();
     }
 
     /**
@@ -667,37 +552,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         return fillNextSectionToStart(leadingEdge, markerLine, state);
-    }
-
-    private FillResult fillSections(LayoutState layoutState, FillResult fillState,
-            int recyclerViewHeight, Direction direction) {
-        while (true) {
-            final int anchor;
-            final SectionData section;
-            final SectionData2 sd;
-            if (direction == Direction.END) {
-                anchor = fillState.positionEnd + 1;
-                if (fillState.markerEnd >= recyclerViewHeight
-                        || anchor >= layoutState.recyclerState.getItemCount()) {
-                    break;
-                }
-                section = new SectionData(this, layoutState, direction, anchor,
-                        fillState.markerEnd);
-            } else {
-                anchor = fillState.positionStart - 1;
-                if (fillState.markerStart <= 0 || anchor < 0) {
-                    break;
-                }
-                section = new SectionData(this, layoutState, direction, anchor,
-                        fillState.markerStart);
-            }
-
-            SectionLayoutManager sectionManager = getSectionLayoutManager(section.getLayoutId());
-            section.loadMargins(this, sectionManager);
-            fillState = sectionManager.fill(layoutState, section);
-            fillState = layoutAndAddHeader(layoutState, section, fillState);
-        }
-        return fillState;
     }
 
     /**
@@ -966,24 +820,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return borderline;
     }
 
-    private int getBorderLine(LayoutState state, int anchorPosition,
-            Direction direction) {
-        int borderline;
-        final android.view.View marker = state.getCachedView(anchorPosition);
-        if (marker == null) {
-            if (direction == Direction.START) {
-                borderline = getPaddingBottom();
-            } else {
-                borderline = getPaddingTop();
-            }
-        } else if (direction == Direction.START) {
-            borderline = getDecoratedBottom(marker);
-        } else {
-            borderline = getDecoratedTop(marker);
-        }
-        return borderline;
-    }
-
     private int getDirectionToPosition(int targetPosition) {
         SectionData2 sd = new SectionData2(this, getChildAt(0));
         final View startSectionFirstView = getSectionLayoutManager(sd)
@@ -1115,15 +951,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return view;
     }
 
-    @Deprecated
-    private SectionLayoutManager getSectionLayoutManager(int sectionManager) {
-        SectionLayoutManager slm = mSectionLayouts.get(sectionManager);
-        if (slm == null) {
-            throw new UnknownSectionLayoutException(sectionManager);
-        }
-        return slm;
-    }
-
     private SectionLayoutManager getSectionLayoutManager(SectionData2 sd) {
         SectionLayoutManager manager = mSectionLayouts.get(sd.sectionManager);
         if (manager == null) {
@@ -1246,78 +1073,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             // Header is not aligned to a directed edge and assumed to fill the width available.
             r.left = paddingLeft;
             r.right = r.left + sd.headerWidth;
-        }
-
-        return r;
-    }
-
-    private Rect setHeaderRectSides(LayoutState state, SectionData section, int width,
-            LayoutParams params, Rect r) {
-
-        if (params.isHeaderEndAligned()) {
-            // Position header from end edge.
-            if (!params.isHeaderOverlay() && !params.headerEndMarginIsAuto
-                    && section.getHeaderMarginEnd() > 0) {
-                // Position inside end margin.
-                if (state.isLTR) {
-                    r.left = getWidth() - section.getHeaderMarginEnd() - getPaddingEnd();
-                    r.right = r.left + width;
-                } else {
-                    r.right = section.getHeaderMarginEnd() + getPaddingEnd();
-                    r.left = r.right - width;
-                }
-            } else if (state.isLTR) {
-                r.right = getWidth() - getPaddingEnd();
-                r.left = r.right - width;
-            } else {
-                r.left = getPaddingEnd();
-                r.right = r.left + width;
-            }
-        } else if (params.isHeaderStartAligned()) {
-            // Position header from start edge.
-            if (!params.isHeaderOverlay() && !params.headerStartMarginIsAuto
-                    && section.getHeaderMarginStart() > 0) {
-                // Position inside start margin.
-                if (state.isLTR) {
-                    r.right = section.getHeaderMarginStart() + getPaddingStart();
-                    r.left = r.right - width;
-                } else {
-                    r.left = getWidth() - section.getHeaderMarginStart() - getPaddingStart();
-                    r.right = r.left + width;
-                }
-            } else if (state.isLTR) {
-                r.left = getPaddingStart();
-                r.right = r.left + width;
-            } else {
-                r.right = getWidth() - getPaddingStart();
-                r.left = r.right - width;
-            }
-        } else {
-            // Header is not aligned to a directed edge and assumed to fill the width available.
-            r.left = getPaddingLeft();
-            r.right = r.left + width;
-        }
-
-        return r;
-    }
-
-    private Rect setHeaderRectTopAndBottom(LayoutState state, FillResult fillResult, int height,
-            LayoutParams params, Rect r) {
-        r.top = fillResult.markerStart;
-        if (params.headerDisplay != LayoutParams.HEADER_INLINE && fillResult.headerOffset < 0) {
-            r.top += fillResult.headerOffset;
-        }
-        r.bottom = r.top + height;
-
-        if (params.isHeaderSticky() && !mDisableStickyHeaderDisplay) {
-            if (r.top < 0) {
-                r.top = 0;
-                r.bottom = height;
-            }
-            if (r.bottom > fillResult.markerEnd) {
-                r.bottom = fillResult.markerEnd;
-                r.top = r.bottom - height;
-            }
         }
 
         return r;
