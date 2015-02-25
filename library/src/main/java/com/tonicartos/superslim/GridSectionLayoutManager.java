@@ -28,7 +28,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state) {
+    public int computeHeaderOffset(View anchor, SectionData sd, LayoutState state) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -88,7 +88,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
+    public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
             LayoutState state) {
         final int itemCount = state.recyclerState.getItemCount();
         if (anchorPosition >= itemCount) {
@@ -145,7 +145,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData2 sd,
+    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
             LayoutState state) {
         final int firstContentPosition = sd.hasHeader ? sd.firstPosition + 1 : sd.firstPosition;
 
@@ -257,7 +257,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
+    public int finishFillToEnd(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine = getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1,
                 mLayoutManager.getDecoratedBottom(anchor));
@@ -266,7 +266,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd, LayoutState state) {
+    public int finishFillToStart(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine = mLayoutManager.getDecoratedTop(anchor);
 
@@ -321,7 +321,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return foundItems ? bottomMostEdge : endEdge;
     }
 
-    public GridSectionLayoutManager init(SectionData2 sd) {
+    public GridSectionLayoutManager init(SectionData sd) {
         super.init(sd);
 
         calculateColumnWidthValues(sd);
@@ -339,7 +339,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
      * @param state           Layout state.   @return The height of the new row.
      */
     public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
-            boolean measureRowItems, SectionData2 sd, LayoutState state) {
+            boolean measureRowItems, SectionData sd, LayoutState state) {
         int rowHeight = 0;
         LayoutState.View[] views = new LayoutState.View[mNumColumns];
         for (int i = 0; i < mNumColumns; i++) {
@@ -406,7 +406,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return addIndex;
     }
 
-    private void calculateColumnWidthValues(SectionData2 section) {
+    private void calculateColumnWidthValues(SectionData section) {
         int availableWidth = mLayoutManager.getWidth() - section.contentStart - section.contentEnd;
         if (!mColumnsSpecified) {
             if (mMinimumWidth <= 0) {
@@ -749,7 +749,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
      * @param state     Layout state.
      */
     private void layoutChild(LayoutState.View child, int top, int col, int rowHeight,
-            SectionData2 sd, LayoutState state) {
+            SectionData sd, LayoutState state) {
         final int height;
         if (child.getLayoutParams().height == LayoutManager.LayoutParams.MATCH_PARENT) {
             height = rowHeight;
@@ -787,7 +787,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
      * @param child View to measure.
      * @param sd    Section data.
      */
-    private void measureChild(LayoutState.View child, SectionData2 sd) {
+    private void measureChild(LayoutState.View child, SectionData sd) {
         int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
         mLayoutManager.measureChildWithMargins(child.view,
                 sd.marginStart + sd.marginEnd + widthOtherColumns,

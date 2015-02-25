@@ -44,7 +44,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first completely visible item.
      */
     public int findFirstCompletelyVisibleItemPosition() {
-        SectionData2 sd = new SectionData2(this, getChildAt(0));
+        SectionData sd = new SectionData(this, getChildAt(0));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
         return slm.findFirstCompletelyVisibleItemPosition(sd.firstPosition);
@@ -56,7 +56,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first visible item.
      */
     public int findFirstVisibleItemPosition() {
-        SectionData2 sd = new SectionData2(this, getChildAt(0));
+        SectionData sd = new SectionData(this, getChildAt(0));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
         return slm.findFirstVisibleItemPosition(sd.firstPosition);
@@ -68,7 +68,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of last completely visible item.
      */
     public int findLastCompletelyVisibleItemPosition() {
-        SectionData2 sd = new SectionData2(this, getChildAt(getChildCount() - 1));
+        SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
         return slm.findLastCompletelyVisibleItemPosition(sd.firstPosition);
@@ -80,7 +80,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of last visible item.
      */
     public int findLastVisibleItemPosition() {
-        SectionData2 sd = new SectionData2(this, getChildAt(getChildCount() - 1));
+        SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
         return slm.findLastVisibleItemPosition(sd.firstPosition);
@@ -376,7 +376,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header, unavailableWidth, 0);
     }
 
-    private void attachHeaderForStart(View header, SectionData2 sd, LayoutState state) {
+    private void attachHeaderForStart(View header, SectionData sd, LayoutState state) {
         if (state.getCachedView(sd.firstPosition) != null) {
             addView(header, findLastIndexForSection(sd.firstPosition) + 1);
             state.decacheView(sd.firstPosition);
@@ -464,10 +464,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         LayoutState.View header = state.getView(anchorPosition);
-        SectionData2 sd = new SectionData2(this, header.view);
+        SectionData sd = new SectionData(this, header.view);
         if (sd.hasHeader) {
             measureHeader(header.view);
-            sd = new SectionData2(this, header.view);
+            sd = new SectionData(this, header.view);
             markerLine = layoutHeaderTowardsEnd(header.view, markerLine, sd, state);
             anchorPosition += 1;
         } else {
@@ -526,10 +526,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Setup section data.
         View header = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
-        SectionData2 sd = new SectionData2(this, header);
+        SectionData sd = new SectionData(this, header);
         if (sd.hasHeader) {
             measureHeader(header);
-            sd = new SectionData2(this, header);
+            sd = new SectionData(this, header);
         }
 
         // Fill out section.
@@ -568,7 +568,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
         final int sfp = anchorParams.getTestedFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.END, state);
-        final SectionData2 sd = new SectionData2(this, first);
+        final SectionData sd = new SectionData(this, first);
 
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
         int markerLine = slm.finishFillToEnd(leadingEdge, anchor, sd, state);
@@ -593,7 +593,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
         final int sfp = anchorParams.getTestedFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
-        final SectionData2 sd = new SectionData2(this, first);
+        final SectionData sd = new SectionData(this, first);
 
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
         int markerLine = slm.finishFillToStart(leadingEdge, anchor, sd, state);
@@ -821,7 +821,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getDirectionToPosition(int targetPosition) {
-        SectionData2 sd = new SectionData2(this, getChildAt(0));
+        SectionData sd = new SectionData(this, getChildAt(0));
         final View startSectionFirstView = getSectionLayoutManager(sd)
                 .getFirstVisibleView(sd.firstPosition, true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
@@ -845,7 +845,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             float height = getDecoratedMeasuredHeight(child);
             fractionOffscreen = -top / height;
         }
-        SectionData2 sd = new SectionData2(this, child);
+        SectionData sd = new SectionData(this, child);
         if (sd.headerParams.isHeader && sd.headerParams.isHeaderInline()) {
             // Header must not be stickied as it is not attached after section items.
             return fractionOffscreen;
@@ -896,7 +896,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int anchorPosition = getPosition(child);
         int countAfter = 0;
 
-        SectionData2 sd = new SectionData2(this, child);
+        SectionData sd = new SectionData(this, child);
 
         float fractionOffscreen = 0;
         int lastPosition = -1;
@@ -951,7 +951,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return view;
     }
 
-    private SectionLayoutManager getSectionLayoutManager(SectionData2 sd) {
+    private SectionLayoutManager getSectionLayoutManager(SectionData sd) {
         SectionLayoutManager manager = mSectionLayouts.get(sd.sectionManager);
         if (manager == null) {
             throw new UnknownSectionLayoutException(sd.sectionManager);
@@ -968,7 +968,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param state      Layout state.
      * @return Line at which to start filling out the section's content.
      */
-    private int layoutHeaderTowardsEnd(View header, int markerLine, SectionData2 sd,
+    private int layoutHeaderTowardsEnd(View header, int markerLine, SectionData sd,
             LayoutState state) {
         Rect r = setHeaderRectSides(mRect, sd, state);
 
@@ -995,7 +995,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Top of the section including the header.
      */
     private int layoutHeaderTowardsStart(View header, int leadingEdge, int markerLine, int offset,
-            int sectionBottom, SectionData2 sd, LayoutState state) {
+            int sectionBottom, SectionData sd, LayoutState state) {
         Rect r = setHeaderRectSides(mRect, sd, state);
 
         if (sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
@@ -1027,7 +1027,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return Math.min(r.top, markerLine);
     }
 
-    private Rect setHeaderRectSides(Rect r, SectionData2 sd, LayoutState state) {
+    private Rect setHeaderRectSides(Rect r, SectionData sd, LayoutState state) {
         final int paddingLeft = getPaddingLeft();
         final int paddingRight = getPaddingRight();
 
@@ -1173,7 +1173,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param sd         Section data.
      * @return The end of the section including the header.
      */
-    private int updateHeaderForEnd(int markerLine, SectionData2 sd) {
+    private int updateHeaderForEnd(int markerLine, SectionData sd) {
         View header = findAttachedHeaderForSectionFromEnd(sd.firstPosition);
         if (header == null) {
             return markerLine;
@@ -1195,7 +1195,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param state       Layout state.
      * @return Updated line for the start of the section content including the header.
      */
-    private int updateHeaderForStart(int leadingEdge, int markerLine, SectionData2 sd,
+    private int updateHeaderForStart(int leadingEdge, int markerLine, SectionData sd,
             LayoutState state) {
         View header = getHeaderOrFirstViewForSection(sd.firstPosition, Direction.START, state);
 
@@ -1226,7 +1226,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private void updateHeaderForTrimFromStart(View header) {
-        SectionData2 sd = new SectionData2(this, header);
+        SectionData sd = new SectionData(this, header);
         if (!sd.headerParams.isHeaderSticky() || mDisableStickyHeaderDisplay) {
             return;
         }

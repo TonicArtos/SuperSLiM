@@ -2,7 +2,7 @@ package com.tonicartos.superslim;
 
 import android.view.View;
 
-public class SectionData2 {
+public class SectionData {
 
     public final int firstPosition;
 
@@ -26,7 +26,7 @@ public class SectionData2 {
 
     LayoutManager.LayoutParams headerParams;
 
-    public SectionData2(LayoutManager lm, View first) {
+    public SectionData(LayoutManager lm, View first) {
         final int paddingStart = lm.getPaddingStart();
         final int paddingEnd = lm.getPaddingEnd();
 

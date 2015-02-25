@@ -4,8 +4,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.View;
 
-import java.util.ArrayList;
-
 public abstract class SectionLayoutManager {
 
     private static final int MARGIN_UNSET = -1;
@@ -27,7 +25,7 @@ public abstract class SectionLayoutManager {
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
-    public abstract int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state);
+    public abstract int computeHeaderOffset(View anchor, SectionData sd, LayoutState state);
 
     /**
      * Measure and layout children. Make sure to only lay out views belonging to this mSection,
@@ -46,10 +44,10 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData2 sd, LayoutState state);
+            SectionData sd, LayoutState state);
 
     public abstract int fillToStart(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData2 sd, LayoutState state);
+            SectionData sd, LayoutState state);
 
     /**
      * Find the position of the first completely visible item of this section.
@@ -101,10 +99,10 @@ public abstract class SectionLayoutManager {
      * @param state       Layout state.
      * @return Line to which content has been filled.
      */
-    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd,
+    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData sd,
             LayoutState state);
 
-    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd,
+    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData sd,
             LayoutState state);
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {
@@ -338,7 +336,7 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
-    public SectionLayoutManager init(SectionData2 sd) {
+    public SectionLayoutManager init(SectionData sd) {
         return this;
     }
 
