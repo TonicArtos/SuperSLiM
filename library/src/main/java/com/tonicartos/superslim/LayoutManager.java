@@ -213,12 +213,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutState layoutState = new LayoutState(this, recycler, state);
 
         final Direction direction = dy > 0 ? Direction.END : Direction.START;
+        final boolean isDirectionEnd = direction == Direction.END;
 
-        final int leadingEdge = direction == Direction.END ? getHeight() + dy : dy;
+        final int leadingEdge = isDirectionEnd ? getHeight() + dy : dy;
         final int fillEdge = fillUntil(leadingEdge, direction, layoutState);
+
         final int delta;
-        if (direction == Direction.END) {
-            // padding added here to allow extra scroll
+        if (isDirectionEnd) {
+            // Add padding so we scroll to inset area at scroll end.
             int fillDelta = fillEdge - getHeight() + getPaddingBottom();
             delta = fillDelta < dy ? fillDelta : dy;
         } else {
@@ -229,7 +231,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (delta != 0) {
             offsetChildrenVertical(-delta);
 
-            trimTail(direction == Direction.START ? Direction.END : Direction.START, layoutState);
+            trimTail(isDirectionEnd ? Direction.START : Direction.END, layoutState);
         }
 
         layoutState.recycleCache();
@@ -708,7 +710,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     private int fillToEnd(int leadingEdge, LayoutState state) {
         final View anchor = getAnchorAtEnd();
-        final int sfp = ((LayoutParams) anchor.getLayoutParams()).getTestedFirstPosition();
+
+        LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
+        final int sfp = anchorParams.getTestedFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.END, state);
         final SectionData2 sd = new SectionData2(this, first);
 
