@@ -1040,6 +1040,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             markerLine = r.bottom;
         }
 
+        if (sd.headerParams.isHeaderSticky() && r.top < 0) {
+            r.top = 0;
+            r.bottom = r.top + sd.headerHeight;
+        }
+
         layoutDecorated(header, r.left, r.top, r.right, r.bottom);
 
         return markerLine;
