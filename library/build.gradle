@@ -24,7 +24,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:21.0.2'
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn-push.gradle'
 
 afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
