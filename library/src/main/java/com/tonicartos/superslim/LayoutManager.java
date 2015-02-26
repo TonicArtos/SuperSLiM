@@ -484,8 +484,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header, unavailableWidth, 0);
     }
 
-    private void attachHeaderForStart(View header, SectionData sd, LayoutState state) {
-        if (state.getCachedView(sd.firstPosition) != null && getDecoratedBottom(header) > 0) {
+    private void attachHeaderForStart(View header, int leadingEdge, SectionData sd, LayoutState state) {
+        if (state.getCachedView(sd.firstPosition) != null && getDecoratedBottom(header) > leadingEdge) {
             addView(header, findLastIndexForSection(sd.firstPosition) + 1);
             state.decacheView(sd.firstPosition);
 //        } else {
@@ -649,7 +649,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, headerOffset,
                     sectionBottom, sd, state);
 
-            attachHeaderForStart(header, sd, state);
+            attachHeaderForStart(header, leadingEdge, sd, state);
         }
 
         return fillNextSectionToStart(leadingEdge, markerLine, state);
@@ -1451,7 +1451,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         markerLine = layoutHeaderTowardsStart(header, leadingEdge, markerLine, offset,
                 sectionBottom, sd, state);
 
-        attachHeaderForStart(header, sd, state);
+        attachHeaderForStart(header, leadingEdge, sd, state);
 
         return markerLine;
     }
