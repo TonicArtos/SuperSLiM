@@ -19,7 +19,6 @@ public abstract class SectionLayoutManager {
      * section is taller than the header, then the header should be offscreen, in that case return
      * any +ve number.
      *
-     * @param anchor View to compute offset against. The top of the view is the reference point.
      * @param sd     Section data.
      * @param state  Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
