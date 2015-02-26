@@ -119,10 +119,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         detachAndScrapAttachedViews(recycler);
 
         LayoutState layoutState = new LayoutState(this, recycler, state);
-        final int anchorPosition = determineAnchorPosition(layoutState, requestedPosition);
-
-        // Layout views. Anchor position
-        layoutChildren(anchorPosition, borderLine, layoutState);
+        layoutChildren(requestedPosition, borderLine, layoutState);
 
         // Check
     }
@@ -856,6 +853,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (firstParams.isHeaderInline() && !firstParams.isHeaderOverlay()
                 && getDecoratedTop(child) >= getDecoratedBottom(first)) {
             return first;
+        }
+
+        if (getDecoratedTop(child) < getDecoratedTop(first)) {
+            return child;
         }
 
         if (sfp + 1 == getPosition(child)) {
