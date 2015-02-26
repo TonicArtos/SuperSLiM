@@ -25,7 +25,7 @@ public abstract class SectionLayoutManager {
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
-    public abstract int computeHeaderOffset(View anchor, SectionData sd, LayoutState state);
+    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state);
 
     /**
      * Fill section content towards the end.

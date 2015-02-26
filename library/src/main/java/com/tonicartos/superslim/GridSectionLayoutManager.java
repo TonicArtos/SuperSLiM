@@ -28,18 +28,11 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int computeHeaderOffset(View anchor, SectionData sd, LayoutState state) {
+    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
          */
-        View firstVisibleView = getFirstVisibleView(sd.firstPosition, true);
-        if (firstVisibleView == null) {
-            return 0;
-        }
-
-        int firstVisiblePosition = mLayoutManager.getPosition(firstVisibleView);
-
         int areaAbove = 0;
         for (int position = sd.firstPosition + 1;
                 areaAbove < sd.headerHeight && position < firstVisiblePosition;
@@ -130,7 +123,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         // Check to see if we have to adjust for minimum section height. We don't if there is an
         // attached non-header view in this section.
         boolean applyMinHeight = false;
-        for (int i = 0; i < state.recyclerState.getItemCount(); i++) {
+        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
             View check = mLayoutManager.getChildAt(0);
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
@@ -150,7 +143,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         for (int i = 1; i < mNumColumns - col; i++) {
             // Detach and scrap attached items in this row, so we can re-lay them again. The last
             // child view in the index can be the header so we just skip past it if it last.
-            for (int j = 0; j <= mLayoutManager.getChildCount(); j++) {
+            for (int j = 0; j < mLayoutManager.getChildCount(); j++) {
                 View child = mLayoutManager.getChildAt(j);
                 LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                         .getLayoutParams();

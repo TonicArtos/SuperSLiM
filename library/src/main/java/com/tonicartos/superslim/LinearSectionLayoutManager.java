@@ -9,17 +9,11 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
-    public int computeHeaderOffset(View anchor, SectionData sd, LayoutState state) {
+    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
          */
-        View firstVisibleView = getFirstVisibleView(sd.firstPosition, true);
-        if (firstVisibleView == null) {
-            return 0;
-        }
-
-        int firstVisiblePosition = mLayoutManager.getPosition(firstVisibleView);
 
         int areaAbove = 0;
         for (int position = sd.firstPosition + 1;
@@ -75,6 +69,11 @@ public class LinearSectionLayoutManager extends SectionLayoutManager {
         boolean applyMinHeight = false;
         for (int i = 0; i < state.recyclerState.getItemCount(); i++) {
             View check = mLayoutManager.getChildAt(0);
+            if (check == null) {
+                applyMinHeight = false;
+                break;
+            }
+
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
             if (checkParams.getTestedFirstPosition() != sd.firstPosition) {
