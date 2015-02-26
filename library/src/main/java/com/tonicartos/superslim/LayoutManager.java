@@ -43,7 +43,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      *
      * @return Position of first completely visible item.
      */
-    public int findFirstCompletelyVisibleItemPosition() {
+    public View findFirstCompletelyVisibleItem() {
         SectionData sd = new SectionData(this, getChildAt(0));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
@@ -53,13 +53,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (firstVisiblePosition == sd.firstPosition ||
                 firstVisiblePosition > sd.firstPosition + 1) {
             // Header doesn't matter.
-            return firstVisiblePosition;
+            return firstVisibleView;
         }
 
         // Maybe the header is completely visible.
         View first = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
         if (first == null) {
-            return firstVisiblePosition;
+            return firstVisibleView;
         }
 
         final int topEdge = getClipToPadding() ? getPaddingTop() : 0;
@@ -69,20 +69,60 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int firstBottom = getDecoratedBottom(first);
 
         if (firstTop < topEdge || bottomEdge < firstBottom) {
-            return firstVisiblePosition;
+            return firstVisibleView;
         }
 
         if (firstBottom <= getDecoratedTop(firstVisibleView)) {
-            return sd.firstPosition;
+            return first;
         }
 
         LayoutParams firstParams = (LayoutParams) first.getLayoutParams();
         if ((!firstParams.isHeaderInline() || firstParams.isHeaderOverlay())
                 && firstTop == getDecoratedTop(firstVisibleView)) {
-            return sd.firstPosition;
+            return first;
         }
 
-        return firstVisiblePosition;
+        return firstVisibleView;
+    }
+
+    /**
+     * Find the position of the first completely visible item.
+     *
+     * @return Position of first completely visible item.
+     */
+    public int findFirstCompletelyVisibleItemPosition() {
+        return getPosition(findFirstCompletelyVisibleItem());
+    }
+
+    /**
+     * Find the position of the first visible item.
+     *
+     * @return Position of first visible item.
+     */
+    public View findFirstVisibleItem() {
+        SectionData sd = new SectionData(this, getChildAt(0));
+        final SectionLayoutManager slm = getSectionLayoutManager(sd);
+        View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, false);
+        int position = getPosition(firstVisibleView);
+        if (position > sd.firstPosition + 1 || position == sd.firstPosition) {
+            return firstVisibleView;
+        }
+        View first = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
+        if (first == null) {
+            return firstVisibleView;
+        }
+
+        if (getDecoratedBottom(first) <= getDecoratedTop(firstVisibleView)) {
+            return first;
+        }
+
+        LayoutParams firstParams = (LayoutParams) first.getLayoutParams();
+        if ((!firstParams.isHeaderInline() || firstParams.isHeaderOverlay())
+                && getDecoratedTop(first) == getDecoratedTop(firstVisibleView)) {
+            return first;
+        }
+
+        return firstVisibleView;
     }
 
     /**
@@ -91,29 +131,19 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first visible item.
      */
     public int findFirstVisibleItemPosition() {
-        SectionData sd = new SectionData(this, getChildAt(0));
+        return getPosition(findFirstVisibleItem());
+    }
+
+    /**
+     * Find the position of the last completely visible item.
+     *
+     * @return Position of last completely visible item.
+     */
+    public View findLastCompletelyVisibleItem() {
+        SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
-        View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, false);
-        int position = getPosition(firstVisibleView);
-        if (position > sd.firstPosition + 1 || position == sd.firstPosition) {
-            return position;
-        }
-        View first = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
-        if (first == null) {
-            return position;
-        }
 
-        if (getDecoratedBottom(first) <= getDecoratedTop(firstVisibleView)) {
-            return sd.firstPosition;
-        }
-
-        LayoutParams firstParams = (LayoutParams) first.getLayoutParams();
-        if ((!firstParams.isHeaderInline() || firstParams.isHeaderOverlay())
-                && getDecoratedTop(first) == getDecoratedTop(firstVisibleView)) {
-            return sd.firstPosition;
-        }
-
-        return position;
+        return slm.getLastCompletelyVisibleView(sd.firstPosition);
     }
 
     /**
@@ -126,6 +156,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
         return slm.findLastCompletelyVisibleItemPosition(sd.firstPosition);
+    }
+
+    /**
+     * Find the position of the last visible item.
+     *
+     * @return Position of last visible item.
+     */
+    public View findLastVisibleItem() {
+        SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
+        final SectionLayoutManager slm = getSectionLayoutManager(sd);
+
+        return slm.getLastVisibleView(sd.firstPosition);
     }
 
     /**
