@@ -4,8 +4,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.View;
 
-import java.util.ArrayList;
-
 public abstract class SectionLayoutManager {
 
     private static final int MARGIN_UNSET = -1;
@@ -21,19 +19,13 @@ public abstract class SectionLayoutManager {
      * section is taller than the header, then the header should be offscreen, in that case return
      * any +ve number.
      *
-     * @param anchor View to compute offset against. The top of the view is the reference point.
-     * @param sd     Section data.
-     * @param state  Layout state.
+     * @param sd    Section data.
+     * @param state Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
-    public abstract int computeHeaderOffset(View anchor, SectionData2 sd, LayoutState state);
-
-    /**
-     * Measure and layout children. Make sure to only lay out views belonging to this mSection,
-     * excepting headers, which are laid out by the wrapping layout manager.
-     */
-    public abstract FillResult fill(LayoutState state, SectionData sectionData);
+    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sd,
+            LayoutState state);
 
     /**
      * Fill section content towards the end.
@@ -46,10 +38,10 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData2 sd, LayoutState state);
+            SectionData sd, LayoutState state);
 
     public abstract int fillToStart(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData2 sd, LayoutState state);
+            SectionData sd, LayoutState state);
 
     /**
      * Find the position of the first completely visible item of this section.
@@ -101,10 +93,10 @@ public abstract class SectionLayoutManager {
      * @param state       Layout state.
      * @return Line to which content has been filled.
      */
-    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData2 sd,
+    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData sd,
             LayoutState state);
 
-    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData2 sd,
+    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData sd,
             LayoutState state);
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {
@@ -188,14 +180,6 @@ public abstract class SectionLayoutManager {
         }
     }
 
-    public int getHeaderEndMargin() {
-        return MARGIN_UNSET;
-    }
-
-    public int getHeaderStartMargin() {
-        return MARGIN_UNSET;
-    }
-
     /**
      * Find the highest displayed edge of the section. If there is no member found then return the
      * start edge instead.
@@ -244,12 +228,19 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition() && topInside && bottomInside) {
-                if (!lp.isHeader) {
-                    return view;
-                } else {
-                    candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (topInside && bottomInside) {
+                    if (!lp.isHeader) {
+                        return view;
+                    } else {
+                        candidate = view;
+                    }
                 }
+            } else if (candidate == null) {
+                sectionFirstPosition = lp.getTestedFirstPosition();
+                continue;
+            } else {
+                return candidate;
             }
 
             lookAt -= 1;
@@ -338,7 +329,7 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
-    public SectionLayoutManager init(SectionData2 sd) {
+    public SectionLayoutManager init(SectionData sd) {
         return this;
     }
 
