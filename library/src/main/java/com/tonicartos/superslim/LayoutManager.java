@@ -47,9 +47,42 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionData sd = new SectionData(this, getChildAt(0));
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
-        // TODO: Check for completely visible header if first content item was returned.
+        View firstVisibleView = slm.getFirstCompletelyVisibleView(sd.firstPosition, false);
 
-        return slm.findFirstCompletelyVisibleItemPosition(sd.firstPosition);
+        int firstVisiblePosition = getPosition(firstVisibleView);
+        if (firstVisiblePosition == sd.firstPosition ||
+                firstVisiblePosition > sd.firstPosition + 1) {
+            // Header doesn't matter.
+            return firstVisiblePosition;
+        }
+
+        // Maybe the header is completely visible.
+        View first = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
+        if (first == null) {
+            return firstVisiblePosition;
+        }
+
+        final int topEdge = getClipToPadding() ? getPaddingTop() : 0;
+        final int bottomEdge = getClipToPadding() ? getHeight() - getPaddingBottom() : getHeight();
+
+        final int firstTop = getDecoratedTop(first);
+        final int firstBottom = getDecoratedBottom(first);
+
+        if (firstTop < topEdge || bottomEdge < firstBottom) {
+            return firstVisiblePosition;
+        }
+
+        if (firstBottom <= getDecoratedTop(firstVisibleView)) {
+            return sd.firstPosition;
+        }
+
+        LayoutParams firstParams = (LayoutParams) first.getLayoutParams();
+        if ((!firstParams.isHeaderInline() || firstParams.isHeaderOverlay())
+                && firstTop == getDecoratedTop(firstVisibleView)) {
+            return sd.firstPosition;
+        }
+
+        return firstVisiblePosition;
     }
 
     /**
