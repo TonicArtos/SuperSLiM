@@ -429,16 +429,17 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int determineAnchorPosition(LayoutState state, int position) {
-        SectionData section = new SectionData(this, state, Direction.NONE, position, 0);
+        LayoutState.View child = state.getView(position);
+        state.cacheView(position, child.view);
+        SectionData sd = new SectionData(this, child.view);
 
-        if (section.getFirstPosition() == position && section.getSectionHeader(state) != null &&
-                section.getSectionHeader(state).getLayoutParams().isHeaderInline()) {
+        if (sd.firstPosition == position && sd.hasHeader && sd.headerParams.isHeaderInline()
+                && !sd.headerParams.isHeaderOverlay()) {
             // Already know what to do in this case.
             return position;
         }
 
-        return mSectionLayouts.get(section.getLayoutId())
-                .getAnchorPosition(state, section, position);
+        return mSectionLayouts.get(sd.sectionManager).getAnchorPosition(state, sd, position);
     }
 
     /**
