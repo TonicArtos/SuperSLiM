@@ -332,6 +332,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         super.onStop();
                         // Turn sticky headers back on.
                         mDisableStickyHeaderDisplay = false;
+                        requestLayout();
                     }
 
                     @Override
