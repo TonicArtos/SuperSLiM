@@ -428,7 +428,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private void attachHeaderForStart(View header, SectionData sd, LayoutState state) {
-        if (state.getCachedView(sd.firstPosition) != null) {
+        if (state.getCachedView(sd.firstPosition) != null && getDecoratedBottom(header) > 0) {
             addView(header, findLastIndexForSection(sd.firstPosition) + 1);
             state.decacheView(sd.firstPosition);
 //        } else {
