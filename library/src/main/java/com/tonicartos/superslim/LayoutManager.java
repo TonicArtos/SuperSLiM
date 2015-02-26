@@ -479,19 +479,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return binarySearchForLastPosition(mid + 1, max, sfp);
     }
 
-    private int determineAnchorPosition(LayoutState state, int position) {
-        LayoutState.View child = state.getView(position);
-        state.cacheView(position, child.view);
-        SectionData sd = new SectionData(this, child.view);
-
-        if (sd.firstPosition == position && sd.hasHeader) {
-            // Already know what to do in this case.
-            return position;
-        }
-
-        return mSectionLayouts.get(sd.sectionManager).getAnchorPosition(state, sd, position);
-    }
-
     /**
      * Fill out the next section as far as possible. The marker line is used as a start line to
      * position content from. If necessary, room for headers is given before laying out the section
