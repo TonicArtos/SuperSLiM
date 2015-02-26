@@ -837,9 +837,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return child;
         }
 
-        if (firstParams.isHeaderInline() && !firstParams.isHeaderOverlay()
-                && getDecoratedTop(child) >= getDecoratedBottom(first)) {
-            return first;
+        if (firstParams.isHeaderInline() && !firstParams.isHeaderOverlay()) {
+            if (getDecoratedBottom(first) <= getDecoratedTop(child)) {
+                return first;
+            } else {
+                return child;
+            }
         }
 
         if (getDecoratedTop(child) < getDecoratedTop(first)) {
