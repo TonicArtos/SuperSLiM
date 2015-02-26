@@ -231,102 +231,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         fixOverscroll(bottomLine, layoutState);
     }
 
-    private void fixOverscroll(int bottomLine, LayoutState state) {
-        if (!isOverscrolled(state)) {
-            return;
-        }
-
-        // Shunt content down to the bottom of the screen.
-        int delta = getHeight() - getPaddingBottom() - bottomLine;
-        offsetChildrenVertical(delta);
-
-        // Fill back towards the top.
-        int topLine = fillToStart(0, state);
-
-        if (topLine > getPaddingTop()) {
-            // Not enough content to fill all the way back up so we shunt it back up.
-            offsetChildrenVertical(topLine - getPaddingTop());
-        }
-    }
-
-    private boolean isOverscrolled(LayoutState state) {
-        final int itemCount = state.recyclerState.getItemCount();
-
-        if (getChildCount() == 0) {
-            return false;
-        }
-
-        View lastVisibleView = findLastCompletelyVisibleItem();
-        if (lastVisibleView == null) {
-            lastVisibleView = getChildAt(getChildCount() - 1);
-        }
-
-        boolean reachedBottom = getPosition(lastVisibleView) == itemCount - 1;
-        if (!reachedBottom ||
-                getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
-            return false;
-        }
-
-        View firstVisibleView = findFirstCompletelyVisibleItem();
-        if (firstVisibleView == null) {
-            firstVisibleView = getChildAt(0);
-        }
-
-        boolean reachedTop = getPosition(firstVisibleView) == 0
-                && getDecoratedTop(firstVisibleView) == getPaddingTop();
-        return !reachedTop;
-    }
-
-    /**
-     * Layout views from the top.
-     *
-     * @param anchorPosition Position to start laying out from.
-     * @param state          Layout state.  @return Line to which content has been filled. If the
-     *                       line is before the leading edge then the end of the data set has been
-     */
-    private int layoutChildren(int anchorPosition, int borderLine, LayoutState state) {
-        final int height = getHeight();
-
-        final LayoutState.View anchor = state.getView(anchorPosition);
-        state.cacheView(anchorPosition, anchor.view);
-
-        final int sfp = anchor.getLayoutParams().getTestedFirstPosition();
-        final LayoutState.View first = state.getView(sfp);
-        measureHeader(first.view);
-        state.cacheView(sfp, first.view);
-
-        final SectionData sd = new SectionData(this, first.view);
-
-        final SectionLayoutManager slm = getSectionLayoutManager(sd);
-        // Layout header
-        int markerLine = borderLine;
-        int contentPosition = anchorPosition;
-        if (sd.hasHeader && anchorPosition == sd.firstPosition) {
-            markerLine = layoutHeaderTowardsEnd(first.view, borderLine, sd, state);
-            contentPosition += 1;
-        }
-
-        // Layout first section to end.
-        markerLine = slm.fillToEnd(height, markerLine, contentPosition, sd, state);
-
-        if (sd.hasHeader && anchorPosition != sd.firstPosition) {
-            int offset = slm.computeHeaderOffset(contentPosition, sd, state);
-            layoutHeaderTowardsStart(first.view, 0, borderLine, offset, markerLine, sd, state);
-        } else {
-            markerLine = Math.max(markerLine, getDecoratedBottom(first.view));
-        }
-
-        if (sd.hasHeader && getDecoratedBottom(first.view) > 0) {
-            addView(first.view);
-            state.decacheView(sd.firstPosition);
-        }
-
-        // Layout the rest.
-        markerLine = fillNextSectionToEnd(height, markerLine, state);
-
-        return markerLine;
-    }
-
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -917,6 +821,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return binarySearchForLastPosition(0, getChildCount() - 1, sfp);
     }
 
+    private void fixOverscroll(int bottomLine, LayoutState state) {
+        if (!isOverscrolled(state)) {
+            return;
+        }
+
+        // Shunt content down to the bottom of the screen.
+        int delta = getHeight() - getPaddingBottom() - bottomLine;
+        offsetChildrenVertical(delta);
+
+        // Fill back towards the top.
+        int topLine = fillToStart(0, state);
+
+        if (topLine > getPaddingTop()) {
+            // Not enough content to fill all the way back up so we shunt it back up.
+            offsetChildrenVertical(topLine - getPaddingTop());
+        }
+    }
+
     /**
      * Find an anchor to fill to end from.
      *
@@ -1171,6 +1093,84 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             throw new UnknownSectionLayoutException(sd.sectionManager);
         }
         return manager.init(sd);
+    }
+
+    private boolean isOverscrolled(LayoutState state) {
+        final int itemCount = state.recyclerState.getItemCount();
+
+        if (getChildCount() == 0) {
+            return false;
+        }
+
+        View lastVisibleView = findLastCompletelyVisibleItem();
+        if (lastVisibleView == null) {
+            lastVisibleView = getChildAt(getChildCount() - 1);
+        }
+
+        boolean reachedBottom = getPosition(lastVisibleView) == itemCount - 1;
+        if (!reachedBottom ||
+                getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
+            return false;
+        }
+
+        View firstVisibleView = findFirstCompletelyVisibleItem();
+        if (firstVisibleView == null) {
+            firstVisibleView = getChildAt(0);
+        }
+
+        boolean reachedTop = getPosition(firstVisibleView) == 0
+                && getDecoratedTop(firstVisibleView) == getPaddingTop();
+        return !reachedTop;
+    }
+
+    /**
+     * Layout views from the top.
+     *
+     * @param anchorPosition Position to start laying out from.
+     * @param state          Layout state.  @return Line to which content has been filled. If the
+     *                       line is before the leading edge then the end of the data set has been
+     */
+    private int layoutChildren(int anchorPosition, int borderLine, LayoutState state) {
+        final int height = getHeight();
+
+        final LayoutState.View anchor = state.getView(anchorPosition);
+        state.cacheView(anchorPosition, anchor.view);
+
+        final int sfp = anchor.getLayoutParams().getTestedFirstPosition();
+        final LayoutState.View first = state.getView(sfp);
+        measureHeader(first.view);
+        state.cacheView(sfp, first.view);
+
+        final SectionData sd = new SectionData(this, first.view);
+
+        final SectionLayoutManager slm = getSectionLayoutManager(sd);
+        // Layout header
+        int markerLine = borderLine;
+        int contentPosition = anchorPosition;
+        if (sd.hasHeader && anchorPosition == sd.firstPosition) {
+            markerLine = layoutHeaderTowardsEnd(first.view, borderLine, sd, state);
+            contentPosition += 1;
+        }
+
+        // Layout first section to end.
+        markerLine = slm.fillToEnd(height, markerLine, contentPosition, sd, state);
+
+        if (sd.hasHeader && anchorPosition != sd.firstPosition) {
+            int offset = slm.computeHeaderOffset(contentPosition, sd, state);
+            layoutHeaderTowardsStart(first.view, 0, borderLine, offset, markerLine, sd, state);
+        } else {
+            markerLine = Math.max(markerLine, getDecoratedBottom(first.view));
+        }
+
+        if (sd.hasHeader && getDecoratedBottom(first.view) > 0) {
+            addView(first.view);
+            state.decacheView(sd.firstPosition);
+        }
+
+        // Layout the rest.
+        markerLine = fillNextSectionToEnd(height, markerLine, state);
+
+        return markerLine;
     }
 
     /**
