@@ -17,6 +17,7 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
@@ -44,10 +45,20 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first completely visible item.
      */
     public View findFirstCompletelyVisibleItem() {
-        SectionData sd = new SectionData(this, getChildAt(0));
-        final SectionLayoutManager slm = getSectionLayoutManager(sd);
+        View firstVisibleView = null;
+        SectionData sd = null;
+        for (int i = 0; i < getChildCount() - 1; i++) {
+            sd = new SectionData(this, getChildAt(0));
+            final SectionLayoutManager slm = getSectionLayoutManager(sd);
 
-        View firstVisibleView = slm.getFirstCompletelyVisibleView(sd.firstPosition, false);
+            firstVisibleView = slm.getFirstCompletelyVisibleView(sd.firstPosition, false);
+            if (firstVisibleView != null) {
+                break;
+            }
+        }
+        if (firstVisibleView == null) {
+            return null;
+        }
 
         int firstVisiblePosition = getPosition(firstVisibleView);
         if (firstVisiblePosition == sd.firstPosition ||
@@ -215,9 +226,55 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         detachAndScrapAttachedViews(recycler);
 
         LayoutState layoutState = new LayoutState(this, recycler, state);
-        layoutChildren(requestedPosition, borderLine, layoutState);
+        int bottomLine = layoutChildren(requestedPosition, borderLine, layoutState);
 
-        // Check
+        fixOverscroll(bottomLine, layoutState);
+    }
+
+    private void fixOverscroll(int bottomLine, LayoutState state) {
+        if (!isOverscrolled(state)) {
+            return;
+        }
+
+        // Shunt content down to the bottom of the screen.
+        int delta = getHeight() - getPaddingBottom() - bottomLine;
+        offsetChildrenVertical(delta);
+
+        // Fill back towards the top.
+        int topLine = fillToStart(0, state);
+
+        if (topLine > getPaddingTop()) {
+            // Not enough content to fill all the way back up so we shunt it back up.
+            offsetChildrenVertical(topLine - getPaddingTop());
+        }
+    }
+
+    private boolean isOverscrolled(LayoutState state) {
+        final int itemCount = state.recyclerState.getItemCount();
+
+        if (getChildCount() == 0) {
+            return false;
+        }
+
+        View lastVisibleView = findLastCompletelyVisibleItem();
+        if (lastVisibleView == null) {
+            lastVisibleView = getChildAt(getChildCount() - 1);
+        }
+
+        boolean reachedBottom = getPosition(lastVisibleView) == itemCount - 1;
+        if (!reachedBottom ||
+                getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
+            return false;
+        }
+
+        View firstVisibleView = findFirstCompletelyVisibleItem();
+        if (firstVisibleView == null) {
+            firstVisibleView = getChildAt(0);
+        }
+
+        boolean reachedTop = getPosition(firstVisibleView) == 0
+                && getDecoratedTop(firstVisibleView) == getPaddingTop();
+        return !reachedTop;
     }
 
     /**
@@ -339,7 +396,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-        mRequestPosition = position;
+        mRequestPosition = 222;//position;
         requestLayout();
     }
 
@@ -1370,9 +1427,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             View view = getChildAt(i);
             LayoutParams params = (LayoutParams) view.getLayoutParams();
             if (params.getTestedFirstPosition() != sd.firstPosition) {
-                view = findAttachedHeaderOrFirstViewForSection(params.getTestedFirstPosition(), i,
+                View first = findAttachedHeaderOrFirstViewForSection(
+                        params.getTestedFirstPosition(), i,
                         Direction.START);
-                sectionBottom = getDecoratedTop(view);
+                if (first == null) {
+                    sectionBottom = getDecoratedTop(view);
+                } else {
+                    sectionBottom = getDecoratedTop(first);
+                }
                 break;
             }
         }
@@ -1396,7 +1458,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private void updateHeaderForTrimFromStart(View header) {
         SectionData sd = new SectionData(this, header);
-        if (!sd.headerParams.isHeaderSticky() || mDisableStickyHeaderDisplay) {
+        if (!sd.headerParams.isHeaderSticky()) {
             return;
         }
 

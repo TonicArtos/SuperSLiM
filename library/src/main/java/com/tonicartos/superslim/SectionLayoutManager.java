@@ -19,12 +19,13 @@ public abstract class SectionLayoutManager {
      * section is taller than the header, then the header should be offscreen, in that case return
      * any +ve number.
      *
-     * @param sd     Section data.
-     * @param state  Layout state.
+     * @param sd    Section data.
+     * @param state Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
-    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state);
+    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sd,
+            LayoutState state);
 
     /**
      * Fill section content towards the end.
@@ -227,12 +228,19 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition() && topInside && bottomInside) {
-                if (!lp.isHeader) {
-                    return view;
-                } else {
-                    candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (topInside && bottomInside) {
+                    if (!lp.isHeader) {
+                        return view;
+                    } else {
+                        candidate = view;
+                    }
                 }
+            } else if (candidate == null) {
+                sectionFirstPosition = lp.getTestedFirstPosition();
+                continue;
+            } else {
+                return candidate;
             }
 
             lookAt -= 1;
