@@ -300,7 +300,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-        mRequestPosition = 222;//position;
+        mRequestPosition = position;
         requestLayout();
     }
 
