@@ -10,7 +10,9 @@ public class SectionData {
 
     public final int minimumHeight;
 
-    public final int sectionManager;
+    public final String sectionManager;
+
+    public final int sectionManagerKind;
 
     public final int headerWidth;
 
@@ -76,6 +78,7 @@ public class SectionData {
         firstPosition = headerParams.getTestedFirstPosition();
 
         sectionManager = headerParams.sectionManager;
+        sectionManagerKind = headerParams.sectionManagerKind;
     }
 
     public int getTotalMarginWidth() {

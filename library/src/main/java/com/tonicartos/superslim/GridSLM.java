@@ -1,16 +1,27 @@
 package com.tonicartos.superslim;
 
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.os.Build;
+import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 
 /**
  * Lays out views in a grid. The number of columns can be set directly, or a minimum size can be
  * requested. If you request a 100dip minimum column size and there is 330dip available, the layout
  * with calculate there to be 3 columns each 130dip across.
  */
-public class GridSectionLayoutManager extends SectionLayoutManager {
+public class GridSLM extends SectionLayoutManager {
+
+    private static final int AUTO_FIT = -1;
+
+    private static final int DEFAULT_NUM_COLUMNS = 1;
+
+    public static int ID = LayoutManager.SECTION_MANAGER_GRID;
 
     private final Context mContext;
 
@@ -22,7 +33,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
     private boolean mColumnsSpecified;
 
-    public GridSectionLayoutManager(LayoutManager layoutManager, Context context) {
+    public GridSLM(LayoutManager layoutManager, Context context) {
         super(layoutManager);
         mContext = context;
     }
@@ -245,6 +256,16 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
+        return new LayoutParams(params);
+    }
+
+    @Override
+    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+        return new LayoutParams(c, attrs);
+    }
+
+    @Override
     public int getAnchorPosition(LayoutState state, SectionData sd, int position) {
         calculateColumnWidthValues(sd);
 
@@ -287,8 +308,23 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return foundItems ? bottomMostEdge : endEdge;
     }
 
-    public GridSectionLayoutManager init(SectionData sd) {
+    public GridSLM init(SectionData sd) {
         super.init(sd);
+
+        if (sd.headerParams instanceof LayoutParams) {
+            LayoutParams params = (LayoutParams) sd.headerParams;
+            int columnWidth = params.getColumnWidth();
+            int numColumns = params.getNumColumns();
+            if (columnWidth < 0 && numColumns < 0) {
+                numColumns = DEFAULT_NUM_COLUMNS;
+            }
+
+            if (numColumns == AUTO_FIT) {
+                setColumnWidth(columnWidth);
+            } else {
+                setNumColumns(numColumns);
+            }
+        }
 
         calculateColumnWidthValues(sd);
 
@@ -346,7 +382,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return rowHeight;
     }
 
-    public void setColumnMinimumWidth(int minimumWidth) {
+    public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
     }
@@ -431,5 +467,54 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         mLayoutManager.measureChildWithMargins(child.view,
                 sd.marginStart + sd.marginEnd + widthOtherColumns,
                 0);
+    }
+
+    public static class LayoutParams extends LayoutManager.LayoutParams {
+
+        private int mNumColumns;
+
+        private int mColumnWidth;
+
+        public LayoutParams(Context c, AttributeSet attrs) {
+            super(c, attrs);
+
+            TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_GridSLM);
+            mNumColumns = a.getInt(R.styleable.superslim_GridSLM_slm_grid_numColumns, AUTO_FIT);
+            mColumnWidth =
+                    a.getDimensionPixelSize(R.styleable.superslim_GridSLM_slm_grid_columnWidth, -1);
+            a.recycle();
+        }
+
+        public LayoutParams(ViewGroup.LayoutParams other) {
+            super(other);
+            init(other);
+        }
+
+        public int getColumnWidth() {
+            return mColumnWidth;
+        }
+
+        public void setColumnWidth(int columnWidth) {
+            mColumnWidth = columnWidth;
+        }
+
+        public int getNumColumns() {
+            return mNumColumns;
+        }
+
+        public void setNumColumns(int numColumns) {
+            mNumColumns = numColumns;
+        }
+
+        private void init(ViewGroup.LayoutParams other) {
+            if (other instanceof LayoutParams) {
+                final LayoutParams lp = (LayoutParams) other;
+                mNumColumns = lp.mNumColumns;
+                mColumnWidth = lp.mColumnWidth;
+            } else {
+                mNumColumns = AUTO_FIT;
+                mColumnWidth = -1;
+            }
+        }
     }
 }

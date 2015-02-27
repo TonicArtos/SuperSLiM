@@ -8,9 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.tonicartos.superslim.GridSectionLayoutManager;
+import com.tonicartos.superslim.GridSLM;
 import com.tonicartos.superslim.LayoutManager;
-import com.tonicartos.superslim.LinearSectionLayoutManager;
+import com.tonicartos.superslim.LinearSLM;
 import com.tonicartos.superslim.SectionLayoutManager;
 
 import java.util.Random;
@@ -36,7 +36,7 @@ public class CountriesFragment extends Fragment {
 
     private Toast mToast = null;
 
-    private GridSectionLayoutManager mGridSectionLayoutManager;
+    private GridSLM mGridSLM;
 
     private SectionLayoutManager mLinearSectionLayoutManager;
 
@@ -84,17 +84,8 @@ public class CountriesFragment extends Fragment {
             mAreMarginsFixed = getResources().getBoolean(R.bool.default_margins_fixed);
         }
 
-        LayoutManager lm = new LayoutManager();
-        mLinearSectionLayoutManager = new LinearSectionLayoutManager(lm);
-        lm.registerSectionLayoutManager(0, mLinearSectionLayoutManager);
-
-        mGridSectionLayoutManager = new GridSectionLayoutManager(lm, getActivity());
-        mGridSectionLayoutManager.setColumnMinimumWidth((int) getResources()
-                .getDimension(R.dimen.grid_column_width));
-        lm.registerSectionLayoutManager(1, mGridSectionLayoutManager);
-
         mViews = new ViewHolder(view);
-        mViews.initViews(lm);
+        mViews.initViews(new LayoutManager(getActivity()));
         mAdapter = new CountryNamesAdapter(getActivity(), mHeaderDisplay);
         mAdapter.setMarginsFixed(mAreMarginsFixed);
         mAdapter.setHeaderDisplay(mHeaderDisplay);
