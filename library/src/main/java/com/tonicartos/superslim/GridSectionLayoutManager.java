@@ -310,6 +310,21 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     public GridSectionLayoutManager init(SectionData sd) {
         super.init(sd);
 
+        if (sd.headerParams instanceof LayoutParams) {
+            LayoutParams params = (LayoutParams) sd.headerParams;
+            int columnWidth = params.getColumnWidth();
+            int numColumns = params.getNumColumns();
+            if (columnWidth < 0 && numColumns < 0) {
+                numColumns = DEFAULT_NUM_COLUMNS;
+            }
+
+            if (numColumns == AUTO_FIT) {
+                setColumnWidth(columnWidth);
+            } else {
+                setNumColumns(numColumns);
+            }
+        }
+
         calculateColumnWidthValues(sd);
 
         return this;
@@ -366,7 +381,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return rowHeight;
     }
 
-    public void setColumnMinimumWidth(int minimumWidth) {
+    public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
     }
@@ -467,16 +482,22 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
             mColumnWidth =
                     a.getDimensionPixelSize(R.styleable.superslim_GridSLM_slm_grid_columnWidth, -1);
             a.recycle();
-
-            if (mColumnWidth < 0 && mNumColumns < 0) {
-                mNumColumns = DEFAULT_NUM_COLUMNS;
-            }
         }
 
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
-            mNumColumns = DEFAULT_NUM_COLUMNS;
-            mColumnWidth = -1;
+            init(other);
+        }
+
+        private void init(ViewGroup.LayoutParams other) {
+            if (other instanceof LayoutParams) {
+                final LayoutParams lp = (LayoutParams) other;
+                mNumColumns = lp.mNumColumns;
+                mColumnWidth = lp.mColumnWidth;
+            } else {
+                mNumColumns = AUTO_FIT;
+                mColumnWidth = -1;
+            }
         }
 
         public int getColumnWidth() {
