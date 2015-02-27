@@ -294,6 +294,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     .getInt(R.styleable.superslim_LayoutManager_slm_section_sectionManager,
                             SECTION_MANAGER_LINEAR);
         }
+        a.recycle();
 
         return getSLM(sectionManagerKind, sectionManager).generateLayoutParams(c, attrs);
     }

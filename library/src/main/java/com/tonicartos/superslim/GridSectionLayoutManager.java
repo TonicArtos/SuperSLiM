@@ -1,9 +1,13 @@
 package com.tonicartos.superslim;
 
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 
 /**
  * Lays out views in a grid. The number of columns can be set directly, or a minimum size can be
@@ -12,7 +16,11 @@ import android.view.View;
  */
 public class GridSectionLayoutManager extends SectionLayoutManager {
 
-    public static int ID = LayoutManager.SECTION_MANAGER_LINEAR;
+    private static final int AUTO_FIT = -1;
+
+    private static final int DEFAULT_NUM_COLUMNS = 1;
+
+    public static int ID = LayoutManager.SECTION_MANAGER_GRID;
 
     private final Context mContext;
 
@@ -247,6 +255,16 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
     }
 
     @Override
+    public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
+        return new LayoutParams(params);
+    }
+
+    @Override
+    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+        return new LayoutParams(c, attrs);
+    }
+
+    @Override
     public int getAnchorPosition(LayoutState state, SectionData sd, int position) {
         calculateColumnWidthValues(sd);
 
@@ -433,5 +451,48 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         mLayoutManager.measureChildWithMargins(child.view,
                 sd.marginStart + sd.marginEnd + widthOtherColumns,
                 0);
+    }
+
+    public static class LayoutParams extends LayoutManager.LayoutParams {
+
+        private int mNumColumns;
+
+        private int mColumnWidth;
+
+        public LayoutParams(Context c, AttributeSet attrs) {
+            super(c, attrs);
+
+            TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_LayoutManager);
+            mNumColumns = a.getInt(R.styleable.superslim_GridSLM_slm_grid_numColumns, AUTO_FIT);
+            mColumnWidth =
+                    a.getDimensionPixelSize(R.styleable.superslim_GridSLM_slm_grid_columnWidth, -1);
+            a.recycle();
+
+            if (mColumnWidth < 0 && mNumColumns < 0) {
+                mNumColumns = DEFAULT_NUM_COLUMNS;
+            }
+        }
+
+        public LayoutParams(ViewGroup.LayoutParams other) {
+            super(other);
+            mNumColumns = DEFAULT_NUM_COLUMNS;
+            mColumnWidth = -1;
+        }
+
+        public int getColumnWidth() {
+            return mColumnWidth;
+        }
+
+        public void setColumnWidth(int columnWidth) {
+            mColumnWidth = columnWidth;
+        }
+
+        public int getNumColumns() {
+            return mNumColumns;
+        }
+
+        public void setNumColumns(int numColumns) {
+            mNumColumns = numColumns;
+        }
     }
 }
