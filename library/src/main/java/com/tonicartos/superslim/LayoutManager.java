@@ -213,7 +213,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int borderLine;
 
         if (mRequestPosition != NO_POSITION_REQUEST) {
-            requestedPosition = mRequestPosition;
+            requestedPosition = Math.min(mRequestPosition, itemCount - 1);
             mRequestPosition = NO_POSITION_REQUEST;
             borderLine = mRequestPositionOffset;
             mRequestPositionOffset = 0;
