@@ -11,8 +11,8 @@
         </attr>
         <attr name="slm_section_firstPosition" format="integer" />
         <attr name="slm_section_sectionManager" format="enum|string">
-            <enum name="grid" value="0x01" />
-            <enum name="linear" value="0x02" />
+            <enum name="linear" value="0x01" />
+            <enum name="grid" value="0x02" />
             <enum name="staggered_grid" value="0x03" />
         </attr>
         <attr name="slm_section_headerMarginStart" format="enum|dimension">
