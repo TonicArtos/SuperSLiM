@@ -748,7 +748,19 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionData sd = new SectionData(this, first);
 
         final SectionLayoutManager slm = getSectionLayoutManager(sd);
-        int markerLine = slm.finishFillToStart(leadingEdge, anchor, sd, state);
+
+        int markerLine;
+        int anchorPosition = getPosition(anchor);
+        if (anchorPosition == sd.firstPosition) {
+            markerLine = getDecoratedBottom(anchor);
+        } else {
+            if (anchorPosition - 1 == sd.firstPosition && sd.hasHeader) {
+                // Already at first content position, so no more to do.
+                markerLine = getDecoratedTop(anchor);
+            } else {
+                markerLine = slm.finishFillToStart(leadingEdge, anchor, sd, state);
+            }
+        }
 
         markerLine = updateHeaderForStart(first, leadingEdge, markerLine, sd, state);
 
