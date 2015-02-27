@@ -2,6 +2,7 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -477,7 +478,7 @@ public class GridSLM extends SectionLayoutManager {
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
 
-            TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_LayoutManager);
+            TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_GridSLM);
             mNumColumns = a.getInt(R.styleable.superslim_GridSLM_slm_grid_numColumns, AUTO_FIT);
             mColumnWidth =
                     a.getDimensionPixelSize(R.styleable.superslim_GridSLM_slm_grid_columnWidth, -1);
@@ -487,17 +488,6 @@ public class GridSLM extends SectionLayoutManager {
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
-        }
-
-        private void init(ViewGroup.LayoutParams other) {
-            if (other instanceof LayoutParams) {
-                final LayoutParams lp = (LayoutParams) other;
-                mNumColumns = lp.mNumColumns;
-                mColumnWidth = lp.mColumnWidth;
-            } else {
-                mNumColumns = AUTO_FIT;
-                mColumnWidth = -1;
-            }
         }
 
         public int getColumnWidth() {
@@ -514,6 +504,17 @@ public class GridSLM extends SectionLayoutManager {
 
         public void setNumColumns(int numColumns) {
             mNumColumns = numColumns;
+        }
+
+        private void init(ViewGroup.LayoutParams other) {
+            if (other instanceof LayoutParams) {
+                final LayoutParams lp = (LayoutParams) other;
+                mNumColumns = lp.mNumColumns;
+                mColumnWidth = lp.mColumnWidth;
+            } else {
+                mNumColumns = AUTO_FIT;
+                mColumnWidth = -1;
+            }
         }
     }
 }
