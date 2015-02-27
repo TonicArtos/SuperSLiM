@@ -1,6 +1,7 @@
 package com.tonicartos.superslimexample;
 
-import com.tonicartos.superslim.LayoutManager;
+import com.tonicartos.superslim.GridSLM;
+import com.tonicartos.superslim.LinearSLM;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -20,13 +21,19 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
     private static final int VIEW_TYPE_CONTENT = 0x00;
 
+    private static final int LINEAR = 0;
+
     private final ArrayList<LineItem> mItems;
 
     private int mHeaderDisplay;
 
     private boolean mMarginsFixed;
 
+    private final Context mContext;
+
     public CountryNamesAdapter(Context context, int headerMode) {
+        mContext = context;
+
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
         mHeaderDisplay = headerMode;
 
@@ -79,8 +86,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         holder.bindItem(item.text);
 
-        final LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) itemView
-                .getLayoutParams();
+        final GridSLM.LayoutParams lp = new GridSLM.LayoutParams(
+                itemView.getLayoutParams());
         // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
             lp.headerDisplay = mHeaderDisplay;
@@ -93,7 +100,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
         }
-        lp.sectionManager = item.sectionManager;
+        lp.setSlm(item.sectionManager == LINEAR ? LinearSLM.ID : GridSLM.ID);
+        lp.setColumnWidth(mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
         lp.setFirstPosition(item.sectionFirstPosition);
         itemView.setLayoutParams(lp);
     }
@@ -137,7 +145,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         public String text;
 
-        public LineItem(String text, boolean isHeader, int sectionManager, int sectionFirstPosition) {
+        public LineItem(String text, boolean isHeader, int sectionManager,
+                int sectionFirstPosition) {
             this.isHeader = isHeader;
             this.text = text;
             this.sectionManager = sectionManager;
