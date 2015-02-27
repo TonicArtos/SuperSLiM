@@ -11,13 +11,15 @@ import android.os.Parcelable;
 import android.support.v4.util.SparseArrayCompat;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+
+import java.util.HashMap;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
@@ -25,7 +27,16 @@ import android.widget.TextView;
  */
 public class LayoutManager extends RecyclerView.LayoutManager {
 
+    static final int SECTION_MANAGER_CUSTOM = -1;
+
+    static final int SECTION_MANAGER_LINEAR = 0x01;
+
+    static final int SECTION_MANAGER_GRID = 0x02;
+
+    static final int SECTION_MANAGER_STAGGERED_GRID = 0x03;
+
     private static final int NO_POSITION_REQUEST = -1;
+
 
     private int mRequestPosition = NO_POSITION_REQUEST;
 
@@ -35,7 +46,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mDisableStickyHeaderDisplay = false;
 
-    private SparseArrayCompat<SectionLayoutManager> mSectionLayouts = new SparseArrayCompat<>();
+    private HashMap<String, SectionLayoutManager> mSectionLayouts = new HashMap<>();
 
     private boolean mSmoothScrollEnabled = true;
 
@@ -512,11 +523,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     /**
      * Register a SectionLayoutManager.
      *
-     * @param id      Id of layout. Referenced by first section view.
+     * @param key     Key to match that to be set in {@link LayoutParams#setSectionManager(String)}.
      * @param manager SectionLayoutManager to register.
      */
-    public void registerSectionLayoutManager(int id, SectionLayoutManager manager) {
-        mSectionLayouts.put(id, manager);
+    public void registerSectionLayoutManager(String key, SectionLayoutManager manager) {
+        mSectionLayouts.put(key, manager);
     }
 
     void measureHeader(View header) {
@@ -535,8 +546,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureChildWithMargins(header, unavailableWidth, 0);
     }
 
-    private void attachHeaderForStart(View header, int leadingEdge, SectionData sd, LayoutState state) {
-        if (state.getCachedView(sd.firstPosition) != null && getDecoratedBottom(header) > leadingEdge) {
+    private void attachHeaderForStart(View header, int leadingEdge, SectionData sd,
+            LayoutState state) {
+        if (state.getCachedView(sd.firstPosition) != null
+                && getDecoratedBottom(header) > leadingEdge) {
             addView(header, findLastIndexForSection(sd.firstPosition) + 1);
             state.decacheView(sd.firstPosition);
 //        } else {
@@ -766,7 +779,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         markerLine = updateHeaderForStart(first, leadingEdge, markerLine, sd, state);
 
-        if (markerLine >=leadingEdge) {
+        if (markerLine >= leadingEdge) {
             markerLine = fillNextSectionToStart(leadingEdge, markerLine, state);
         }
 
@@ -937,7 +950,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private View getAnchorAtStart() {
         View child = getChildAt(0);
         LayoutParams params = (LayoutParams) child.getLayoutParams();
-        int sfp = params.sectionManager;
+        int sfp = params.getTestedFirstPosition();
 
         if (!params.isHeader) {
             return child;
@@ -1586,7 +1599,27 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public int headerDisplay;
 
-        public int sectionManager;
+        private String sectionManager;
+
+        private int sectionManagerKind;
+
+        /**
+         * Set the layout manager for this section to a custom implementation. This custom SLM must
+         * be registered via {@link #registerSectionLayoutManager(String, SectionLayoutManager)}.
+         */
+        public void setSectionManager(String key) {
+            sectionManagerKind = SECTION_MANAGER_CUSTOM;
+            sectionManager = key;
+        }
+
+        /**
+         * Set the layout manager for this section to one of the default implementations.
+         *
+         * @param id Kind of SLM to use.
+         */
+        public void setSectionManager(int id) {
+            sectionManagerKind = id;
+        }
 
         public int headerMarginEnd;
 
@@ -1619,45 +1652,35 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mFirstPosition = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_section_firstPosition,
                     NO_FIRST_POSITION);
-            sectionManager = a.getInt(
-                    R.styleable.superslim_LayoutManager_slm_section_sectionManager,
-                    0);
 
             // Header margin types can be dimension or integer (enum).
-            boolean isDimension;
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                 TypedValue value = new TypedValue();
                 a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginStart,
                         value);
-                isDimension = value.type == TypedValue.TYPE_DIMENSION;
+                loadHeaderStartMargin(a, value.type == TypedValue.TYPE_DIMENSION);
+
+                a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, value);
+                loadHeaderEndMargin(a, value.type == TypedValue.TYPE_DIMENSION);
+
+                a.getValue(R.styleable.superslim_LayoutManager_slm_section_sectionManager, value);
+                loadSectionManager(a, value.type == TypedValue.TYPE_STRING);
             } else {
+                boolean isDimension;
                 isDimension =
                         a.getType(R.styleable.superslim_LayoutManager_slm_section_headerMarginStart)
                                 == TypedValue.TYPE_DIMENSION;
-            }
-            if (isDimension) {
-                headerStartMarginIsAuto = false;
-                headerMarginStart = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_section_headerMarginStart, 0);
-            } else {
-                headerStartMarginIsAuto = true;
-            }
+                loadHeaderStartMargin(a, isDimension);
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                TypedValue value = new TypedValue();
-                a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, value);
-                isDimension = value.type == TypedValue.TYPE_DIMENSION;
-            } else {
                 isDimension =
                         a.getType(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd)
                                 == TypedValue.TYPE_DIMENSION;
-            }
-            if (isDimension) {
-                headerEndMarginIsAuto = false;
-                headerMarginEnd = a.getDimensionPixelSize(
-                        R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, 0);
-            } else {
-                headerEndMarginIsAuto = true;
+                loadHeaderEndMargin(a, isDimension);
+
+                boolean isString =
+                        a.getType(R.styleable.superslim_LayoutManager_slm_section_sectionManager)
+                                == TypedValue.TYPE_STRING;
+                loadSectionManager(a, isString);
             }
 
             a.recycle();
@@ -1746,6 +1769,43 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 headerMarginStart = DEFAULT_HEADER_MARGIN;
                 headerStartMarginIsAuto = true;
                 headerEndMarginIsAuto = true;
+                sectionManagerKind = SECTION_MANAGER_LINEAR;
+            }
+        }
+
+        private void loadHeaderEndMargin(TypedArray a, boolean isDimension) {
+            if (isDimension) {
+                headerEndMarginIsAuto = false;
+                headerMarginEnd = a.getDimensionPixelSize(
+                        R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, 0);
+            } else {
+                headerEndMarginIsAuto = true;
+            }
+        }
+
+        private void loadHeaderStartMargin(TypedArray a, boolean isDimension) {
+            if (isDimension) {
+                headerStartMarginIsAuto = false;
+                headerMarginStart = a.getDimensionPixelSize(
+                        R.styleable.superslim_LayoutManager_slm_section_headerMarginStart, 0);
+            } else {
+                headerStartMarginIsAuto = true;
+            }
+        }
+
+        private void loadSectionManager(TypedArray a, boolean isString) {
+            if (isString) {
+                sectionManager = a
+                        .getString(R.styleable.superslim_LayoutManager_slm_section_sectionManager);
+                if (TextUtils.isEmpty(sectionManager)) {
+                    sectionManagerKind = SECTION_MANAGER_LINEAR;
+                } else {
+                    sectionManagerKind = SECTION_MANAGER_CUSTOM;
+                }
+            } else {
+                sectionManagerKind = a
+                        .getInt(R.styleable.superslim_LayoutManager_slm_section_sectionManager,
+                                SECTION_MANAGER_LINEAR);
             }
         }
 
@@ -1805,8 +1865,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private class UnknownSectionLayoutException extends RuntimeException {
 
-        public UnknownSectionLayoutException(int id) {
-            super("No registered layout for id " + id + ".");
+        public UnknownSectionLayoutException(String key) {
+            super("No registered layout for id " + key + ".");
         }
     }
 }

@@ -12,6 +12,8 @@ import android.view.View;
  */
 public class GridSectionLayoutManager extends SectionLayoutManager {
 
+    public static int ID = LayoutManager.SECTION_MANAGER_LINEAR;
+
     private final Context mContext;
 
     private int mMinimumWidth = 0;
