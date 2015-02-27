@@ -241,11 +241,6 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine = mLayoutManager.getDecoratedTop(anchor);
 
-        if (anchorPosition - 1 == sd.firstPosition && sd.hasHeader) {
-            // Already at first content position, so no more to do.
-            return markerLine;
-        }
-
         return fillToStart(leadingEdge, markerLine, anchorPosition - 1, sd, state);
     }
 
