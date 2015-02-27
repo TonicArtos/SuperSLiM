@@ -1,6 +1,8 @@
 package com.tonicartos.superslim;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
 
@@ -98,6 +100,14 @@ public abstract class SectionLayoutManager {
 
     public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData sd,
             LayoutState state);
+
+    public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
+        return params;
+    }
+
+    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+        return new LayoutManager.LayoutParams(c, attrs);
+    }
 
     public int getAnchorPosition(LayoutState state, SectionData params, int position) {
         return position;
