@@ -2,11 +2,11 @@ package com.tonicartos.superslim;
 
 import android.view.View;
 
-public class LinearSectionLayoutManager extends SectionLayoutManager {
+public class LinearSLM extends SectionLayoutManager {
 
     public static int ID = LayoutManager.SECTION_MANAGER_LINEAR;
 
-    public LinearSectionLayoutManager(LayoutManager layoutManager) {
+    public LinearSLM(LayoutManager layoutManager) {
         super(layoutManager);
     }
 

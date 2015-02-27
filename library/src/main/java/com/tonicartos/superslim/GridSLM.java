@@ -14,7 +14,7 @@ import android.view.ViewGroup;
  * requested. If you request a 100dip minimum column size and there is 330dip available, the layout
  * with calculate there to be 3 columns each 130dip across.
  */
-public class GridSectionLayoutManager extends SectionLayoutManager {
+public class GridSLM extends SectionLayoutManager {
 
     private static final int AUTO_FIT = -1;
 
@@ -32,7 +32,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
 
     private boolean mColumnsSpecified;
 
-    public GridSectionLayoutManager(LayoutManager layoutManager, Context context) {
+    public GridSLM(LayoutManager layoutManager, Context context) {
         super(layoutManager);
         mContext = context;
     }
@@ -307,7 +307,7 @@ public class GridSectionLayoutManager extends SectionLayoutManager {
         return foundItems ? bottomMostEdge : endEdge;
     }
 
-    public GridSectionLayoutManager init(SectionData sd) {
+    public GridSLM init(SectionData sd) {
         super.init(sd);
 
         if (sd.headerParams instanceof LayoutParams) {
