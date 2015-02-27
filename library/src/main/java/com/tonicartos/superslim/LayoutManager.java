@@ -727,7 +727,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         View header = findAttachedHeaderForSectionFromEnd(sd.firstPosition);
         markerLine = updateHeaderForEnd(header, markerLine);
 
-        markerLine = fillNextSectionToEnd(leadingEdge, markerLine, state);
+        if (markerLine <= leadingEdge) {
+            markerLine = fillNextSectionToEnd(leadingEdge, markerLine, state);
+        }
 
         return markerLine;
     }
@@ -764,7 +766,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         markerLine = updateHeaderForStart(first, leadingEdge, markerLine, sd, state);
 
-        markerLine = fillNextSectionToStart(leadingEdge, markerLine, state);
+        if (markerLine >=leadingEdge) {
+            markerLine = fillNextSectionToStart(leadingEdge, markerLine, state);
+        }
 
         return markerLine;
     }
