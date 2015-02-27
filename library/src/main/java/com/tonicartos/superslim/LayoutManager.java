@@ -48,13 +48,20 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mDisableStickyHeaderDisplay = false;
 
-    private HashMap<String, SectionLayoutManager> mSlms = new HashMap<>();
+    private HashMap<String, SectionLayoutManager> mSlms;
 
     private boolean mSmoothScrollEnabled = true;
 
     public LayoutManager(Context context) {
         mLinearSlm = new LinearSLM(this);
         mGridSlm = new GridSLM(this, context);
+        mSlms = new HashMap<>();
+    }
+
+    LayoutManager(Builder builder) {
+        mLinearSlm = new LinearSLM(this);
+        mGridSlm = new GridSLM(this, builder.context);
+        mSlms = builder.slms;
     }
 
     /**
@@ -63,7 +70,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param key Key to match that to be set in {@link LayoutParams#setSlm(String)}.
      * @param slm SectionLayoutManager to add.
      */
-    public void addSLM(String key, SectionLayoutManager slm) {
+    public void addSlm(String key, SectionLayoutManager slm) {
         mSlms.put(key, slm);
     }
 
@@ -1646,6 +1653,26 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         NONE
     }
 
+    public static class Builder {
+
+        final Context context;
+
+        HashMap<String, SectionLayoutManager> slms = new HashMap<>();
+
+        public Builder(Context context) {
+            this.context = context;
+        }
+
+        public Builder addSlm(String key, SectionLayoutManager slm) {
+            slms.put(key, slm);
+            return this;
+        }
+
+        public LayoutManager build() {
+            return new LayoutManager(this);
+        }
+    }
+
     public static class LayoutParams extends RecyclerView.LayoutParams {
 
         public static final int HEADER_INLINE = 0x01;
@@ -1675,8 +1702,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         public int headerMarginStart;
 
         public boolean headerStartMarginIsAuto;
-
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         public boolean headerEndMarginIsAuto;
 
@@ -1737,6 +1762,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             a.recycle();
         }
+
+        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
