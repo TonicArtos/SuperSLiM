@@ -9,9 +9,9 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.tonicartos.superslim.GridSLM;
+import com.tonicartos.superslim.ItemDecorator;
 import com.tonicartos.superslim.LayoutManager;
 import com.tonicartos.superslim.LinearSLM;
-import com.tonicartos.superslim.SectionLayoutManager;
 
 import java.util.Random;
 
@@ -24,8 +24,6 @@ public class CountriesFragment extends Fragment {
 
     private static final String KEY_MARGINS_FIXED = "key_margins_fixed";
 
-    private ViewHolder mViews;
-
     private CountryNamesAdapter mAdapter;
 
     private int mHeaderDisplay;
@@ -36,9 +34,7 @@ public class CountriesFragment extends Fragment {
 
     private Toast mToast = null;
 
-    private GridSLM mGridSLM;
-
-    private SectionLayoutManager mLinearSectionLayoutManager;
+    private RecyclerView mRecyclerView;
 
     public boolean areHeadersOverlaid() {
         return (mHeaderDisplay & LayoutManager.LayoutParams.HEADER_OVERLAY) != 0;
@@ -84,12 +80,28 @@ public class CountriesFragment extends Fragment {
             mAreMarginsFixed = getResources().getBoolean(R.bool.default_margins_fixed);
         }
 
-        mViews = new ViewHolder(view);
-        mViews.initViews(new LayoutManager(getActivity()));
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+
+        ItemDecorator gridItemDecor = new ItemDecorator.Builder(getActivity())
+                .decorateSlm(GridSLM.ID)
+                .setPaddingDimensionRight(R.dimen.grid_spacing, ItemDecorator.INTERNAL)
+                .setDrawableBelow(R.drawable.divider, ItemDecorator.INTERNAL | ItemDecorator.INSET)
+                .build();
+
+        ItemDecorator linearItemDecor = new ItemDecorator.Builder(getActivity())
+                .decorateSlm(LinearSLM.ID)
+                .setDrawableBelow(R.drawable.divider, ItemDecorator.INTERNAL)
+                .build();
+
+        mRecyclerView.addItemDecoration(gridItemDecor);
+        mRecyclerView.addItemDecoration(linearItemDecor);
+
+        mRecyclerView.setLayoutManager(new LayoutManager(getActivity()));
+
         mAdapter = new CountryNamesAdapter(getActivity(), mHeaderDisplay);
         mAdapter.setMarginsFixed(mAreMarginsFixed);
         mAdapter.setHeaderDisplay(mHeaderDisplay);
-        mViews.setAdapter(mAdapter);
+        mRecyclerView.setAdapter(mAdapter);
     }
 
     @Override
@@ -111,7 +123,7 @@ public class CountriesFragment extends Fragment {
             mToast = Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT);
         }
         mToast.show();
-        mViews.scrollToPosition(position);
+        mRecyclerView.scrollToPosition(position);
     }
 
     public void setHeadersOverlaid(boolean areHeadersOverlaid) {
@@ -144,32 +156,6 @@ public class CountriesFragment extends Fragment {
             mToast = Toast.makeText(getActivity(), s, Toast.LENGTH_SHORT);
         }
         mToast.show();
-        mViews.smoothScrollToPosition(position);
-    }
-
-    private static class ViewHolder {
-
-        private final RecyclerView mRecyclerView;
-
-
-        public ViewHolder(View view) {
-            mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
-        }
-
-        public void initViews(LayoutManager lm) {
-            mRecyclerView.setLayoutManager(lm);
-        }
-
-        public void scrollToPosition(int position) {
-            mRecyclerView.scrollToPosition(position);
-        }
-
-        public void setAdapter(RecyclerView.Adapter<?> adapter) {
-            mRecyclerView.setAdapter(adapter);
-        }
-
-        public void smoothScrollToPosition(int position) {
-            mRecyclerView.smoothScrollToPosition(position);
-        }
+        mRecyclerView.smoothScrollToPosition(position);
     }
 }
