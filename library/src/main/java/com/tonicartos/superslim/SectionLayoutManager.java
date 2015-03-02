@@ -21,8 +21,9 @@ public abstract class SectionLayoutManager {
      * section is taller than the header, then the header should be offscreen, in that case return
      * any +ve number.
      *
-     * @param sd    Section data.
-     * @param state Layout state.
+     * @param firstVisiblePosition Position of first visible item in section.
+     * @param sd                   Section data.
+     * @param state                Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
@@ -192,9 +193,14 @@ public abstract class SectionLayoutManager {
 
     /**
      * Find the highest displayed edge of the section. If there is no member found then return the
-     * start edge instead.
+     * default edge instead.
+     *
+     * @param sectionFirstPosition Section id, position of first item in the section.
+     * @param firstIndex           Child index to start looking from.
+     * @param defaultEdge          Default value.
+     * @return Top (attached) edge of the section.
      */
-    public int getHighestEdge(int sectionFirstPosition, int firstIndex, int startEdge) {
+    public int getHighestEdge(int sectionFirstPosition, int firstIndex, int defaultEdge) {
         // Look from start to find children that are the highest.
         for (int i = firstIndex; i < mLayoutManager.getChildCount(); i++) {
             View child = mLayoutManager.getChildAt(i);
@@ -209,7 +215,7 @@ public abstract class SectionLayoutManager {
             // A more interesting layout would have to do something more here.
             return mLayoutManager.getDecoratedTop(child);
         }
-        return startEdge;
+        return defaultEdge;
     }
 
     /**
@@ -290,9 +296,15 @@ public abstract class SectionLayoutManager {
 
     /**
      * Find the lowest displayed edge of the section. If there is no member found then return the
-     * end edge instead.
+     * default edge instead.
+     *
+     * @param sectionFirstPosition Section id, position of first item in the section.
+     * @param lastIndex            Index to start looking from. Usually the index of the last
+     *                             attached view in this section.
+     * @param defaultEdge          Default value.
+     * @return Lowest (attached) edge of the section.
      */
-    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
+    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int defaultEdge) {
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
             View child = mLayoutManager.getChildAt(i);
@@ -307,7 +319,7 @@ public abstract class SectionLayoutManager {
             // A more interesting layout would have to do something more here.
             return mLayoutManager.getDecoratedBottom(child);
         }
-        return endEdge;
+        return defaultEdge;
     }
 
     public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
