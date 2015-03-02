@@ -86,7 +86,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sd = new SectionData(this, getChildAt(0));
             final SectionLayoutManager slm = getSlm(sd);
 
-            firstVisibleView = slm.getFirstCompletelyVisibleView(sd.firstPosition, false);
+            firstVisibleView = slm.findFirstCompletelyVisibleView(sd.firstPosition, false);
             if (firstVisibleView != null) {
                 break;
             }
@@ -148,7 +148,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public View findFirstVisibleItem() {
         SectionData sd = new SectionData(this, getChildAt(0));
         final SectionLayoutManager slm = getSlm(sd);
-        View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, false);
+        View firstVisibleView = slm.findFirstVisibleView(sd.firstPosition, false);
         int position = getPosition(firstVisibleView);
         if (position > sd.firstPosition + 1 || position == sd.firstPosition) {
             return firstVisibleView;
@@ -189,7 +189,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
         final SectionLayoutManager slm = getSlm(sd);
 
-        return slm.getLastCompletelyVisibleView(sd.firstPosition);
+        return slm.findLastCompletelyVisibleView(sd.firstPosition);
     }
 
     /**
@@ -213,7 +213,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionData sd = new SectionData(this, getChildAt(getChildCount() - 1));
         final SectionLayoutManager slm = getSlm(sd);
 
-        return slm.getLastVisibleView(sd.firstPosition);
+        return slm.findLastVisibleView(sd.firstPosition);
     }
 
     /**
@@ -746,7 +746,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (sd.hasHeader) {
             int headerOffset = 0;
             if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
-                View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, true);
+                View firstVisibleView = slm.findFirstVisibleView(sd.firstPosition, true);
                 if (firstVisibleView == null) {
                     headerOffset = 0;
                 } else {
@@ -1083,7 +1083,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private int getDirectionToPosition(int targetPosition) {
         SectionData sd = new SectionData(this, getChildAt(0));
         final View startSectionFirstView = getSlm(sd)
-                .getFirstVisibleView(sd.firstPosition, true);
+                .findFirstVisibleView(sd.firstPosition, true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
@@ -1598,7 +1598,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
         int offset = 0;
         if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
-            View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, true);
+            View firstVisibleView = slm.findFirstVisibleView(sd.firstPosition, true);
             if (firstVisibleView == null) {
                 offset = 0;
             } else {
