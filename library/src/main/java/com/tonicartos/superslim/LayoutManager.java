@@ -1117,7 +1117,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i < getChildCount(); i++) {
             child = getChildAt(i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.sectionManager != sd.sectionManager) {
+            if (!sd.sameSectionManager(lp)) {
                 break;
             }
 
@@ -1165,7 +1165,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i <= getChildCount(); i++) {
             child = getChildAt(getChildCount() - i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.sectionManager != sd.sectionManager) {
+            if (!sd.sameSectionManager(lp)) {
                 break;
             }
 
