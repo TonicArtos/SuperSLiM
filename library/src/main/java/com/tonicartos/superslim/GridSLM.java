@@ -266,7 +266,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
+    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int defaultEdge) {
         int bottomMostEdge = 0;
         int leftPosition = mLayoutManager.getWidth();
         boolean foundItems = false;
@@ -292,7 +292,7 @@ public class GridSLM extends SectionLayoutManager {
             bottomMostEdge = Math.max(bottomMostEdge, mLayoutManager.getDecoratedBottom(look));
         }
 
-        return foundItems ? bottomMostEdge : endEdge;
+        return foundItems ? bottomMostEdge : defaultEdge;
     }
 
     public GridSLM init(SectionData sd) {
@@ -323,9 +323,11 @@ public class GridSLM extends SectionLayoutManager {
      *
      * @param markerLine      Line indicating the top edge of the row.
      * @param anchorPosition  Position of the first view in the row.
+     * @param direction       Direction of edge to fill towards.
      * @param measureRowItems Measure the row items.
      * @param sd              Section data.
-     * @param state           Layout state.   @return The height of the new row.
+     * @param state           Layout state.
+     * @return The height of the new row.
      */
     public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
             boolean measureRowItems, SectionData sd, LayoutState state) {
