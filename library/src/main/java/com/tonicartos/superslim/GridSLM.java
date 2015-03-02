@@ -266,19 +266,6 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int getAnchorPosition(LayoutState state, SectionData sd, int position) {
-        calculateColumnWidthValues(sd);
-
-        int firstPosition = sd.firstPosition;
-        LayoutState.View first = state.getView(firstPosition);
-        if (first.getLayoutParams().isHeader) {
-            firstPosition += 1;
-        }
-        state.cacheView(sd.firstPosition, first.view);
-        return position - ((position - firstPosition) % mNumColumns);
-    }
-
-    @Override
     public int getLowestEdge(int sectionFirstPosition, int lastIndex, int endEdge) {
         int bottomMostEdge = 0;
         int leftPosition = mLayoutManager.getWidth();
