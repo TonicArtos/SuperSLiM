@@ -231,6 +231,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return slm.findLastVisibleItemPosition(params.getTestedFirstPosition());
     }
 
+    public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
+        LayoutParams params = (LayoutParams) child.getLayoutParams();
+        if (params.isHeader) {
+            outRect.left = params.isHeaderEndAligned() ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.right = params.isHeaderStartAligned() ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.top = params.getViewPosition() == 0 ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            return;
+        }
+
+        SectionLayoutManager slm = getSlm(params);
+        slm.getEdgeStates(outRect, child, state);
+    }
+
     public boolean isSmoothScrollEnabled() {
         return mSmoothScrollEnabled;
     }
@@ -1749,6 +1767,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             sectionManagerKind = SECTION_MANAGER_LINEAR;
         }
 
+        @Override
+        public int getViewPosition() {
+            return super.getViewPosition();
+        }
+
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
@@ -1801,6 +1824,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             super(other);
             init(other);
         }
+
+        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
