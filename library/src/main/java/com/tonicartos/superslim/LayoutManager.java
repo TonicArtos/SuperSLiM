@@ -305,18 +305,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_LayoutManager);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             TypedValue value = new TypedValue();
-            a.getValue(R.styleable.superslim_LayoutManager_slm_section_sectionManager, value);
+            a.getValue(R.styleable.superslim_LayoutManager_slm_section_layoutManager, value);
             isString = value.type == TypedValue.TYPE_STRING;
         } else {
             isString =
-                    a.getType(R.styleable.superslim_LayoutManager_slm_section_sectionManager)
+                    a.getType(R.styleable.superslim_LayoutManager_slm_section_layoutManager)
                             == TypedValue.TYPE_STRING;
         }
         String sectionManager = null;
         int sectionManagerKind;
         if (isString) {
             sectionManager = a
-                    .getString(R.styleable.superslim_LayoutManager_slm_section_sectionManager);
+                    .getString(R.styleable.superslim_LayoutManager_slm_section_layoutManager);
             if (TextUtils.isEmpty(sectionManager)) {
                 sectionManagerKind = SECTION_MANAGER_LINEAR;
             } else {
@@ -324,7 +324,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         } else {
             sectionManagerKind = a
-                    .getInt(R.styleable.superslim_LayoutManager_slm_section_sectionManager,
+                    .getInt(R.styleable.superslim_LayoutManager_slm_section_layoutManager,
                             SECTION_MANAGER_LINEAR);
         }
         a.recycle();
@@ -1774,7 +1774,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 a.getValue(R.styleable.superslim_LayoutManager_slm_section_headerMarginEnd, value);
                 loadHeaderEndMargin(a, value.type == TypedValue.TYPE_DIMENSION);
 
-                a.getValue(R.styleable.superslim_LayoutManager_slm_section_sectionManager, value);
+                a.getValue(R.styleable.superslim_LayoutManager_slm_section_layoutManager, value);
                 loadSlm(a, value.type == TypedValue.TYPE_STRING);
             } else {
                 boolean isDimension;
@@ -1789,7 +1789,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 loadHeaderEndMargin(a, isDimension);
 
                 boolean isString =
-                        a.getType(R.styleable.superslim_LayoutManager_slm_section_sectionManager)
+                        a.getType(R.styleable.superslim_LayoutManager_slm_section_layoutManager)
                                 == TypedValue.TYPE_STRING;
                 loadSlm(a, isString);
             }
@@ -1928,7 +1928,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         private void loadSlm(TypedArray a, boolean isString) {
             if (isString) {
                 sectionManager = a
-                        .getString(R.styleable.superslim_LayoutManager_slm_section_sectionManager);
+                        .getString(R.styleable.superslim_LayoutManager_slm_section_layoutManager);
                 if (TextUtils.isEmpty(sectionManager)) {
                     sectionManagerKind = SECTION_MANAGER_LINEAR;
                 } else {
@@ -1936,7 +1936,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 }
             } else {
                 sectionManagerKind = a
-                        .getInt(R.styleable.superslim_LayoutManager_slm_section_sectionManager,
+                        .getInt(R.styleable.superslim_LayoutManager_slm_section_layoutManager,
                                 SECTION_MANAGER_LINEAR);
             }
         }
