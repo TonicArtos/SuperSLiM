@@ -1713,12 +1713,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         String sectionManager;
 
+        int sectionManagerKind;
+
         private int mFirstPosition;
 
         public LayoutParams(int width, int height) {
             super(width, height);
 
             isHeader = DEFAULT_IS_HEADER;
+            sectionManagerKind = SECTION_MANAGER_LINEAR;
         }
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -1777,8 +1780,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
         }
-
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         /**
          * Get the first position for the section to which this param's item belongs.
