@@ -2,6 +2,7 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Rect;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -236,6 +237,21 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         return markerLine;
+    }
+
+    @Override
+    public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
+        // TODO: use section data to better determine things.
+        // If left column then external.
+        outRect.left = ItemDecorator.EXTERNAL;
+        // If right column then external.
+        outRect.right = ItemDecorator.EXTERNAL;
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        outRect.top = params.getViewPosition() == params.getTestedFirstPosition() ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        // Reset position to left column and add num columns, if < itemcount then not last row.
+        outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
     @Override

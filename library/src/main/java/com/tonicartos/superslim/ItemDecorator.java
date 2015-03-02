@@ -13,14 +13,11 @@ import java.util.List;
 
 /**
  * A generic decorator that can decorate items with drawables and/or padding in a flexible and
- * selectable manner.
- *
- * To control which edges are affected, flags are used to determine whether to apply the padding or
- * drawable to a given edge. External edges are on the outside of the section, internal edges are
- * between the section items. The edge status is determined by the section layout manager. Drawables
- * take precedence over padding in being applied to an edge.
- *
- * AssignmentCheckers are used to limit the decorator to a subset of the items.
+ * selectable manner. <p> To control which edges are affected, flags are used to determine whether
+ * to apply the padding or drawable to a given edge. Edges can be internal or external as determined
+ * by the section layout manager. Drawables take precedence over padding in being applied to an
+ * edge. </p> Use the Builder.decorates* methods, or assignmentCheckers to limit the decorator to a
+ * subset of the items.
  */
 public class ItemDecorator extends RecyclerView.ItemDecoration {
 
