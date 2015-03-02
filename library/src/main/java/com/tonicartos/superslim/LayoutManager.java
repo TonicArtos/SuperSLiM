@@ -1830,6 +1830,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         /**
          * Set the layout manager for this section to a custom implementation. This custom SLM must
          * be registered via {@link #addSlm(String, SectionLayoutManager)}.
+         *
+         * @param key Identifier for a registered custom SLM to layout this section out with.
          */
         public void setSlm(String key) {
             sectionManagerKind = SECTION_MANAGER_CUSTOM;
