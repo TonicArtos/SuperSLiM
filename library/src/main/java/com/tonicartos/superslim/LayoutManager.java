@@ -312,7 +312,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
         a.recycle();
 
-        return getSLM(sectionManagerKind, sectionManager).generateLayoutParams(c, attrs);
+        return getSlm(sectionManagerKind, sectionManager).generateLayoutParams(c, attrs);
     }
 
     @Override
@@ -1211,7 +1211,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return view;
     }
 
-    private SectionLayoutManager getSLM(int kind, String key) {
+    private SectionLayoutManager getSlm(int kind, String key) {
         if (kind == SECTION_MANAGER_CUSTOM) {
             return mSlms.get(key);
         } else if (kind == SECTION_MANAGER_LINEAR) {
@@ -1763,12 +1763,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             a.recycle();
         }
 
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
-
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
         }
+
+        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
