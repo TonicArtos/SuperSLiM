@@ -1218,8 +1218,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return mLinearSlm;
         } else if (kind == SECTION_MANAGER_GRID) {
             return mGridSlm;
-        } else {
+        } else if (kind == SECTION_MANAGER_STAGGERED_GRID) {
             throw new NotYetImplementedSlmException(kind);
+        } else {
+            throw new UnknownSectionLayoutException(kind);
         }
     }
 
@@ -1230,8 +1232,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return mLinearSlm;
         } else if (params.sectionManagerKind == SECTION_MANAGER_GRID) {
             return mGridSlm;
-        } else {
+        } else if (params.sectionManagerKind == SECTION_MANAGER_STAGGERED_GRID) {
             throw new NotYetImplementedSlmException(params.sectionManagerKind);
+        } else {
+            throw new UnknownSectionLayoutException(params.sectionManagerKind);
         }
     }
 
@@ -1246,8 +1250,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             slm = mLinearSlm;
         } else if (sd.headerParams.sectionManagerKind == SECTION_MANAGER_GRID) {
             slm = mGridSlm;
-        } else {
+        } else if (sd.headerParams.sectionManagerKind == SECTION_MANAGER_STAGGERED_GRID) {
             throw new NotYetImplementedSlmException(sd.headerParams.sectionManagerKind);
+        } else {
+            throw new UnknownSectionLayoutException(sd.headerParams.sectionManagerKind);
         }
 
         return slm.init(sd);
@@ -1768,11 +1774,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             init(other);
         }
 
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
-
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
         }
+
+        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         /**
          * Get the first position for the section to which this param's item belongs.
@@ -1974,6 +1980,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public UnknownSectionLayoutException(String key) {
             super("No registered layout for id " + key + ".");
+        }
+
+        public UnknownSectionLayoutException(int id) {
+            super("No built-in layout known by id " + id + ".");
         }
     }
 }
