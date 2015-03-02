@@ -109,10 +109,6 @@ public abstract class SectionLayoutManager {
         return new LayoutManager.LayoutParams(c, attrs);
     }
 
-    public int getAnchorPosition(LayoutState state, SectionData params, int position) {
-        return position;
-    }
-
     /**
      * Locate the first view in this section that is completely visible. Will skip headers unless
      * they are the only one visible.
