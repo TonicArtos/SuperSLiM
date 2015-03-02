@@ -261,7 +261,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+    public LayoutManager.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutParams(c, attrs);
     }
 
