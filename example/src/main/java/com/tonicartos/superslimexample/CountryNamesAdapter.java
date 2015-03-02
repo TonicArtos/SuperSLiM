@@ -96,12 +96,15 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
             } else {
                 lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
+        }
 
+        if (position == item.sectionFirstPosition) {
+            lp.setSlm(item.sectionManager == LINEAR ? LinearSLM.ID : GridSLM.ID);
             lp.headerEndMarginIsAuto = !mMarginsFixed;
             lp.headerStartMarginIsAuto = !mMarginsFixed;
+            lp.setColumnWidth(mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
         }
-        lp.setSlm(item.sectionManager == LINEAR ? LinearSLM.ID : GridSLM.ID);
-        lp.setColumnWidth(mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
+
         lp.setFirstPosition(item.sectionFirstPosition);
         itemView.setLayoutParams(lp);
     }
