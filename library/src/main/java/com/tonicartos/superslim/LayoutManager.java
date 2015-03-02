@@ -52,6 +52,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mSmoothScrollEnabled = true;
 
+    private SparseArray<SectionData> mSectionDataCache = new SparseArray<>();
+
     public LayoutManager(Context context) {
         mLinearSlm = new LinearSLM(this);
         mGridSlm = new GridSLM(this, context);
@@ -1081,9 +1083,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getDirectionToPosition(int targetPosition) {
-        SectionData sd = new SectionData(this, getChildAt(0));
-        final View startSectionFirstView = getSlm(sd)
-                .findFirstVisibleView(sd.firstPosition, true);
+        LayoutParams params = (LayoutParams) getChildAt(0).getLayoutParams();
+        final View startSectionFirstView = getSlm(params)
+                .findFirstVisibleView(params.getTestedFirstPosition(), true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
@@ -1105,7 +1107,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             float height = getDecoratedMeasuredHeight(child);
             fractionOffscreen = -top / height;
         }
-        SectionData sd = new SectionData(this, child);
+
+        SectionData sd = getCachedSectionData(child);
         if (sd.headerParams.isHeader && sd.headerParams.isHeaderInline()) {
             // Header must not be stickied as it is not attached after section items.
             return fractionOffscreen;
@@ -1149,6 +1152,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 .howManyMissingAbove(firstPosition, positionsOffscreen);
     }
 
+    private SectionData getCachedSectionData(View child) {
+        LayoutParams params = (LayoutParams) child.getLayoutParams();
+        return mSectionDataCache.get(params.getTestedFirstPosition());
+    }
+
     private float getFractionOfContentBelow(RecyclerView.State state, boolean ignorePosition) {
         final float parentHeight = getHeight();
         View child = getChildAt(getChildCount() - 1);
@@ -1156,7 +1164,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int anchorPosition = getPosition(child);
         int countAfter = 0;
 
-        SectionData sd = new SectionData(this, child);
+        SectionData sd = getCachedSectionData(child);
 
         float fractionOffscreen = 0;
         int lastPosition = -1;
