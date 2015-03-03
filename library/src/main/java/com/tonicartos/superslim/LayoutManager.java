@@ -249,6 +249,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         slm.getEdgeStates(outRect, child, sd, state);
     }
 
+    public SectionData getSectionData(int position, View view) {
+        SectionData sd = mSectionDataCache.get(position);
+        if (sd == null) {
+            sd = new SectionData(this, view);
+            mSectionDataCache.put(position, sd);
+        }
+        return sd;
+    }
+
     public boolean isSmoothScrollEnabled() {
         return mSmoothScrollEnabled;
     }
@@ -286,19 +295,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int bottomLine = layoutChildren(requestedPosition, borderLine, layoutState);
 
         fixOverscroll(bottomLine, layoutState);
-    }
-
-    private void clearSectionDataCache() {
-        mSectionDataCache.clear();
-    }
-
-    private SectionData getSectionData(int position, View view) {
-        SectionData sd = mSectionDataCache.get(position);
-        if (sd == null) {
-            sd = new SectionData(this, view);
-            mSectionDataCache.put(position, sd);
-        }
-        return sd;
     }
 
     @Override
@@ -677,6 +673,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return binarySearchForLastPosition(mid + 1, max, sfp);
     }
 
+    private void clearSectionDataCache() {
+        mSectionDataCache.clear();
+    }
+
     /**
      * Fill out the next section as far as possible. The marker line is used as a start line to
      * position content from. If necessary, room for headers is given before laying out the section
@@ -829,28 +829,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         return markerLine;
-    }
-
-    private void updateSectionDataAfterFillToEnd(SectionData sd, LayoutState state) {
-        // Check to see if we reached the end of the section so we can update the section data with
-        // the last section position.
-        if (sd.lastContentPosition != -1) {
-            return;
-        }
-
-        final View finishFillEndView = getAnchorAtEnd();
-        final int endPosition = getPosition(finishFillEndView);
-        if (endPosition == state.recyclerState.getItemCount() - 1) {
-            sd.lastContentPosition = endPosition;
-        } else {
-            final int nextPosition = endPosition + 1;
-            final LayoutState.View next = state.getView(nextPosition);
-            state.cacheView(nextPosition, next.view);
-
-            if (next.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
-                sd.lastContentPosition = endPosition;
-            }
-        }
     }
 
     /**
@@ -1723,6 +1701,28 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
+    private void updateSectionDataAfterFillToEnd(SectionData sd, LayoutState state) {
+        // Check to see if we reached the end of the section so we can update the section data with
+        // the last section position.
+        if (sd.lastContentPosition != -1) {
+            return;
+        }
+
+        final View finishFillEndView = getAnchorAtEnd();
+        final int endPosition = getPosition(finishFillEndView);
+        if (endPosition == state.recyclerState.getItemCount() - 1) {
+            sd.lastContentPosition = endPosition;
+        } else {
+            final int nextPosition = endPosition + 1;
+            final LayoutState.View next = state.getView(nextPosition);
+            state.cacheView(nextPosition, next.view);
+
+            if (next.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+                sd.lastContentPosition = endPosition;
+            }
+        }
+    }
+
     public enum Direction {
         START,
         END,
@@ -1792,11 +1792,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             isHeader = DEFAULT_IS_HEADER;
             sectionManagerKind = SECTION_MANAGER_LINEAR;
-        }
-
-        @Override
-        public int getViewPosition() {
-            return super.getViewPosition();
         }
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
