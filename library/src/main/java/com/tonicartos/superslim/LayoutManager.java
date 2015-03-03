@@ -986,7 +986,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         if (topLine > getPaddingTop()) {
             // Not enough content to fill all the way back up so we shunt it back up.
-            offsetChildrenVertical(topLine - getPaddingTop());
+            offsetChildrenVertical(getPaddingTop() - topLine);
         }
     }
 
