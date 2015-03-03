@@ -71,9 +71,11 @@ public abstract class SectionLayoutManager {
         outRect.left = ItemDecorator.EXTERNAL;
         outRect.right = ItemDecorator.EXTERNAL;
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
-        outRect.top = params.getViewPosition() == params.getTestedFirstPosition() ?
+        final int position = params.getViewPosition();
+        outRect.top = position == sectionData.getFirstContentPosition() ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
+        // Reset position to left column and add num columns, if < itemcount then not last row.
+        outRect.bottom = position == sectionData.lastContentPosition ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
