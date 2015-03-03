@@ -82,19 +82,13 @@ public class CountriesFragment extends Fragment {
 
         mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
 
-        ItemDecorator gridItemDecor = new ItemDecorator.Builder(getActivity())
-                .decorateSlm(GridSLM.ID)
-                .setPaddingDimensionRight(R.dimen.grid_spacing, ItemDecorator.INTERNAL)
-                .setDrawableBelow(R.drawable.divider, ItemDecorator.INTERNAL | ItemDecorator.INSET)
-                .build();
-
-        ItemDecorator linearItemDecor = new ItemDecorator.Builder(getActivity())
+        ItemDecorator decor = new ItemDecorator.Builder(getActivity())
+                .setDrawableBelow(R.drawable.divider_horizontal, ItemDecorator.INTERNAL)
                 .decorateSlm(LinearSLM.ID)
-                .setDrawableBelow(R.drawable.divider, ItemDecorator.INTERNAL)
+                .decorateSlm(GridSLM.ID)
                 .build();
 
-        mRecyclerView.addItemDecoration(gridItemDecor);
-        mRecyclerView.addItemDecoration(linearItemDecor);
+        mRecyclerView.addItemDecoration(decor);
 
         mRecyclerView.setLayoutManager(new LayoutManager(getActivity()));
 
