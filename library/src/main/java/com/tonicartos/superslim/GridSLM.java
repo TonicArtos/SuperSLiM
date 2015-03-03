@@ -2,7 +2,7 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.os.Build;
+import android.graphics.Rect;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -267,6 +267,26 @@ public class GridSLM extends SectionLayoutManager {
     @Override
     public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutParams(c, attrs);
+    }
+
+    @Override
+    public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        final int position = params.getViewPosition();
+        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
+
+        outRect.left = column == 0 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.right = column == mNumColumns - 1 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+
+        outRect.top = position - column == sd.getFirstContentPosition() ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        // Reset position to left column and add num columns, if < itemcount then not last row.
+        if (sd.isLastContentItemFound()) {
+            outRect.bottom = position + (mNumColumns - column) > sd.lastContentPosition ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        } else {
+            outRect.bottom = ItemDecorator.INTERNAL;
+        }
     }
 
     @Override

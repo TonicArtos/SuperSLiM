@@ -231,6 +231,40 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return slm.findLastVisibleItemPosition(params.getTestedFirstPosition());
     }
 
+    public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
+        LayoutParams params = (LayoutParams) child.getLayoutParams();
+        if (params.isHeader) {
+            outRect.left = params.isHeaderEndAligned() ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.right = params.isHeaderStartAligned() ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.top = params.getViewPosition() == 0 ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            return;
+        }
+        SectionData sd = getSectionData(params.getTestedFirstPosition(), child);
+        SectionLayoutManager slm = getSlm(sd);
+        slm.getEdgeStates(outRect, child, sd, state);
+    }
+
+    /**
+     * Get section data.
+     *
+     * @param sfp  Section id. First position of section.
+     * @param view View to create new section data if non is found.
+     * @return Section data.
+     */
+    public SectionData getSectionData(int sfp, View view) {
+        SectionData sd = mSectionDataCache.get(sfp);
+        if (sd == null) {
+            sd = new SectionData(this, view);
+            mSectionDataCache.put(sfp, sd);
+        }
+        return sd;
+    }
+
     public boolean isSmoothScrollEnabled() {
         return mSmoothScrollEnabled;
     }
@@ -268,19 +302,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int bottomLine = layoutChildren(requestedPosition, borderLine, layoutState);
 
         fixOverscroll(bottomLine, layoutState);
-    }
-
-    private void clearSectionDataCache() {
-        mSectionDataCache.clear();
-    }
-
-    private SectionData getSectionData(int position, View view) {
-        SectionData sd = mSectionDataCache.get(position);
-        if (sd == null) {
-            sd = new SectionData(this, view);
-            mSectionDataCache.put(position, sd);
-        }
-        return sd;
     }
 
     @Override
@@ -669,6 +690,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return binarySearchForLastPosition(mid + 1, max, sfp);
     }
 
+    private void clearSectionDataCache() {
+        mSectionDataCache.clear();
+    }
+
     /**
      * Fill out the next section as far as possible. The marker line is used as a start line to
      * position content from. If necessary, room for headers is given before laying out the section
@@ -707,6 +732,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (anchorPosition < state.recyclerState.getItemCount()) {
             SectionLayoutManager slm = getSlm(sd);
             markerLine = slm.fillToEnd(leadingEdge, markerLine, anchorPosition, sd, state);
+            updateSectionDataAfterFillToEnd(sd, state);
         }
 
         if (sd.hasHeader) {
@@ -742,6 +768,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         LayoutState.View anchor = state.getView(anchorPosition);
         LayoutParams anchorParams = anchor.getLayoutParams();
+        // Skip past previous sections header if there.
         if (anchorParams.isHeader) {
             state.cacheView(anchorPosition, anchor.view);
             anchorPosition = anchorPosition - 1;
@@ -752,6 +779,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             anchorParams = anchor.getLayoutParams();
         }
 
+        // Now we are in our intended section to fill.
         int sfp = anchorParams.getTestedFirstPosition();
 
         // Setup section data.
@@ -761,6 +789,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             measureHeader(header);
         }
         SectionData sd = getSectionData(sfp, header);
+        sd.lastContentPosition = anchorPosition;
 
         // Fill out section.
         SectionLayoutManager slm = getSlm(sd);
@@ -807,6 +836,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         final SectionLayoutManager slm = getSlm(sd);
         int markerLine = slm.finishFillToEnd(leadingEdge, anchor, sd, state);
+        updateSectionDataAfterFillToEnd(sd, state);
 
         View header = findAttachedHeaderForSectionFromEnd(sd.firstPosition);
         markerLine = updateHeaderForEnd(header, markerLine);
@@ -1685,6 +1715,28 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
 
             layoutDecorated(header, left, top, right, bottom);
+        }
+    }
+
+    private void updateSectionDataAfterFillToEnd(SectionData sd, LayoutState state) {
+        // Check to see if we reached the end of the section so we can update the section data with
+        // the last section position.
+        if (sd.lastContentPosition != -1) {
+            return;
+        }
+
+        final View finishFillEndView = getAnchorAtEnd();
+        final int endPosition = getPosition(finishFillEndView);
+        if (endPosition == state.recyclerState.getItemCount() - 1) {
+            sd.lastContentPosition = endPosition;
+        } else {
+            final int nextPosition = endPosition + 1;
+            final LayoutState.View next = state.getView(nextPosition);
+            state.cacheView(nextPosition, next.view);
+
+            if (next.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+                sd.lastContentPosition = endPosition;
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.tonicartos.superslim;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.SparseArray;
@@ -261,6 +262,27 @@ public abstract class SectionLayoutManager {
 
     public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutManager.LayoutParams(c, attrs);
+    }
+
+    /**
+     * Tell decorators which edges are internal and external. The default implementation assumes a
+     * linear list.
+     *
+     * @param outRect     Rect to load with ege states.
+     * @param child       Child to look at.
+     * @param sectionData Section data.
+     * @param state       State.
+     */
+    public void getEdgeStates(Rect outRect, View child, SectionData sectionData,
+            RecyclerView.State state) {
+        outRect.left = ItemDecorator.EXTERNAL;
+        outRect.right = ItemDecorator.EXTERNAL;
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        final int position = params.getViewPosition();
+        outRect.top = position == sectionData.getFirstContentPosition() ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.bottom = position == sectionData.lastContentPosition ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
     /**

@@ -29,6 +29,11 @@ public class SectionData {
 
     LayoutManager.LayoutParams headerParams;
 
+    /**
+     * Last content position should only be set once the last position has been found.
+     */
+    int lastContentPosition = -1;
+
     public SectionData(LayoutManager lm, View first) {
         final int paddingStart = lm.getPaddingStart();
         final int paddingEnd = lm.getPaddingEnd();
@@ -82,8 +87,27 @@ public class SectionData {
         sectionManagerKind = headerParams.sectionManagerKind;
     }
 
+    public int getFirstContentPosition() {
+        if (hasHeader) {
+            if (isLastContentItemFound()) {
+                return lastContentPosition > firstPosition ? firstPosition + 1 : firstPosition;
+            } else {
+                return firstPosition + 1;
+            }
+        }
+        return firstPosition;
+    }
+
+    public int getLastContentPosition() {
+        return lastContentPosition;
+    }
+
     public int getTotalMarginWidth() {
         return marginEnd + marginStart;
+    }
+
+    public boolean isLastContentItemFound() {
+        return lastContentPosition != -1;
     }
 
     public boolean sameSectionManager(LayoutManager.LayoutParams params) {
