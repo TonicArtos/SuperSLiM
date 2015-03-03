@@ -240,16 +240,22 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
-        // If left column then external.
-        outRect.left = ItemDecorator.EXTERNAL;
-        // If right column then external.
-        outRect.right = ItemDecorator.EXTERNAL;
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
-        outRect.top = params.getViewPosition() == params.getTestedFirstPosition() ?
+        final int position = params.getViewPosition();
+        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
+
+        outRect.left = column == 0 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.right = column == mNumColumns - 1 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+
+        outRect.top = position - column == sd.getFirstContentPosition() ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
         // Reset position to left column and add num columns, if < itemcount then not last row.
-        outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        if (sd.isLastContentItemFound()) {
+            outRect.bottom = position + (mNumColumns - column) > sd.lastContentPosition ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        } else {
+            outRect.bottom = ItemDecorator.INTERNAL;
+        }
     }
 
     @Override
