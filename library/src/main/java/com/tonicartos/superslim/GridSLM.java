@@ -82,8 +82,8 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         LayoutState.View anchor = state.getView(anchorPosition);
+        state.cacheView(anchorPosition, anchor.view);
         if (anchor.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
-            state.cacheView(anchorPosition, anchor.view);
             return markerLine;
         }
 
@@ -227,9 +227,9 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             LayoutState.View rowAnchor = state.getView(i);
+            state.cacheView(i, rowAnchor.view);
             LayoutManager.LayoutParams params = rowAnchor.getLayoutParams();
             if (params.isHeader || params.getTestedFirstPosition() != sd.firstPosition) {
-                state.cacheView(i, rowAnchor.view);
                 break;
             }
 
