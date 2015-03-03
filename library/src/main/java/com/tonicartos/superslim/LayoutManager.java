@@ -1825,8 +1825,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             init(other);
         }
 
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
-
         public boolean areHeaderFlagsSet(int flags) {
             return (headerDisplay & flags) == flags;
         }
