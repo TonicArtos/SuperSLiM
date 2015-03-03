@@ -244,9 +244,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
             return;
         }
-        SectionData sd = getSectionData(params.getFirstPosition(), child);
+        SectionData sd = getSectionDataInternal(params.getFirstPosition(), child);
         SectionLayoutManager slm = getSlm(sd);
         slm.getEdgeStates(outRect, child, sd, state);
+    }
+
+    private SectionData getSectionDataInternal(int sfp, View view) {
+        SectionData sd = mSectionDataCache.get(sfp);
+        if (sd == null) {
+            sd = new SectionData(this, view);
+            mSectionDataCache.put(sfp, sd);
+        }
+        return sd;
     }
 
     /**
@@ -260,9 +269,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         SectionData sd = mSectionDataCache.get(sfp);
         if (sd == null) {
             sd = new SectionData(this, view);
-            mSectionDataCache.put(sfp, sd);
         }
         return sd;
+
     }
 
     public boolean isSmoothScrollEnabled() {
@@ -721,12 +730,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionData sd;
         if (headerParams.isHeader) {
             measureHeader(header.view);
-            sd = getSectionData(anchorPosition, header.view);
+            sd = getSectionDataInternal(anchorPosition, header.view);
             markerLine = layoutHeaderTowardsEnd(header.view, markerLine, sd, state);
             anchorPosition += 1;
         } else {
             state.cacheView(anchorPosition, header.view);
-            sd = getSectionData(anchorPosition, header.view);
+            sd = getSectionDataInternal(anchorPosition, header.view);
         }
 
         if (anchorPosition < state.recyclerState.getItemCount()) {
@@ -788,7 +797,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (headerParams.isHeader) {
             measureHeader(header);
         }
-        SectionData sd = getSectionData(sfp, header);
+        SectionData sd = getSectionDataInternal(sfp, header);
         sd.lastContentPosition = anchorPosition;
 
         // Fill out section.
@@ -832,7 +841,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
         final int sfp = anchorParams.getFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.END, state);
-        final SectionData sd = getSectionData(sfp, first);
+        final SectionData sd = getSectionDataInternal(sfp, first);
 
         final SectionLayoutManager slm = getSlm(sd);
         int markerLine = slm.finishFillToEnd(leadingEdge, anchor, sd, state);
@@ -861,7 +870,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
         final int sfp = anchorParams.getFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
-        final SectionData sd = getSectionData(sfp, first);
+        final SectionData sd = getSectionDataInternal(sfp, first);
 
         final SectionLayoutManager slm = getSlm(sd);
 
@@ -1368,7 +1377,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         measureHeader(first.view);
         state.cacheView(sfp, first.view);
 
-        final SectionData sd = getSectionData(sfp, first.view);
+        final SectionData sd = getSectionDataInternal(sfp, first.view);
 
         final SectionLayoutManager slm = getSlm(sd);
         // Layout header
