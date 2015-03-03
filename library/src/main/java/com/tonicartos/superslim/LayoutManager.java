@@ -244,9 +244,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
             return;
         }
-
-        SectionLayoutManager slm = getSlm(params);
-        slm.getEdgeStates(outRect, child, getSectionData(params.getViewPosition(), child), state);
+        SectionData sd = getSectionData(params.getTestedFirstPosition(), child);
+        SectionLayoutManager slm = getSlm(sd);
+        slm.getEdgeStates(outRect, child, sd, state);
     }
 
     public boolean isSmoothScrollEnabled() {
@@ -834,6 +834,10 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private void updateSectionDataAfterFillToEnd(SectionData sd, LayoutState state) {
         // Check to see if we reached the end of the section so we can update the section data with
         // the last section position.
+        if (sd.lastContentPosition != -1) {
+            return;
+        }
+
         final View finishFillEndView = getAnchorAtEnd();
         final int endPosition = getPosition(finishFillEndView);
         if (endPosition == state.recyclerState.getItemCount() - 1) {
