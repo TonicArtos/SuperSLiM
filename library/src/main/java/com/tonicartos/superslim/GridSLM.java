@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -273,10 +274,15 @@ public class GridSLM extends SectionLayoutManager {
     public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
         final int position = params.getViewPosition();
-        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
 
-        outRect.left = column == 0 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.right = column == mNumColumns - 1 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
+        boolean isLtr = mLayoutManager.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
+        final int ltrColumn = adjustColumnForLayoutDirection(column, isLtr);
+
+        outRect.left = ltrColumn == 0 ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.right = ltrColumn == mNumColumns - 1 ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
 
         outRect.top = position - column == sd.getFirstContentPosition() ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
@@ -462,11 +468,20 @@ public class GridSLM extends SectionLayoutManager {
         }
         final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
 
+        col = adjustColumnForLayoutDirection(col, state.isLTR);
+
         final int bottom = top + height;
         final int left = (state.isLTR ? sd.contentStart : sd.contentEnd) + col * mColumnWidth;
         final int right = left + width;
 
         mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
+    }
+
+    private int adjustColumnForLayoutDirection(int col, boolean isLtr) {
+        if (!isLtr) {
+            col = mNumColumns - 1 - col;
+        }
+        return col;
     }
 
     /**
