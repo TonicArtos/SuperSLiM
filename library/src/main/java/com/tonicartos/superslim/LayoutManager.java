@@ -325,14 +325,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         final Direction direction = dy > 0 ? Direction.END : Direction.START;
         final boolean isDirectionEnd = direction == Direction.END;
+        final int height = getHeight();
 
-        final int leadingEdge = isDirectionEnd ? getHeight() + dy : dy;
+        // Handle situation where total content height is less than the view height. We only
+        // have to handle the end direction because we never over scroll the top or lay out
+        // from the bottom up.
+        final View end = getAnchorAtEnd();
+        if (getDecoratedBottom(end) < height - getPaddingBottom() &&
+                getPosition(end) == (state.getItemCount() - 1)) {
+            return 0;
+        }
+
+        final int leadingEdge = isDirectionEnd ? height + dy : dy;
         final int fillEdge = fillUntil(leadingEdge, direction, layoutState);
 
         final int delta;
         if (isDirectionEnd) {
             // Add padding so we scroll to inset area at scroll end.
-            int fillDelta = fillEdge - getHeight() + getPaddingBottom();
+            int fillDelta = fillEdge - height + getPaddingBottom();
             delta = fillDelta < dy ? fillDelta : dy;
         } else {
             int fillDelta = fillEdge - getPaddingTop();
