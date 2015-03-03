@@ -50,7 +50,7 @@ public class LinearSLM extends SectionLayoutManager {
 
             LayoutState.View next = state.getView(i);
             LayoutManager.LayoutParams params = next.getLayoutParams();
-            if (params.getTestedFirstPosition() != sd.firstPosition) {
+            if (params.getFirstPosition() != sd.firstPosition) {
                 state.cacheView(i, next.view);
                 break;
             }
@@ -78,7 +78,7 @@ public class LinearSLM extends SectionLayoutManager {
 
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
-            if (checkParams.getTestedFirstPosition() != sd.firstPosition) {
+            if (checkParams.getFirstPosition() != sd.firstPosition) {
                 applyMinHeight = true;
                 break;
             }
@@ -99,7 +99,7 @@ public class LinearSLM extends SectionLayoutManager {
                 LayoutState.View measure = state.getView(i);
                 state.cacheView(i, measure.view);
                 LayoutManager.LayoutParams params = measure.getLayoutParams();
-                if (params.getTestedFirstPosition() != sd.firstPosition) {
+                if (params.getFirstPosition() != sd.firstPosition) {
                     break;
                 }
 
@@ -132,7 +132,7 @@ public class LinearSLM extends SectionLayoutManager {
                 state.cacheView(i, next.view);
                 break;
             }
-            if (params.getTestedFirstPosition() != sd.firstPosition) {
+            if (params.getFirstPosition() != sd.firstPosition) {
                 state.cacheView(i, next.view);
                 break;
             }

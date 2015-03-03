@@ -87,7 +87,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             final SectionLayoutManager slm = getSlm(params);
 
             firstVisibleView =
-                    slm.findFirstCompletelyVisibleView(params.getTestedFirstPosition(), false);
+                    slm.findFirstCompletelyVisibleView(params.getFirstPosition(), false);
             if (firstVisibleView != null) {
                 break;
             }
@@ -149,14 +149,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public View findFirstVisibleItem() {
         LayoutParams params = (LayoutParams) getChildAt(0).getLayoutParams();
         final SectionLayoutManager slm = getSlm(params);
-        View firstVisibleView = slm.findFirstVisibleView(params.getTestedFirstPosition(), false);
+        View firstVisibleView = slm.findFirstVisibleView(params.getFirstPosition(), false);
         int position = getPosition(firstVisibleView);
-        if (position > params.getTestedFirstPosition() + 1 ||
-                position == params.getTestedFirstPosition()) {
+        if (position > params.getFirstPosition() + 1 ||
+                position == params.getFirstPosition()) {
             return firstVisibleView;
         }
         View first = findAttachedHeaderOrFirstViewForSection(
-                params.getTestedFirstPosition(), 0, Direction.START);
+                params.getFirstPosition(), 0, Direction.START);
         if (first == null) {
             return firstVisibleView;
         }
@@ -192,7 +192,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams params = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
         final SectionLayoutManager slm = getSlm(params);
 
-        return slm.findLastCompletelyVisibleView(params.getTestedFirstPosition());
+        return slm.findLastCompletelyVisibleView(params.getFirstPosition());
     }
 
     /**
@@ -204,7 +204,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams params = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
         final SectionLayoutManager slm = getSlm(params);
 
-        return slm.findLastCompletelyVisibleItemPosition(params.getTestedFirstPosition());
+        return slm.findLastCompletelyVisibleItemPosition(params.getFirstPosition());
     }
 
     /**
@@ -216,7 +216,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams params = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
         final SectionLayoutManager slm = getSlm(params);
 
-        return slm.findLastVisibleView(params.getTestedFirstPosition());
+        return slm.findLastVisibleView(params.getFirstPosition());
     }
 
     /**
@@ -228,7 +228,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         LayoutParams params = (LayoutParams) getChildAt(getChildCount() - 1).getLayoutParams();
         final SectionLayoutManager slm = getSlm(params);
 
-        return slm.findLastVisibleItemPosition(params.getTestedFirstPosition());
+        return slm.findLastVisibleItemPosition(params.getFirstPosition());
     }
 
     public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
@@ -244,7 +244,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
             return;
         }
-        SectionData sd = getSectionData(params.getTestedFirstPosition(), child);
+        SectionData sd = getSectionData(params.getFirstPosition(), child);
         SectionLayoutManager slm = getSlm(sd);
         slm.getEdgeStates(outRect, child, sd, state);
     }
@@ -657,11 +657,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         View candidate = getChildAt(mid);
         LayoutParams params = (LayoutParams) candidate.getLayoutParams();
-        if (params.getTestedFirstPosition() < sfp) {
+        if (params.getFirstPosition() < sfp) {
             return binarySearchForLastPosition(mid + 1, max, sfp);
         }
 
-        if (params.getTestedFirstPosition() > sfp || params.isHeader) {
+        if (params.getFirstPosition() > sfp || params.isHeader) {
             return binarySearchForLastPosition(min, mid - 1, sfp);
         }
 
@@ -671,7 +671,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         View next = getChildAt(mid + 1);
         LayoutParams lp = (LayoutParams) next.getLayoutParams();
-        if (lp.getTestedFirstPosition() != sfp) {
+        if (lp.getFirstPosition() != sfp) {
             return mid;
         }
 
@@ -682,7 +682,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             next = getChildAt(mid + 2);
             lp = (LayoutParams) next.getLayoutParams();
-            if (lp.getTestedFirstPosition() != sfp) {
+            if (lp.getFirstPosition() != sfp) {
                 return mid;
             }
         }
@@ -780,7 +780,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Now we are in our intended section to fill.
-        int sfp = anchorParams.getTestedFirstPosition();
+        int sfp = anchorParams.getFirstPosition();
 
         // Setup section data.
         View header = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
@@ -830,7 +830,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final View anchor = getAnchorAtEnd();
 
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
-        final int sfp = anchorParams.getTestedFirstPosition();
+        final int sfp = anchorParams.getFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.END, state);
         final SectionData sd = getSectionData(sfp, first);
 
@@ -859,7 +859,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         View anchor = getAnchorAtStart();
 
         LayoutParams anchorParams = (LayoutParams) anchor.getLayoutParams();
-        final int sfp = anchorParams.getTestedFirstPosition();
+        final int sfp = anchorParams.getFirstPosition();
         final View first = getHeaderOrFirstViewForSection(sfp, Direction.START, state);
         final SectionData sd = getSectionData(sfp, first);
 
@@ -931,7 +931,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = getChildCount() - 1; i >= 0; i--) {
             View child = getChildAt(i);
             LayoutParams params = (LayoutParams) child.getLayoutParams();
-            if (params.getTestedFirstPosition() != sfp) {
+            if (params.getFirstPosition() != sfp) {
                 break;
             } else if (params.isHeader) {
                 return child;
@@ -959,7 +959,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         View candidate = getChildAt(mid);
         LayoutParams params = (LayoutParams) candidate.getLayoutParams();
-        if (params.getTestedFirstPosition() != sfp) {
+        if (params.getFirstPosition() != sfp) {
             return findAttachedHeaderForSectionFromStart(min, mid - 1, sfp);
         }
 
@@ -990,7 +990,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 return child;
             }
             LayoutParams params = (LayoutParams) child.getLayoutParams();
-            if (params.getTestedFirstPosition() != sfp) {
+            if (params.getFirstPosition() != sfp) {
                 break;
             }
         }
@@ -1035,7 +1035,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             // Try one above.
             View check = getChildAt(getChildCount() - 2);
             LayoutParams checkParams = (LayoutParams) check.getLayoutParams();
-            if (checkParams.getTestedFirstPosition() == candidateParams.getTestedFirstPosition()) {
+            if (checkParams.getFirstPosition() == candidateParams.getFirstPosition()) {
                 candidate = check;
             }
         }
@@ -1051,7 +1051,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private View getAnchorAtStart() {
         View child = getChildAt(0);
         LayoutParams params = (LayoutParams) child.getLayoutParams();
-        int sfp = params.getTestedFirstPosition();
+        int sfp = params.getFirstPosition();
 
         if (!params.isHeader) {
             return child;
@@ -1061,7 +1061,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (i < getChildCount()) {
             View candidate = getChildAt(i);
             LayoutParams candidateParams = (LayoutParams) candidate.getLayoutParams();
-            if (candidateParams.getTestedFirstPosition() == sfp) {
+            if (candidateParams.getFirstPosition() == sfp) {
                 return candidate;
             }
         }
@@ -1081,7 +1081,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         final View child = getChildAt(0);
         final LayoutParams params = (LayoutParams) child.getLayoutParams();
-        final int sfp = params.getTestedFirstPosition();
+        final int sfp = params.getFirstPosition();
 
         final View first = findAttachedHeaderOrFirstViewForSection(sfp, 0, Direction.START);
         if (first == null) {
@@ -1139,13 +1139,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private SectionData getCachedSectionData(View child) {
         LayoutParams params = (LayoutParams) child.getLayoutParams();
-        return mSectionDataCache.get(params.getTestedFirstPosition());
+        return mSectionDataCache.get(params.getFirstPosition());
     }
 
     private int getDirectionToPosition(int targetPosition) {
         LayoutParams params = (LayoutParams) getChildAt(0).getLayoutParams();
         final View startSectionFirstView = getSlm(params)
-                .findFirstVisibleView(params.getTestedFirstPosition(), true);
+                .findFirstVisibleView(params.getFirstPosition(), true);
         return targetPosition < getPosition(startSectionFirstView) ? -1 : 1;
     }
 
@@ -1180,7 +1180,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i < getChildCount(); i++) {
             child = getChildAt(i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.getTestedFirstPosition() != sd.firstPosition) {
+            if (lp.getFirstPosition() != sd.firstPosition) {
                 break;
             }
 
@@ -1228,7 +1228,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i <= getChildCount(); i++) {
             child = getChildAt(getChildCount() - i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.getTestedFirstPosition() != sd.firstPosition) {
+            if (lp.getFirstPosition() != sd.firstPosition) {
                 break;
             }
 
@@ -1363,7 +1363,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final LayoutState.View anchor = state.getView(anchorPosition);
         state.cacheView(anchorPosition, anchor.view);
 
-        final int sfp = anchor.getLayoutParams().getTestedFirstPosition();
+        final int sfp = anchor.getLayoutParams().getFirstPosition();
         final LayoutState.View first = state.getView(sfp);
         measureHeader(first.view);
         state.cacheView(sfp, first.view);
@@ -1570,7 +1570,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             for (int i = anchorIndex - 1; i >= 0; i--) {
                 View look = getChildAt(i);
                 LayoutParams lookParams = (LayoutParams) look.getLayoutParams();
-                if (lookParams.getTestedFirstPosition() == anchorParams.getTestedFirstPosition()) {
+                if (lookParams.getFirstPosition() == anchorParams.getFirstPosition()) {
                     anchor = look;
                     anchorParams = lookParams;
                     anchorIndex = i;
@@ -1583,7 +1583,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             removeAndRecycleViewAt(0, state.recycler);
         }
 
-        int sfp = anchorParams.getTestedFirstPosition();
+        int sfp = anchorParams.getFirstPosition();
 
         View header = findAttachedHeaderForSection(sfp, Direction.START);
         if (header != null) {
@@ -1654,9 +1654,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = sli == -1 ? 0 : sli; i < getChildCount(); i++) {
             View view = getChildAt(i);
             LayoutParams params = (LayoutParams) view.getLayoutParams();
-            if (params.getTestedFirstPosition() != sd.firstPosition) {
+            if (params.getFirstPosition() != sd.firstPosition) {
                 View first = findAttachedHeaderOrFirstViewForSection(
-                        params.getTestedFirstPosition(), i,
+                        params.getFirstPosition(), i,
                         Direction.START);
                 if (first == null) {
                     sectionBottom = getDecoratedTop(view);
@@ -1690,7 +1690,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return;
         }
 
-        int sfp = params.getTestedFirstPosition();
+        int sfp = params.getFirstPosition();
         final int slp = findLastIndexForSection(sfp);
         if (slp == -1) {
             return;
@@ -1734,7 +1734,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             final LayoutState.View next = state.getView(nextPosition);
             state.cacheView(nextPosition, next.view);
 
-            if (next.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+            if (next.getLayoutParams().getFirstPosition() != sd.firstPosition) {
                 sd.lastContentPosition = endPosition;
             }
         }
@@ -1869,15 +1869,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         /**
-         * Get the first position for the section to which this param's item belongs.
-         *
-         * @return A value {@literal <=} 0.
-         */
-        public int getFirstPosition() {
-            return mFirstPosition;
-        }
-
-        /**
          * Set the first position for the section to which this param's item belongs.
          *
          * @param firstPosition First position of section for this param's item. Must be {@literal
@@ -1897,7 +1888,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          *
          * @return A value {@literal >=} 0.
          */
-        public int getTestedFirstPosition() {
+        public int getFirstPosition() {
             if (mFirstPosition == NO_FIRST_POSITION) {
                 throw new MissingFirstPositionException();
             }

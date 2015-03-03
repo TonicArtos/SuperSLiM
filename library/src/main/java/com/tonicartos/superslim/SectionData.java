@@ -81,7 +81,7 @@ public class SectionData {
 
         hasHeader = headerParams.isHeader;
 
-        firstPosition = headerParams.getTestedFirstPosition();
+        firstPosition = headerParams.getFirstPosition();
 
         sectionManager = headerParams.sectionManager;
         sectionManagerKind = headerParams.sectionManagerKind;

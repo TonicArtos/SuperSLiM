@@ -66,7 +66,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             View child = lm.getChildAt(i);
             LayoutManager.LayoutParams params =
                     (LayoutManager.LayoutParams) child.getLayoutParams();
-            if (!assignedTo(lm.getSectionData(params.getTestedFirstPosition(), child), params)) {
+            if (!assignedTo(lm.getSectionData(params.getFirstPosition(), child), params)) {
                 continue;
             }
 
@@ -150,7 +150,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         // Check decorator is assigned to section by sfp or slm.
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
         LayoutManager lm = (LayoutManager) parent.getLayoutManager();
-        if (!assignedTo(lm.getSectionData(params.getTestedFirstPosition(), view), params)) {
+        if (!assignedTo(lm.getSectionData(params.getFirstPosition(), view), params)) {
             outRect.left = 0;
             outRect.top = 0;
             outRect.right = 0;
@@ -621,7 +621,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         @Override
         public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
-            return params.getTestedFirstPosition() == mSfp && params.isHeader == mApplyToHeader;
+            return params.getFirstPosition() == mSfp && params.isHeader == mApplyToHeader;
         }
     }
 }

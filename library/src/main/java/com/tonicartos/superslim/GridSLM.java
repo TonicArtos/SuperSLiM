@@ -83,7 +83,7 @@ public class GridSLM extends SectionLayoutManager {
 
         LayoutState.View anchor = state.getView(anchorPosition);
         state.cacheView(anchorPosition, anchor.view);
-        if (anchor.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+        if (anchor.getLayoutParams().getFirstPosition() != sd.firstPosition) {
             return markerLine;
         }
 
@@ -104,7 +104,7 @@ public class GridSLM extends SectionLayoutManager {
 
                 LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                         .getLayoutParams();
-                if (params.getTestedFirstPosition() != sd.firstPosition) {
+                if (params.getFirstPosition() != sd.firstPosition) {
                     break;
                 }
             }
@@ -118,7 +118,7 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             LayoutState.View view = state.getView(i);
-            if (view.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+            if (view.getLayoutParams().getFirstPosition() != sd.firstPosition) {
                 state.cacheView(i, view.view);
                 break;
             }
@@ -142,7 +142,7 @@ public class GridSLM extends SectionLayoutManager {
             View check = mLayoutManager.getChildAt(0);
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
-            if (checkParams.getTestedFirstPosition() != sd.firstPosition) {
+            if (checkParams.getFirstPosition() != sd.firstPosition) {
                 applyMinHeight = true;
                 break;
             }
@@ -162,7 +162,7 @@ public class GridSLM extends SectionLayoutManager {
                 View child = mLayoutManager.getChildAt(j);
                 LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                         .getLayoutParams();
-                if (params.getTestedFirstPosition() != sd.firstPosition) {
+                if (params.getFirstPosition() != sd.firstPosition) {
                     break;
                 }
 
@@ -185,7 +185,7 @@ public class GridSLM extends SectionLayoutManager {
                 LayoutState.View check = state.getView(i);
                 state.cacheView(i, check.view);
                 LayoutManager.LayoutParams checkParams = check.getLayoutParams();
-                if (checkParams.getTestedFirstPosition() != sd.firstPosition) {
+                if (checkParams.getFirstPosition() != sd.firstPosition) {
                     break;
                 }
 
@@ -194,7 +194,7 @@ public class GridSLM extends SectionLayoutManager {
                     LayoutState.View measure = state.getView(i + j);
                     state.cacheView(i + j, measure.view);
                     LayoutManager.LayoutParams measureParams = measure.getLayoutParams();
-                    if (measureParams.getTestedFirstPosition() != sd.firstPosition) {
+                    if (measureParams.getFirstPosition() != sd.firstPosition) {
                         break;
                     }
 
@@ -229,7 +229,7 @@ public class GridSLM extends SectionLayoutManager {
             LayoutState.View rowAnchor = state.getView(i);
             state.cacheView(i, rowAnchor.view);
             LayoutManager.LayoutParams params = rowAnchor.getLayoutParams();
-            if (params.isHeader || params.getTestedFirstPosition() != sd.firstPosition) {
+            if (params.isHeader || params.getFirstPosition() != sd.firstPosition) {
                 break;
             }
 
@@ -298,7 +298,7 @@ public class GridSLM extends SectionLayoutManager {
         for (int i = lastIndex; i >= 0; i--) {
             View look = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+            if (params.getFirstPosition() != sectionFirstPosition) {
                 break;
             }
 
@@ -364,7 +364,7 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             LayoutState.View view = state.getView(position);
-            if (view.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
+            if (view.getLayoutParams().getFirstPosition() != sd.firstPosition) {
                 state.cacheView(position, view.view);
                 break;
             }
