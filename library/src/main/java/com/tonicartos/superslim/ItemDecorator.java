@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.View;
@@ -31,6 +32,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
     public static final int INSET = 0x04;
 
+    static final int UNSET = -1;
+
     private final Spacing mSpacing;
 
     private final Rect mEdgeState = new Rect();
@@ -43,10 +46,22 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
     private final Edge mBottom;
 
+    private final Edge mStart;
+
+    private final Edge mEnd;
+
     private List<AssignmentChecker> mCheckers;
+
+    private boolean initialised = false;
+
+    private boolean layoutDirectionResolved = false;
 
     ItemDecorator(Builder b) {
         mCheckers = new ArrayList<>(b.assignments);
+        mStart = new Edge(
+                b.startDrawable, b.startDrawableFlags, b.startPadding, b.startPaddingFlags);
+        mEnd = new Edge(
+                b.endDrawable, b.endDrawableFlags, b.endPadding, b.endPaddingFlags);
         mLeft = new Edge(
                 b.leftDrawable, b.leftDrawableFlags, b.leftPadding, b.leftPaddingFlags);
         mTop = new Edge(
@@ -60,6 +75,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
+        resolveLayoutDirection(parent);
         LayoutManager lm = (LayoutManager) parent.getLayoutManager();
 
         for (int i = 0; i < lm.getChildCount(); i++) {
@@ -147,6 +163,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent,
             RecyclerView.State state) {
+        resolveLayoutDirection(parent);
         // Check decorator is assigned to section by sfp or slm.
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
         LayoutManager lm = (LayoutManager) parent.getLayoutManager();
@@ -172,6 +189,58 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             }
         }
         return false;
+    }
+
+    /**
+     * We can finally handle layout direction.
+     * @param view View providing layout direction.
+     */
+    private void resolveLayoutDirection(View view) {
+        if (layoutDirectionResolved) {
+            return;
+        }
+        layoutDirectionResolved = true;
+        int layoutDirection = ViewCompat.getLayoutDirection(view);
+        mSpacing.resolveLayoutDirection(layoutDirection);
+
+        switch (layoutDirection) {
+            case ViewCompat.LAYOUT_DIRECTION_RTL:
+                if (mStart.padding != UNSET) {
+                    mRight.padding = mStart.padding;
+                    mRight.paddingFlags = mStart.paddingFlags;
+                }
+                if (mStart.drawable != null) {
+                    mRight.drawable = mStart.drawable;
+                    mRight.drawableFlags = mStart.drawableFlags;
+                }
+                if (mEnd.padding != UNSET) {
+                    mLeft.padding = mEnd.padding;
+                    mLeft.paddingFlags = mEnd.paddingFlags;
+                }
+                if (mEnd.drawable != null) {
+                    mLeft.drawable = mEnd.drawable;
+                    mLeft.drawableFlags = mEnd.drawableFlags;
+                }
+                break;
+            case ViewCompat.LAYOUT_DIRECTION_LTR:
+            default:
+                if (mStart.padding != UNSET) {
+                    mLeft.padding = mStart.padding;
+                    mLeft.paddingFlags = mStart.paddingFlags;
+                }
+                if (mStart.drawable != null) {
+                    mLeft.drawable = mStart.drawable;
+                    mLeft.drawableFlags = mStart.drawableFlags;
+                }
+                if (mEnd.padding != UNSET) {
+                    mRight.padding = mEnd.padding;
+                    mRight.paddingFlags = mEnd.paddingFlags;
+                }
+                if (mEnd.drawable != null) {
+                    mRight.drawable = mEnd.drawable;
+                    mRight.drawableFlags = mEnd.drawableFlags;
+                }
+        }
     }
 
     /**
@@ -215,6 +284,18 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
      */
     public static class Builder {
 
+        public Drawable startDrawable;
+
+        public int startDrawableFlags;
+
+        public int startPaddingFlags;
+
+        public Drawable endDrawable;
+
+        public int endDrawableFlags;
+
+        public int endPaddingFlags;
+
         ArrayList<AssignmentChecker> assignments = new ArrayList<>();
 
         int leftPadding;
@@ -245,6 +326,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         int bottomPaddingFlags;
 
+        public int startPadding = UNSET;
+
         Drawable bottomDrawable;
 
         int bottomDrawableFlags;
@@ -265,6 +348,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             assignments.add(checker);
             return this;
         }
+
+        public int endPadding = UNSET;
 
         public ItemDecorator build() {
             return new ItemDecorator(this);
@@ -377,6 +462,24 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             return this;
         }
 
+        public Builder setDrawableEnd(int resId) {
+            return setDrawableEnd(resId, DEFAULT_FLAGS);
+        }
+
+        public Builder setDrawableEnd(int resId, int flags) {
+            return setDrawableEnd(mContext.getResources().getDrawable(resId), flags);
+        }
+
+        public Builder setDrawableEnd(Drawable drawable) {
+            return setDrawableEnd(drawable, DEFAULT_FLAGS);
+        }
+
+        public Builder setDrawableEnd(Drawable drawable, int flags) {
+            endDrawable = drawable;
+            endDrawableFlags = flags;
+            return this;
+        }
+
         public Builder setDrawableLeft(int resId) {
             return setDrawableLeft(resId, DEFAULT_FLAGS);
         }
@@ -410,6 +513,24 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         public Builder setDrawableRight(Drawable drawable, int flags) {
             rightDrawable = drawable;
             rightDrawableFlags = flags;
+            return this;
+        }
+
+        public Builder setDrawableStart(int resId) {
+            return setDrawableStart(resId, DEFAULT_FLAGS);
+        }
+
+        public Builder setDrawableStart(int resId, int flags) {
+            return setDrawableStart(mContext.getResources().getDrawable(resId), flags);
+        }
+
+        public Builder setDrawableStart(Drawable drawable) {
+            return setDrawableStart(drawable, DEFAULT_FLAGS);
+        }
+
+        public Builder setDrawableStart(Drawable drawable, int flags) {
+            startDrawable = drawable;
+            startDrawableFlags = flags;
             return this;
         }
 
@@ -449,6 +570,14 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             return setPaddingBelow(mContext.getResources().getDimensionPixelSize(resId), flags);
         }
 
+        public Builder setPaddingDimensionEnd(int resId) {
+            return setPaddingDimensionEnd(resId, DEFAULT_FLAGS);
+        }
+
+        public Builder setPaddingDimensionEnd(int resId, int flags) {
+            return setPaddingEnd(mContext.getResources().getDimensionPixelSize(resId), flags);
+        }
+
         public Builder setPaddingDimensionLeft(int resId) {
             return setPaddingDimensionLeft(resId, DEFAULT_FLAGS);
         }
@@ -463,6 +592,24 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         public Builder setPaddingDimensionRight(int resId, int flags) {
             return setPaddingRight(mContext.getResources().getDimensionPixelSize(resId), flags);
+        }
+
+        public Builder setPaddingDimensionStart(int resId) {
+            return setPaddingDimensionStart(resId, DEFAULT_FLAGS);
+        }
+
+        public Builder setPaddingDimensionStart(int resId, int flags) {
+            return setPaddingStart(mContext.getResources().getDimensionPixelSize(resId), flags);
+        }
+
+        public Builder setPaddingEnd(int padding) {
+            return setPaddingEnd(padding, DEFAULT_FLAGS);
+        }
+
+        public Builder setPaddingEnd(int padding, int flags) {
+            endPadding = padding;
+            endPaddingFlags = flags;
+            return this;
         }
 
         public Builder setPaddingLeft(int padding) {
@@ -484,28 +631,55 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             rightPaddingFlags = flags;
             return this;
         }
+
+        public Builder setPaddingStart(int padding) {
+            return setPaddingStart(padding, DEFAULT_FLAGS);
+        }
+
+        public Builder setPaddingStart(int padding, int flags) {
+            startPadding = padding;
+            startPaddingFlags = flags;
+            return this;
+        }
+
+
     }
 
     static class Spacing {
 
-        final int internalLeft;
-
-        final int internalRight;
 
         final int internalTop;
 
         final int internalBottom;
 
-        final int externalLeft;
-
-        final int externalRight;
-
         final int externalTop;
 
         final int externalBottom;
 
+        int internalLeft;
+
+        int internalRight;
+
+        int externalLeft;
+
+        int externalRight;
+
+        int internalStart;
+
+        int internalEnd;
+
+        int externalStart;
+
+        int externalEnd;
+
         public Spacing(Builder b) {
             int mask = INTERNAL;
+            internalStart = calculateOffset(b.startDrawable, b.startDrawableFlags,
+                    b.startPadding, b.startPaddingFlags, mask, false);
+
+            internalEnd = calculateOffset(b.endDrawable, b.endDrawableFlags,
+                    b.endPadding, b.endPaddingFlags, mask, false);
+
             internalLeft = calculateOffset(b.leftDrawable, b.leftDrawableFlags,
                     b.leftPadding, b.leftPaddingFlags, mask, false);
 
@@ -519,6 +693,12 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
                     b.bottomPadding, b.bottomPaddingFlags, mask, true);
 
             mask = EXTERNAL;
+            externalStart = calculateOffset(b.startDrawable, b.startDrawableFlags,
+                    b.leftPadding, b.leftPaddingFlags, mask, false);
+
+            externalEnd = calculateOffset(b.endDrawable, b.endDrawableFlags,
+                    b.endPadding, b.endPaddingFlags, mask, false);
+
             externalLeft = calculateOffset(b.leftDrawable, b.leftDrawableFlags,
                     b.leftPadding, b.leftPaddingFlags, mask, false);
 
@@ -537,9 +717,48 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             // Reuse the rect to get the edge states, either internal or external.
             lm.getEdgeStates(outRect, view, state);
             outRect.left = outRect.left == EXTERNAL ? externalLeft : internalLeft;
-            outRect.top = outRect.top == EXTERNAL ? externalTop : internalTop;
             outRect.right = outRect.right == EXTERNAL ? externalRight : internalRight;
+            outRect.top = outRect.top == EXTERNAL ? externalTop : internalTop;
             outRect.bottom = outRect.bottom == EXTERNAL ? externalBottom : internalBottom;
+        }
+
+        public void resolveLayoutDirection(int resolvedLayoutDirection) {
+            switch (resolvedLayoutDirection) {
+                case ViewCompat.LAYOUT_DIRECTION_RTL:
+                    if (internalStart != UNSET) {
+                        internalRight = internalStart;
+                    }
+
+                    if (externalStart != UNSET) {
+                        externalRight = externalStart;
+                    }
+
+                    if (internalEnd != UNSET) {
+                        internalLeft = internalEnd;
+                    }
+
+                    if (externalEnd != UNSET) {
+                        externalLeft = externalEnd;
+                    }
+                    break;
+                case ViewCompat.LAYOUT_DIRECTION_LTR:
+                default:
+                    if (internalStart != UNSET) {
+                        internalLeft = internalStart;
+                    }
+
+                    if (externalStart != UNSET) {
+                        externalLeft = externalStart;
+                    }
+
+                    if (internalEnd != UNSET) {
+                        internalRight = internalEnd;
+                    }
+
+                    if (externalEnd != UNSET) {
+                        externalRight = externalEnd;
+                    }
+            }
         }
 
         private int calculateOffset(Drawable drawable, int drawableFlags, int padding,
