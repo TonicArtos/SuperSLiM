@@ -89,7 +89,11 @@ public class SectionData {
 
     public int getFirstContentPosition() {
         if (hasHeader) {
-            return lastContentPosition > firstPosition ? firstPosition + 1 : firstPosition;
+            if (isLastContentItemFound()) {
+                return lastContentPosition > firstPosition ? firstPosition + 1 : firstPosition;
+            } else {
+                return firstPosition + 1;
+            }
         }
         return firstPosition;
     }
