@@ -26,11 +26,17 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
     public static final int EXTERNAL = 0x02;
 
-    public static final int ANY = INTERNAL | EXTERNAL;
+    public static final int ANY_EDGE = INTERNAL | EXTERNAL;
 
-    private static final int DEFAULT_FLAGS = ANY;
+    private static final int DEFAULT_FLAGS = ANY_EDGE;
 
     public static final int INSET = 0x04;
+
+    public static final int HEADER = 0x01;
+
+    public static final int CONTENT = 0x02;
+
+    public static final int ANY_KIND = HEADER | CONTENT;
 
     static final int UNSET = -1;
 
@@ -326,11 +332,11 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         int bottomPaddingFlags;
 
-        public int startPadding = UNSET;
-
         Drawable bottomDrawable;
 
         int bottomDrawableFlags;
+
+        public int startPadding = UNSET;
 
         private Context mContext;
 
@@ -349,8 +355,6 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             return this;
         }
 
-        public int endPadding = UNSET;
-
         public ItemDecorator build() {
             return new ItemDecorator(this);
         }
@@ -361,8 +365,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @param sectionFirstPosition First position in section to decorate items from.
          * @return Builder.
          */
-        public Builder decorateSection(int sectionFirstPosition, boolean applyToHeader) {
-            assignments.add(new SectionChecker(sectionFirstPosition, applyToHeader));
+        public Builder decorateSection(int sectionFirstPosition, int targetKind) {
+            assignments.add(new SectionChecker(sectionFirstPosition, targetKind));
             return this;
         }
 
@@ -373,7 +377,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @return Builder.
          */
         public Builder decorateSection(int sectionFirstPosition) {
-            return decorateSection(sectionFirstPosition, false);
+            return decorateSection(sectionFirstPosition, CONTENT);
         }
 
         /**
@@ -382,10 +386,12 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @param id SLM id.
          * @return Builder.
          */
-        public Builder decorateSlm(int id, boolean applyToHeader) {
-            assignments.add(new InternalSlmChecker(id, applyToHeader));
+        public Builder decorateSlm(int id, int targetKind) {
+            assignments.add(new InternalSlmChecker(id, targetKind));
             return this;
         }
+
+        public int endPadding = UNSET;
 
         /**
          * Decorate items in a section managed by a custom SLM.
@@ -393,8 +399,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @param key SLM key..
          * @return Builder.
          */
-        public Builder decorateSlm(String key, boolean applyToHeader) {
-            assignments.add(new CustomSlmChecker(key, applyToHeader));
+        public Builder decorateSlm(String key, int targetKind) {
+            assignments.add(new CustomSlmChecker(key, targetKind));
             return this;
         }
 
@@ -405,7 +411,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @return Builder.
          */
         public Builder decorateSlm(int id) {
-            return decorateSlm(id, false);
+            return decorateSlm(id, CONTENT);
         }
 
         /**
@@ -415,7 +421,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @return Builder.
          */
         public Builder decorateSlm(String key) {
-            return decorateSlm(key, false);
+            return decorateSlm(key, CONTENT);
         }
 
         /**
@@ -795,16 +801,17 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         final private int mSlmId;
 
-        final private boolean mApplyToHeader;
+        final private int mTargetKind;
 
-        InternalSlmChecker(int slmId, boolean applyToHeader) {
+        InternalSlmChecker(int slmId, int targetKind) {
             mSlmId = slmId;
-            mApplyToHeader = applyToHeader;
+            mTargetKind = targetKind;
         }
 
         @Override
         public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
-            return sd.sectionManagerKind == mSlmId && params.isHeader == mApplyToHeader;
+            int kind = params.isHeader ? HEADER : CONTENT;
+            return sd.sectionManagerKind == mSlmId && (kind & mTargetKind) != 0;
         }
     }
 
@@ -812,17 +819,18 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         final private String mSlmKey;
 
-        final private boolean mApplyToHeader;
+        final private int mTargetKind;
 
-        CustomSlmChecker(String slmKey, boolean applyToHeader) {
+        CustomSlmChecker(String slmKey, int targetKind) {
             mSlmKey = slmKey;
-            mApplyToHeader = applyToHeader;
+            mTargetKind = targetKind;
         }
 
         @Override
         public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
+            int kind = params.isHeader ? HEADER : CONTENT;
             return sd.sectionManagerKind == LayoutManager.SECTION_MANAGER_CUSTOM &&
-                    params.isHeader == mApplyToHeader &&
+                    (kind & mTargetKind) != 0 &&
                     TextUtils.equals(sd.sectionManager, mSlmKey);
         }
     }
@@ -831,16 +839,17 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         final private int mSfp;
 
-        final private boolean mApplyToHeader;
+        final private int mTargetKind;
 
-        SectionChecker(int sfp, boolean applyToHeader) {
+        SectionChecker(int sfp, int targetKind) {
             mSfp = sfp;
-            mApplyToHeader = applyToHeader;
+            mTargetKind = targetKind;
         }
 
         @Override
         public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
-            return params.getFirstPosition() == mSfp && params.isHeader == mApplyToHeader;
+            int kind = params.isHeader ? HEADER : CONTENT;
+            return params.getFirstPosition() == mSfp && (kind & mTargetKind) != 0;
         }
     }
 }
