@@ -86,7 +86,7 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition() && topInside && bottomInside) {
+            if (sectionFirstPosition == lp.getFirstPosition() && topInside && bottomInside) {
                 if (!lp.isHeader || !skipHeader) {
                     return view;
                 } else {
@@ -130,7 +130,7 @@ public abstract class SectionLayoutManager {
 
             final View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+            if (sectionFirstPosition == lp.getFirstPosition()) {
                 if (!lp.isHeader || !skipHeader) {
                     return view;
                 } else {
@@ -181,7 +181,7 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+            if (sectionFirstPosition == lp.getFirstPosition()) {
                 if (topInside && bottomInside) {
                     if (!lp.isHeader) {
                         return view;
@@ -190,7 +190,7 @@ public abstract class SectionLayoutManager {
                     }
                 }
             } else if (candidate == null) {
-                sectionFirstPosition = lp.getTestedFirstPosition();
+                sectionFirstPosition = lp.getFirstPosition();
                 continue;
             } else {
                 return candidate;
@@ -226,7 +226,7 @@ public abstract class SectionLayoutManager {
 
             View view = mLayoutManager.getChildAt(lookAt);
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+            if (sectionFirstPosition == lp.getFirstPosition()) {
                 if (!lp.isHeader) {
                     return view;
                 } else {
@@ -300,7 +300,7 @@ public abstract class SectionLayoutManager {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+            if (params.getFirstPosition() != sectionFirstPosition) {
                 break;
             }
             if (params.isHeader) {
@@ -328,7 +328,7 @@ public abstract class SectionLayoutManager {
             View child = mLayoutManager.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.getTestedFirstPosition() != sectionFirstPosition) {
+            if (params.getFirstPosition() != sectionFirstPosition) {
                 break;
             }
             if (params.isHeader) {
