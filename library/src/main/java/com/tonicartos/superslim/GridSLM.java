@@ -72,6 +72,10 @@ public class GridSLM extends SectionLayoutManager {
     @Override
     public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
             LayoutState state) {
+        if (markerLine >= leadingEdge) {
+            return markerLine;
+        }
+
         final int itemCount = state.recyclerState.getItemCount();
         if (anchorPosition >= itemCount) {
             return markerLine;
