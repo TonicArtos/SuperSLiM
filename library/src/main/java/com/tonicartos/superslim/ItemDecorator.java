@@ -66,7 +66,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             View child = lm.getChildAt(i);
             LayoutManager.LayoutParams params =
                     (LayoutManager.LayoutParams) child.getLayoutParams();
-            if (!assignedTo(params)) {
+            if (!assignedTo(lm.getSectionData(params.getTestedFirstPosition(), child), params)) {
                 continue;
             }
 
@@ -149,7 +149,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             RecyclerView.State state) {
         // Check decorator is assigned to section by sfp or slm.
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
-        if (!assignedTo(params)) {
+        LayoutManager lm = (LayoutManager) parent.getLayoutManager();
+        if (!assignedTo(lm.getSectionData(params.getTestedFirstPosition(), view), params)) {
             outRect.left = 0;
             outRect.top = 0;
             outRect.right = 0;
@@ -157,17 +158,16 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             return;
         }
 
-        LayoutManager lm = (LayoutManager) parent.getLayoutManager();
         mSpacing.getOffsets(outRect, view, lm, state);
     }
 
-    private boolean assignedTo(LayoutManager.LayoutParams params) {
+    private boolean assignedTo(SectionData sectionData, LayoutManager.LayoutParams params) {
         if (mCheckers.size() == 0) {
             return true;
         }
 
         for (AssignmentChecker check : mCheckers) {
-            if (check.isAssigned(params)) {
+            if (check.isAssigned(sectionData, params)) {
                 return true;
             }
         }
@@ -185,7 +185,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @param params Item's layout params.
          * @return True if the decorator should decorate this item.
          */
-        boolean isAssigned(LayoutManager.LayoutParams params);
+        boolean isAssigned(SectionData sectionData, LayoutManager.LayoutParams params);
     }
 
     static class Edge {
@@ -548,16 +548,13 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
                     (drawableFlags & positionMask) == positionMask;
             final boolean paddingSelected = padding > 0 &&
                     (paddingFlags & positionMask) == positionMask;
-            if (!drawableSelected && !paddingSelected) {
-                return 0;
-            }
-
-            if (!drawableSelected) {
+            if (drawableSelected) {
+                return isVerticalOffset ?
+                        drawable.getIntrinsicHeight() : drawable.getIntrinsicWidth();
+            } else if (paddingSelected) {
                 return padding;
             }
-
-            return isVerticalOffset ?
-                    drawable.getIntrinsicHeight() : drawable.getIntrinsicWidth();
+            return 0;
         }
     }
 
@@ -570,7 +567,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(LayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             return params.getViewPosition() == mPosition;
         }
     }
@@ -587,8 +584,8 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(LayoutManager.LayoutParams params) {
-            return params.sectionManagerKind == mSlmId && params.isHeader == mApplyToHeader;
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
+            return sd.sectionManagerKind == mSlmId && params.isHeader == mApplyToHeader;
         }
     }
 
@@ -604,10 +601,10 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(LayoutManager.LayoutParams params) {
-            return params.sectionManagerKind == LayoutManager.SECTION_MANAGER_CUSTOM &&
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
+            return sd.sectionManagerKind == LayoutManager.SECTION_MANAGER_CUSTOM &&
                     params.isHeader == mApplyToHeader &&
-                    TextUtils.equals(params.sectionManager, mSlmKey);
+                    TextUtils.equals(sd.sectionManager, mSlmKey);
         }
     }
 
@@ -623,7 +620,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(LayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             return params.getTestedFirstPosition() == mSfp && params.isHeader == mApplyToHeader;
         }
     }
