@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -234,10 +235,17 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
         LayoutParams params = (LayoutParams) child.getLayoutParams();
         if (params.isHeader) {
-            outRect.left = params.isHeaderEndAligned() ?
-                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-            outRect.right = params.isHeaderStartAligned() ?
-                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+            if (getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR) {
+                outRect.left = params.isHeaderStartAligned() ?
+                        ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+                outRect.right = params.isHeaderStartAligned() ?
+                        ItemDecorator.INTERNAL : ItemDecorator.EXTERNAL;
+            } else {
+                outRect.right = params.isHeaderStartAligned() ?
+                        ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+                outRect.left = params.isHeaderStartAligned() ?
+                        ItemDecorator.INTERNAL : ItemDecorator.EXTERNAL;
+            }
             outRect.top = params.getViewPosition() == 0 ?
                     ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
             outRect.bottom = params.getViewPosition() == state.getItemCount() - 1 ?
