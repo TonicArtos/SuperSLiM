@@ -59,27 +59,6 @@ public abstract class SectionLayoutManager {
     }
 
     /**
-     * Tell decorators which edges are internal and external. The default implementation assumes a
-     * linear list.
-     *  @param outRect Rect to load with ege states.
-     * @param child   Child to look at.
-     * @param sectionData
-     * @param state   State.
-     */
-    public void getEdgeStates(Rect outRect, View child, SectionData sectionData,
-            RecyclerView.State state) {
-        outRect.left = ItemDecorator.EXTERNAL;
-        outRect.right = ItemDecorator.EXTERNAL;
-        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
-        final int position = params.getViewPosition();
-        outRect.top = position == sectionData.getFirstContentPosition() ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        // Reset position to left column and add num columns, if < itemcount then not last row.
-        outRect.bottom = position == sectionData.lastContentPosition ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-    }
-
-    /**
      * Locate the first view in this section that is completely visible. Will skip headers unless
      * they are the only one visible.
      *
@@ -283,6 +262,27 @@ public abstract class SectionLayoutManager {
 
     public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutManager.LayoutParams(c, attrs);
+    }
+
+    /**
+     * Tell decorators which edges are internal and external. The default implementation assumes a
+     * linear list.
+     *
+     * @param outRect     Rect to load with ege states.
+     * @param child       Child to look at.
+     * @param sectionData Section data.
+     * @param state       State.
+     */
+    public void getEdgeStates(Rect outRect, View child, SectionData sectionData,
+            RecyclerView.State state) {
+        outRect.left = ItemDecorator.EXTERNAL;
+        outRect.right = ItemDecorator.EXTERNAL;
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        final int position = params.getViewPosition();
+        outRect.top = position == sectionData.getFirstContentPosition() ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.bottom = position == sectionData.lastContentPosition ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
     /**

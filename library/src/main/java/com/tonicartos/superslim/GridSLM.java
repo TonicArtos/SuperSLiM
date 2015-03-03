@@ -239,26 +239,6 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
-        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
-        final int position = params.getViewPosition();
-        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
-
-        outRect.left = column == 0 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.right = column == mNumColumns - 1 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-
-        outRect.top = position - column == sd.getFirstContentPosition() ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        // Reset position to left column and add num columns, if < itemcount then not last row.
-        if (sd.isLastContentItemFound()) {
-            outRect.bottom = position + (mNumColumns - column) > sd.lastContentPosition ?
-                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        } else {
-            outRect.bottom = ItemDecorator.INTERNAL;
-        }
-    }
-
-    @Override
     public int finishFillToEnd(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
         final int anchorPosition = mLayoutManager.getPosition(anchor);
         final int markerLine = getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1,
@@ -283,6 +263,26 @@ public class GridSLM extends SectionLayoutManager {
     @Override
     public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutParams(c, attrs);
+    }
+
+    @Override
+    public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        final int position = params.getViewPosition();
+        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
+
+        outRect.left = column == 0 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.right = column == mNumColumns - 1 ? ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+
+        outRect.top = position - column == sd.getFirstContentPosition() ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        // Reset position to left column and add num columns, if < itemcount then not last row.
+        if (sd.isLastContentItemFound()) {
+            outRect.bottom = position + (mNumColumns - column) > sd.lastContentPosition ?
+                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        } else {
+            outRect.bottom = ItemDecorator.INTERNAL;
+        }
     }
 
     @Override
