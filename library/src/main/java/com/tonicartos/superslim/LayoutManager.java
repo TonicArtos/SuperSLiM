@@ -249,11 +249,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         slm.getEdgeStates(outRect, child, sd, state);
     }
 
-    public SectionData getSectionData(int position, View view) {
-        SectionData sd = mSectionDataCache.get(position);
+    /**
+     * Get section data.
+     *
+     * @param sfp  Section id. First position of section.
+     * @param view View to create new section data if non is found.
+     * @return Section data.
+     */
+    public SectionData getSectionData(int sfp, View view) {
+        SectionData sd = mSectionDataCache.get(sfp);
         if (sd == null) {
             sd = new SectionData(this, view);
-            mSectionDataCache.put(position, sd);
+            mSectionDataCache.put(sfp, sd);
         }
         return sd;
     }
