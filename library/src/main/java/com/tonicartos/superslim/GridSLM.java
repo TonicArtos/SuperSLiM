@@ -3,7 +3,6 @@ package com.tonicartos.superslim;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
-import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -240,8 +239,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
-        // TODO: use section data to better determine things.
+    public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
         // If left column then external.
         outRect.left = ItemDecorator.EXTERNAL;
         // If right column then external.

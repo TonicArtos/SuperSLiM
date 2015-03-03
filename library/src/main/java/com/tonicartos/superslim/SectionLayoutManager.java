@@ -61,12 +61,13 @@ public abstract class SectionLayoutManager {
     /**
      * Tell decorators which edges are internal and external. The default implementation assumes a
      * linear list.
-     *
-     * @param outRect Rect to load with ege states.
+     *  @param outRect Rect to load with ege states.
      * @param child   Child to look at.
+     * @param sectionData
      * @param state   State.
      */
-    public void getEdgeStates(Rect outRect, View child, RecyclerView.State state) {
+    public void getEdgeStates(Rect outRect, View child, SectionData sectionData,
+            RecyclerView.State state) {
         outRect.left = ItemDecorator.EXTERNAL;
         outRect.right = ItemDecorator.EXTERNAL;
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
