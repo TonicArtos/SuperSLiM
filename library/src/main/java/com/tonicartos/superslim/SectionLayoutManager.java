@@ -10,7 +10,7 @@ public abstract class SectionLayoutManager {
 
     private static final int MARGIN_UNSET = -1;
 
-    protected RecyclerView.LayoutManager mLayoutManager;
+    protected LayoutManager mLayoutManager;
 
     public SectionLayoutManager(LayoutManager layoutManager) {
         mLayoutManager = layoutManager;
