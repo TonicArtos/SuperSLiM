@@ -174,7 +174,7 @@ public class GridSLM extends SectionLayoutManager {
             }
         }
         // Ensure the anchor is the first item in the row.
-        anchorPosition = anchorPosition - col;
+        int columnAnchorPosition = anchorPosition - col;
 
         // Work out offset to marker line by measuring rows from the end. If section height is less
         // than min height, then adjust marker line and then lay out items.
@@ -182,7 +182,7 @@ public class GridSLM extends SectionLayoutManager {
         int sectionHeight = 0;
         int minHeightOffset = 0;
         if (applyMinHeight) {
-            for (int i = anchorPosition; i >= 0; i -= mNumColumns) {
+            for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
                 LayoutState.View check = state.getView(i);
                 state.cacheView(i, check.view);
                 LayoutManager.LayoutParams checkParams = check.getLayoutParams();
@@ -191,7 +191,7 @@ public class GridSLM extends SectionLayoutManager {
                 }
 
                 int rowHeight = 0;
-                for (int j = 0; j < mNumColumns; j++) {
+                for (int j = 0; j < mNumColumns && i + j <= anchorPosition; j++) {
                     LayoutState.View measure = state.getView(i + j);
                     state.cacheView(i + j, measure.view);
                     LayoutManager.LayoutParams measureParams = measure.getLayoutParams();
@@ -222,7 +222,7 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         // Lay out rows to end.
-        for (int i = anchorPosition; i >= 0; i -= mNumColumns) {
+        for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
             if (markerLine - minHeightOffset < leadingEdge) {
                 break;
             }
@@ -378,7 +378,7 @@ public class GridSLM extends SectionLayoutManager {
             if (measureRowItems) {
                 measureChild(view, sd);
             } else {
-                state.decacheView(i);
+                state.decacheView(i + anchorPosition);
             }
             rowHeight = Math.max(rowHeight, mLayoutManager.getDecoratedMeasuredHeight(view.view));
             views[i] = view;
@@ -410,21 +410,6 @@ public class GridSLM extends SectionLayoutManager {
         mNumColumns = numColumns;
         mMinimumWidth = 0;
         mColumnsSpecified = true;
-    }
-
-    private int addView(LayoutState state, LayoutState.View child, int position,
-            LayoutManager.Direction direction) {
-        final int addIndex = direction == LayoutManager.Direction.START ? 0
-                : mLayoutManager.getChildCount();
-
-        if (child.wasCached) {
-            mLayoutManager.attachView(child.view, addIndex);
-            state.decacheView(position);
-        } else {
-            mLayoutManager.addView(child.view, addIndex);
-        }
-
-        return addIndex;
     }
 
     private void calculateColumnWidthValues(SectionData sd) {
@@ -511,6 +496,11 @@ public class GridSLM extends SectionLayoutManager {
             mColumnWidth =
                     a.getDimensionPixelSize(R.styleable.superslim_GridSLM_slm_grid_columnWidth, -1);
             a.recycle();
+        }
+
+        public LayoutParams(ViewGroup.MarginLayoutParams other) {
+            super(other);
+            init(other);
         }
 
         public LayoutParams(ViewGroup.LayoutParams other) {
