@@ -716,8 +716,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return markerLine;
         }
 
-        View first = getAnchorAtStart();
-        int anchorPosition = getPosition(first) - 1;
+        View preAnchor = getAnchorAtStart();
+        LayoutParams preAnchorParams = (LayoutParams) preAnchor.getLayoutParams();
+        View first = findAttachedHeaderOrFirstViewForSection(preAnchorParams.getFirstPosition(), 0,
+                Direction.START);
+        int anchorPosition;
+        if (first != null) {
+            anchorPosition = getPosition(first) - 1;
+        } else {
+            anchorPosition = getPosition(preAnchor) - 1;
+        }
 
         if (anchorPosition < 0) {
             return markerLine;
@@ -725,15 +733,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         LayoutState.View anchor = state.getView(anchorPosition);
         LayoutParams anchorParams = anchor.getLayoutParams();
-        if (anchorParams.isHeader) {
-            state.cacheView(anchorPosition, anchor.view);
-            anchorPosition = anchorPosition - 1;
-            if (anchorPosition < 0) {
-                return markerLine;
-            }
-            anchor = state.getView(anchorPosition);
-            anchorParams = anchor.getLayoutParams();
-        }
 
         int sfp = anchorParams.getTestedFirstPosition();
 
@@ -1473,11 +1472,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private void trimEnd(LayoutState state) {
         int height = getHeight();
         for (int i = getChildCount() - 1; i >= 0; i--) {
-            View view = getChildAt(i);
-            if (getDecoratedTop(view) >= height) {
-                removeAndRecycleView(view, state.recycler);
+            View child = getChildAt(i);
+            if (getDecoratedTop(child) >= height) {
+                removeAndRecycleView(child, state.recycler);
             } else {
-                break;
+                if (!((LayoutParams) child.getLayoutParams()).isHeader) {
+                    break;
+                }
             }
         }
     }
@@ -1774,6 +1775,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         int sectionManagerKind = SECTION_MANAGER_LINEAR;
+
+        public LayoutParams(ViewGroup.MarginLayoutParams other) {
+            super(other);
+            init(other);
+        }
 
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
