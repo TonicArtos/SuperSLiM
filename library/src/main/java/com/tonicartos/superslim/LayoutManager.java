@@ -384,16 +384,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final boolean isDirectionEnd = direction == Direction.END;
         final int height = getHeight();
 
+        final int leadingEdge = isDirectionEnd ? height + dy : dy;
+
         // Handle situation where total content height is less than the view height. We only
         // have to handle the end direction because we never over scroll the top or lay out
         // from the bottom up.
-        final View end = getAnchorAtEnd();
-        if (getDecoratedBottom(end) < height - getPaddingBottom() &&
-                getPosition(end) == (state.getItemCount() - 1)) {
-            return 0;
+        if (isDirectionEnd) {
+            final View end = getAnchorAtEnd();
+            LayoutParams params = (LayoutParams) end.getLayoutParams();
+            SectionData sd = getSectionData(params.getFirstPosition(), end);
+            SectionLayoutManager slm = getSlm(sd);
+            final int endEdge = slm.getLowestEdge(
+                    params.getFirstPosition(), getChildCount() - 1, leadingEdge);
+            if (endEdge < height - getPaddingBottom() &&
+                    getPosition(end) == (state.getItemCount() - 1)) {
+                return 0;
+            }
         }
 
-        final int leadingEdge = isDirectionEnd ? height + dy : dy;
         final int fillEdge = fillUntil(leadingEdge, direction, layoutState);
 
         final int delta;
