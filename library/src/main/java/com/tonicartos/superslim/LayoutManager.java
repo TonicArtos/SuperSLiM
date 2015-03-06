@@ -327,16 +327,23 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final boolean isDirectionEnd = direction == Direction.END;
         final int height = getHeight();
 
+        final int leadingEdge = isDirectionEnd ? height + dy : dy;
+
         // Handle situation where total content height is less than the view height. We only
         // have to handle the end direction because we never over scroll the top or lay out
         // from the bottom up.
-        final View end = getAnchorAtEnd();
-        if (getDecoratedBottom(end) < height - getPaddingBottom() &&
-                getPosition(end) == (state.getItemCount() - 1)) {
-            return 0;
+        if (isDirectionEnd) {
+            final View end = getAnchorAtEnd();
+            LayoutParams params = (LayoutParams) end.getLayoutParams();
+            SectionLayoutManager slm = getSlm(params);
+            final int endEdge = slm.getLowestEdge(
+                    params.getTestedFirstPosition(), getChildCount() - 1, leadingEdge);
+            if (endEdge < height - getPaddingBottom() &&
+                    getPosition(end) == (state.getItemCount() - 1)) {
+                return 0;
+            }
         }
 
-        final int leadingEdge = isDirectionEnd ? height + dy : dy;
         final int fillEdge = fillUntil(leadingEdge, direction, layoutState);
 
         final int delta;
@@ -712,8 +719,16 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return markerLine;
         }
 
-        View first = getAnchorAtStart();
-        int anchorPosition = getPosition(first) - 1;
+        View preAnchor = getAnchorAtStart();
+        LayoutParams preAnchorParams = (LayoutParams) preAnchor.getLayoutParams();
+        View first = findAttachedHeaderOrFirstViewForSection(preAnchorParams.getFirstPosition(), 0,
+                Direction.START);
+        int anchorPosition;
+        if (first != null) {
+            anchorPosition = getPosition(first) - 1;
+        } else {
+            anchorPosition = getPosition(preAnchor) - 1;
+        }
 
         if (anchorPosition < 0) {
             return markerLine;
@@ -721,15 +736,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         LayoutState.View anchor = state.getView(anchorPosition);
         LayoutParams anchorParams = anchor.getLayoutParams();
-        if (anchorParams.isHeader) {
-            state.cacheView(anchorPosition, anchor.view);
-            anchorPosition = anchorPosition - 1;
-            if (anchorPosition < 0) {
-                return markerLine;
-            }
-            anchor = state.getView(anchorPosition);
-            anchorParams = anchor.getLayoutParams();
-        }
 
         int sfp = anchorParams.getTestedFirstPosition();
 
@@ -1470,11 +1476,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private void trimEnd(LayoutState state) {
         int height = getHeight();
         for (int i = getChildCount() - 1; i >= 0; i--) {
-            View view = getChildAt(i);
-            if (getDecoratedTop(view) >= height) {
-                removeAndRecycleView(view, state.recycler);
+            View child = getChildAt(i);
+            if (getDecoratedTop(child) >= height) {
+                removeAndRecycleView(child, state.recycler);
             } else {
-                break;
+                if (!((LayoutParams) child.getLayoutParams()).isHeader) {
+                    break;
+                }
             }
         }
     }
@@ -1771,6 +1779,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         int sectionManagerKind = SECTION_MANAGER_LINEAR;
+
+        public LayoutParams(ViewGroup.MarginLayoutParams other) {
+            super(other);
+            init(other);
+        }
 
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
