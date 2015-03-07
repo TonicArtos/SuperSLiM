@@ -50,30 +50,30 @@ public class SectionData {
                 minimumHeight = 0;
             }
 
-            if (headerParams.headerStartMarginIsAuto) {
+            if (headerParams.marginStartIsAuto) {
                 if (headerParams.isHeaderStartAligned() && !headerParams.isHeaderOverlay()) {
                     marginStart = headerWidth;
                 } else {
                     marginStart = 0;
                 }
             } else {
-                marginStart = headerParams.headerMarginStart;
+                marginStart = headerParams.marginStart;
             }
-            if (headerParams.headerEndMarginIsAuto) {
+            if (headerParams.marginEndIsAuto) {
                 if (headerParams.isHeaderEndAligned() && !headerParams.isHeaderOverlay()) {
                     marginEnd = headerWidth;
                 } else {
                     marginEnd = 0;
                 }
             } else {
-                marginEnd = headerParams.headerMarginEnd;
+                marginEnd = headerParams.marginEnd;
             }
         } else {
             minimumHeight = 0;
             headerHeight = 0;
             headerWidth = 0;
-            marginStart = headerParams.headerMarginStart;
-            marginEnd = headerParams.headerMarginEnd;
+            marginStart = headerParams.marginStart;
+            marginEnd = headerParams.marginEnd;
         }
 
         contentEnd = marginEnd + paddingEnd;
