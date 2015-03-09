@@ -55,6 +55,41 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
+    public void detachAndScrapView(View child, Recycler recycler) {
+        mParent.detachAndScrapView(child, recycler);
+    }
+
+    @Override
+    public void detachAndScrapViewAt(int index, Recycler recycler) {
+        mParent.detachAndScrapViewAt(index, recycler);
+    }
+
+    @Override
+    public void detachView(View child) {
+        mParent.detachView(child);
+    }
+
+    @Override
+    public void detachViewAt(int index) {
+        mParent.detachViewAt(index);
+    }
+
+    @Override
+    public int getBottom(View child) {
+        return mParent.getBottom(child);
+    }
+
+    @Override
+    public View getChildAt(int index) {
+        return mParent.getChildAt(index);
+    }
+
+    @Override
+    public int getChildCount() {
+        return mParent.getChildCount();
+    }
+
+    @Override
     public int getHeight() {
         return mParent.getHeight();
     }
@@ -65,6 +100,11 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
+    public int getLeft(View child) {
+        return mParent.getLeft(child);
+    }
+
+    @Override
     public int getMeasuredHeight(View v) {
         return mParent.getMeasuredHeight(v);
     }
@@ -72,6 +112,21 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     @Override
     public int getMeasuredWidth(View v) {
         return mParent.getMeasuredWidth(v);
+    }
+
+    @Override
+    public int getPosition(View child) {
+        return mParent.getPosition(child);
+    }
+
+    @Override
+    public int getRight(View child) {
+        return mParent.getRight(child);
+    }
+
+    @Override
+    public int getTop(View child) {
+        return mParent.getTop(child);
     }
 
     @Override
@@ -98,6 +153,26 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     public void measureHeader(View header, int widthUsed, int heightUsed) {
         widthUsed += mSectionData.startMarginWidth + mSectionData.endMarginWidth;
         mParent.measureHeader(header, widthUsed, heightUsed);
+    }
+
+    @Override
+    public void removeAndRecycleView(View child, Recycler recycler) {
+        mParent.removeAndRecycleView(child, recycler);
+    }
+
+    @Override
+    public void removeAndRecycleViewAt(int index, Recycler recycler) {
+        mParent.removeAndRecycleViewAt(index, recycler);
+    }
+
+    @Override
+    public void removeView(View child) {
+        mParent.removeView(child);
+    }
+
+    @Override
+    public void removeViewAt(int index) {
+        mParent.removeViewAt(index);
     }
 
     @Override
@@ -188,6 +263,11 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     @Override
     public void recycle() {
         returnToPool(this);
+    }
+
+    @Override
+    public int translateFillResult(int markerLine) {
+        return markerLine + mVerticalOffset;
     }
 
     void measureHeader(View header) {
