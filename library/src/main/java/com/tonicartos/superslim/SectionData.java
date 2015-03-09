@@ -31,9 +31,15 @@ public class SectionData {
 
     private boolean mIsInitialised = false;
 
+    private LayoutManager.LayoutParams mSectionParams;
+
     private SectionData(int firstPosition, int lastPosition) {
         this.firstPosition = firstPosition;
         this.lastPosition = lastPosition;
+    }
+
+    public LayoutManager.LayoutParams getSectionParams() {
+        return mSectionParams;
     }
 
     static ArrayList<SectionData> processSections(List<Integer> sectionStartPositions,
@@ -53,21 +59,24 @@ public class SectionData {
         return sections;
     }
 
+    public boolean containsItem(int viewPosition) {
+        return firstPosition <= viewPosition && viewPosition <= lastPosition;
+    }
+
     public boolean getIsInitialised() {
         return mIsInitialised;
     }
 
     public void init(LayoutHelperImpl helper, View first) {
-        LayoutManager.LayoutParams sectionParams =
-                (LayoutManager.LayoutParams) first.getLayoutParams();
+        mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
 
-        hasHeader = sectionParams.isHeader();
+        hasHeader = mSectionParams.isHeader();
         if (hasHeader) {
             helper.measureHeader(first);
             headerWidth = helper.getMeasuredWidth(first);
             headerHeight = helper.getMeasuredHeight(first);
 
-            if (!sectionParams.isHeaderInline() || sectionParams.isHeaderOverlay()) {
+            if (!mSectionParams.isHeaderInline() || mSectionParams.isHeaderOverlay()) {
                 minimumHeight = headerHeight;
             } else {
                 minimumHeight = 0;
@@ -76,12 +85,12 @@ public class SectionData {
             minimumHeight = 0;
             headerHeight = 0;
             headerWidth = 0;
-            startMarginWidth = sectionParams.marginStart;
-            endMarginWidth = sectionParams.marginEnd;
+            startMarginWidth = mSectionParams.marginStart;
+            endMarginWidth = mSectionParams.marginEnd;
         }
 
         if (startMarginWidth == LayoutManager.LayoutParams.MARGIN_AUTO) {
-            if (sectionParams.isHeaderStartAligned() && !sectionParams.isHeaderOverlay()) {
+            if (mSectionParams.isHeaderStartAligned() && !mSectionParams.isHeaderOverlay()) {
                 startMarginWidth = headerWidth;
             } else {
                 startMarginWidth = 0;
@@ -89,14 +98,14 @@ public class SectionData {
         }
 
         if (endMarginWidth == LayoutManager.LayoutParams.MARGIN_AUTO) {
-            if (sectionParams.isHeaderEndAligned() && !sectionParams.isHeaderOverlay()) {
+            if (mSectionParams.isHeaderEndAligned() && !mSectionParams.isHeaderOverlay()) {
                 endMarginWidth = headerWidth;
             } else {
                 endMarginWidth = 0;
             }
         }
 
-        subsections = processSections(sectionParams.getSections(), lastPosition);
+        subsections = processSections(mSectionParams.getSections(), lastPosition);
 
         mIsInitialised = true;
     }
