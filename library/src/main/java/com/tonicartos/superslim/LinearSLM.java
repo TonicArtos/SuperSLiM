@@ -1,37 +1,35 @@
 package com.tonicartos.superslim;
 
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 public class LinearSLM extends SectionLayoutManager {
 
     public static int ID = LayoutManager.SECTION_MANAGER_LINEAR;
 
-    public LinearSLM(LayoutManager layoutManager) {
-        super(layoutManager);
-    }
-
     @Override
-    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
+    public int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
+            LayoutHelper helper, Recycler state) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
          */
 
         int areaAbove = 0;
-        for (int position = sd.firstPosition + 1;
-                areaAbove < sd.headerHeight && position < firstVisiblePosition;
+        for (int position = sectionData.firstPosition + 1;
+                areaAbove < sectionData.headerHeight && position < firstVisiblePosition;
                 position++) {
             // Look to see if the header overlaps with the displayed area of the mSection.
-            LayoutState.View child = state.getView(position);
-            measureChild(child, sd);
+            View child = state.getView(position);
+            measureChild(child, helper);
 
-            areaAbove += mLayoutManager.getDecoratedMeasuredHeight(child.view);
-            state.cacheView(position, child.view);
+            areaAbove += helper.getMeasuredHeight(child);
+            state.cacheView(position, child);
         }
 
-        if (areaAbove == sd.headerHeight) {
+        if (areaAbove == sectionData.headerHeight) {
             return 0;
-        } else if (areaAbove > sd.headerHeight) {
+        } else if (areaAbove > sectionData.headerHeight) {
             return 1;
         } else {
             return -areaAbove;
@@ -39,38 +37,46 @@ public class LinearSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
-            LayoutState state) {
-        final int itemCount = state.recyclerState.getItemCount();
+    public int fillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        final int itemCount = state.getItemCount();
+        final int leadingEdge = helper.getLeadingEdge();
+        int markerLine = 0;
 
         for (int i = anchorPosition; i < itemCount; i++) {
             if (markerLine >= leadingEdge) {
                 break;
             }
 
-            LayoutState.View next = state.getView(i);
-            LayoutManager.LayoutParams params = next.getLayoutParams();
-            if (params.getFirstPosition() != sd.firstPosition) {
-                state.cacheView(i, next.view);
+            View next = recycler.getView(i);
+            if (!sectionData.containsItem(helper.getPosition(next))) {
+                recycler.cacheView(i, next);
                 break;
             }
 
-            measureChild(next, sd);
-            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.END, sd, state);
-            addView(next, i, LayoutManager.Direction.END, state);
+            measureChild(next, helper);
+            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.END, sectionData,
+                    helper);
+            addView(next, LayoutManager.Direction.END, helper, recycler);
         }
 
         return markerLine;
     }
 
     @Override
-    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
-            LayoutState state) {
+    public int fillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        int markerLine = 0;
+        final int leadingEdge = helper.getLeadingEdge();
+        if (markerLine < leadingEdge) {
+            return markerLine;
+        }
+
         // Check to see if we have to adjust for minimum section height. We don't if there is an
         // attached non-header view in this section.
         boolean applyMinHeight = false;
-        for (int i = 0; i < state.recyclerState.getItemCount(); i++) {
-            View check = mLayoutManager.getChildAt(0);
+        for (int i = 0; i < state.getItemCount(); i++) {
+            View check = helper.getChildAt(0);
             if (check == null) {
                 applyMinHeight = false;
                 break;
@@ -78,12 +84,12 @@ public class LinearSLM extends SectionLayoutManager {
 
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
-            if (checkParams.getFirstPosition() != sd.firstPosition) {
+            if (!sectionData.containsItem(checkParams.getViewPosition())) {
                 applyMinHeight = true;
                 break;
             }
 
-            if (!checkParams.isHeader) {
+            if (!checkParams.isHeader()) {
                 applyMinHeight = false;
                 break;
             }
@@ -96,27 +102,28 @@ public class LinearSLM extends SectionLayoutManager {
         int minHeightOffset = 0;
         if (applyMinHeight) {
             for (int i = anchorPosition; i >= 0; i--) {
-                LayoutState.View measure = state.getView(i);
-                state.cacheView(i, measure.view);
-                LayoutManager.LayoutParams params = measure.getLayoutParams();
-                if (params.getFirstPosition() != sd.firstPosition) {
+                View measure = recycler.getView(i);
+                recycler.cacheView(i, measure);
+                LayoutManager.LayoutParams params =
+                        (LayoutManager.LayoutParams) measure.getLayoutParams();
+                if (!sectionData.containsItem(params.getViewPosition())) {
                     break;
                 }
 
-                if (params.isHeader) {
+                if (params.isHeader()) {
                     continue;
                 }
 
-                measureChild(measure, sd);
-                sectionHeight += mLayoutManager.getDecoratedMeasuredHeight(measure.view);
+                measureChild(measure, helper);
+                sectionHeight += helper.getMeasuredHeight(measure);
                 measuredPositionsMarker = i;
-                if (sectionHeight >= sd.minimumHeight) {
+                if (sectionHeight >= sectionData.minimumHeight) {
                     break;
                 }
             }
 
-            if (sectionHeight < sd.minimumHeight) {
-                minHeightOffset = sectionHeight - sd.minimumHeight;
+            if (sectionHeight < sectionData.minimumHeight) {
+                minHeightOffset = sectionHeight - sectionData.minimumHeight;
                 markerLine += minHeightOffset;
             }
         }
@@ -126,51 +133,36 @@ public class LinearSLM extends SectionLayoutManager {
                 break;
             }
 
-            LayoutState.View next = state.getView(i);
-            LayoutManager.LayoutParams params = next.getLayoutParams();
-            if (params.isHeader) {
-                state.cacheView(i, next.view);
+            View next = recycler.getView(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) next.getLayoutParams();
+            if (params.isHeader()) {
+                recycler.cacheView(i, next);
                 break;
             }
-            if (params.getFirstPosition() != sd.firstPosition) {
-                state.cacheView(i, next.view);
+            if (!sectionData.containsItem(params.getViewPosition())) {
+                recycler.cacheView(i, next);
                 break;
             }
 
             if (!applyMinHeight || i < measuredPositionsMarker) {
-                measureChild(next, sd);
+                measureChild(next, helper);
             } else {
-                state.decacheView(i);
+                recycler.decacheView(i);
             }
-            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sd, state);
-            addView(next, i, LayoutManager.Direction.START, state);
+            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sectionData,
+                    helper);
+            addView(next, LayoutManager.Direction.START, helper, recycler);
         }
 
         return markerLine;
     }
 
-    @Override
-    public int finishFillToEnd(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
-        final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine = mLayoutManager.getDecoratedBottom(anchor);
+    private int layoutChild(View child, int markerLine, LayoutManager.Direction direction,
+            SectionData sd, LayoutHelper helper) {
+        final int height = helper.getMeasuredHeight(child);
+        final int width = helper.getMeasuredWidth(child);
 
-        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
-    }
-
-    @Override
-    public int finishFillToStart(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
-        final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine = mLayoutManager.getDecoratedTop(anchor);
-
-        return fillToStart(leadingEdge, markerLine, anchorPosition - 1, sd, state);
-    }
-
-    private int layoutChild(LayoutState.View child, int markerLine,
-            LayoutManager.Direction direction, SectionData sd, LayoutState state) {
-        final int height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
-
-        int left = state.isLTR ? sd.contentStart : sd.contentEnd;
+        int left = 0;
         int right = left + width;
         int top;
         int bottom;
@@ -182,18 +174,18 @@ public class LinearSLM extends SectionLayoutManager {
             bottom = markerLine;
             top = bottom - height;
         }
-        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
+        helper.layoutChild(child, left, top, right, bottom);
 
         if (direction == LayoutManager.Direction.END) {
-            markerLine = mLayoutManager.getDecoratedBottom(child.view);
+            markerLine = helper.getBottom(child);
         } else {
-            markerLine = mLayoutManager.getDecoratedTop(child.view);
+            markerLine = helper.getTop(child);
         }
 
         return markerLine;
     }
 
-    private void measureChild(LayoutState.View child, SectionData sd) {
-        mLayoutManager.measureChildWithMargins(child.view, sd.getTotalMarginWidth(), 0);
+    private void measureChild(View child, LayoutHelper helper) {
+        helper.measureChild(child, helper.getWidth(), 0);
     }
 }

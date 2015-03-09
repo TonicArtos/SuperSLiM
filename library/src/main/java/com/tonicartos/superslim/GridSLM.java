@@ -34,13 +34,13 @@ public class GridSLM extends SectionLayoutManager {
 
     private boolean mColumnsSpecified;
 
-    public GridSLM(LayoutManager layoutManager, Context context) {
-        super(layoutManager);
+    public GridSLM(Context context) {
         mContext = context;
     }
 
     @Override
-    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
+    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
+            Recycler recycler) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -52,11 +52,11 @@ public class GridSLM extends SectionLayoutManager {
             // Look to see if the header overlaps with the displayed area of the mSection.
             int rowHeight = 0;
             for (int col = 0; col < mNumColumns; col++) {
-                LayoutState.View child = state.getView(position + col);
-                measureChild(child, sd);
+                View child = recycler.getView(position + col);
+                measureChild(child, helper);
                 rowHeight =
-                        Math.max(rowHeight, mLayoutManager.getDecoratedMeasuredHeight(child.view));
-                state.cacheView(position + col, child.view);
+                        Math.max(rowHeight, helper.getMeasuredHeight(child));
+                recycler.cacheView(position + col, child);
             }
             areaAbove += rowHeight;
         }
@@ -71,41 +71,42 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
-            LayoutState state) {
+    public int fillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        int markerLine = 0;
+        final int leadingEdge = helper.getLeadingEdge();
         if (markerLine >= leadingEdge) {
             return markerLine;
         }
 
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getItemCount();
         if (anchorPosition >= itemCount) {
             return markerLine;
         }
 
-        LayoutState.View anchor = state.getView(anchorPosition);
-        state.cacheView(anchorPosition, anchor.view);
-        if (anchor.getLayoutParams().getFirstPosition() != sd.firstPosition) {
+        View anchor = recycler.getView(anchorPosition);
+        recycler.cacheView(anchorPosition, anchor);
+        if (sectionData.containsItem(helper.getPosition(anchor))) {
             return markerLine;
         }
 
-        final int firstContentPosition = sd.hasHeader ? sd.firstPosition + 1 : sd.firstPosition;
+        final int firstContentPosition = sectionData.hasHeader ?
+                sectionData.firstPosition + 1 : sectionData.firstPosition;
 
         // Ensure the anchor is the first item in the row.
         final int col = (anchorPosition - firstContentPosition) % mNumColumns;
         for (int i = 1; i <= col; i++) {
             // Detach and scrap attached items in this row, so we can re-lay them again. The last
             // child view in the index can be the header so we just skip past it if it last.
-            for (int j = 1; j <= mLayoutManager.getChildCount(); j++) {
-                View child = mLayoutManager.getChildAt(mLayoutManager.getChildCount() - j);
-                if (mLayoutManager.getPosition(child) == anchorPosition - i) {
-                    markerLine = mLayoutManager.getDecoratedTop(child);
-                    mLayoutManager.detachAndScrapViewAt(j, state.recycler);
+            for (int j = 1; j <= helper.getChildCount(); j++) {
+                View child = helper.getChildAt(helper.getChildCount() - j);
+                if (helper.getPosition(child) == anchorPosition - i) {
+                    markerLine = helper.getTop(child);
+                    helper.detachAndScrapViewAt(j, recycler);
                     break;
                 }
 
-                LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
-                        .getLayoutParams();
-                if (params.getFirstPosition() != sd.firstPosition) {
+                if (!sectionData.containsItem(helper.getPosition(child))) {
                     break;
                 }
             }
@@ -118,13 +119,14 @@ public class GridSLM extends SectionLayoutManager {
                 break;
             }
 
-            LayoutState.View view = state.getView(i);
-            if (view.getLayoutParams().getFirstPosition() != sd.firstPosition) {
-                state.cacheView(i, view.view);
+            View view = recycler.getView(i);
+            if (!sectionData.containsItem(helper.getPosition(view))) {
+                recycler.cacheView(i, view);
                 break;
             }
 
-            int rowHeight = fillRow(markerLine, i, LayoutManager.Direction.END, true, sd, state);
+            int rowHeight = fillRow(markerLine, i, LayoutManager.Direction.END, true, sectionData,
+                    helper, recycler, state);
             markerLine += rowHeight;
         }
 
@@ -132,23 +134,25 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToStart(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
-            LayoutState state) {
+    public int fillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        final int leadingEdge = helper.getLeadingEdge();
+        int markerLine = 0;
         final int firstContentPosition = sd.hasHeader ? sd.firstPosition + 1 : sd.firstPosition;
 
         // Check to see if we have to adjust for minimum section height. We don't if there is an
         // attached non-header view in this section.
         boolean applyMinHeight = false;
-        for (int i = 0; i < mLayoutManager.getChildCount(); i++) {
-            View check = mLayoutManager.getChildAt(0);
+        for (int i = 0; i < helper.getChildCount(); i++) {
+            View check = helper.getChildAt(0);
             LayoutManager.LayoutParams checkParams =
                     (LayoutManager.LayoutParams) check.getLayoutParams();
-            if (checkParams.getFirstPosition() != sd.firstPosition) {
+            if (!sd.containsItem(checkParams.getViewPosition())) {
                 applyMinHeight = true;
                 break;
             }
 
-            if (!checkParams.isHeader) {
+            if (!checkParams.isHeader()) {
                 applyMinHeight = false;
                 break;
             }
@@ -159,16 +163,14 @@ public class GridSLM extends SectionLayoutManager {
         for (int i = 1; i < mNumColumns - col; i++) {
             // Detach and scrap attached items in this row, so we can re-lay them again. The last
             // child view in the index can be the header so we just skip past it if it last.
-            for (int j = 0; j < mLayoutManager.getChildCount(); j++) {
-                View child = mLayoutManager.getChildAt(j);
-                LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
-                        .getLayoutParams();
-                if (params.getFirstPosition() != sd.firstPosition) {
+            for (int j = 0; j < helper.getChildCount(); j++) {
+                View child = helper.getChildAt(j);
+                if (!sd.containsItem(helper.getPosition(child))) {
                     break;
                 }
 
-                if (mLayoutManager.getPosition(child) == anchorPosition + i) {
-                    mLayoutManager.detachAndScrapViewAt(j, state.recycler);
+                if (helper.getPosition(child) == anchorPosition + i) {
+                    helper.detachAndScrapViewAt(j, recycler);
                     break;
                 }
             }
@@ -183,29 +185,28 @@ public class GridSLM extends SectionLayoutManager {
         int minHeightOffset = 0;
         if (applyMinHeight) {
             for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
-                LayoutState.View check = state.getView(i);
-                state.cacheView(i, check.view);
-                LayoutManager.LayoutParams checkParams = check.getLayoutParams();
-                if (checkParams.getFirstPosition() != sd.firstPosition) {
+                View check = recycler.getView(i);
+                recycler.cacheView(i, check);
+                if (!sd.containsItem(helper.getPosition(check))) {
                     break;
                 }
 
                 int rowHeight = 0;
                 for (int j = 0; j < mNumColumns && i + j <= anchorPosition; j++) {
-                    LayoutState.View measure = state.getView(i + j);
-                    state.cacheView(i + j, measure.view);
-                    LayoutManager.LayoutParams measureParams = measure.getLayoutParams();
-                    if (measureParams.getFirstPosition() != sd.firstPosition) {
+                    View measure = recycler.getView(i + j);
+                    recycler.cacheView(i + j, measure);
+                    LayoutManager.LayoutParams measureParams =
+                            (LayoutManager.LayoutParams) measure.getLayoutParams();
+                    if (!sd.containsItem(measureParams.getViewPosition())) {
                         break;
                     }
 
-                    if (measureParams.isHeader) {
+                    if (measureParams.isHeader()) {
                         continue;
                     }
 
-                    measureChild(measure, sd);
-                    rowHeight = Math.max(rowHeight,
-                            mLayoutManager.getDecoratedMeasuredHeight(measure.view));
+                    measureChild(measure, helper);
+                    rowHeight = Math.max(rowHeight, helper.getMeasuredHeight(measure));
                 }
 
                 sectionHeight += rowHeight;
@@ -227,38 +228,33 @@ public class GridSLM extends SectionLayoutManager {
                 break;
             }
 
-            LayoutState.View rowAnchor = state.getView(i);
-            state.cacheView(i, rowAnchor.view);
-            LayoutManager.LayoutParams params = rowAnchor.getLayoutParams();
-            if (params.isHeader || params.getFirstPosition() != sd.firstPosition) {
+            View rowAnchor = recycler.getView(i);
+            recycler.cacheView(i, rowAnchor);
+            LayoutManager.LayoutParams params =
+                    (LayoutManager.LayoutParams) rowAnchor.getLayoutParams();
+            if (params.isHeader() || !sd.containsItem(params.getViewPosition())) {
                 break;
             }
 
             boolean measureRowItems = !applyMinHeight || i < measuredPositionsMarker;
             int rowHeight = fillRow(markerLine, i, LayoutManager.Direction.START, measureRowItems,
-                    sd, state);
+                    sd, helper, recycler, state);
             markerLine -= rowHeight;
         }
 
         return markerLine;
     }
 
-    @Override
-    public int finishFillToEnd(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
-        final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine = getLowestEdge(sd.firstPosition, mLayoutManager.getChildCount() - 1,
-                mLayoutManager.getDecoratedBottom(anchor));
-
-        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sd, state);
-    }
-
-    @Override
-    public int finishFillToStart(int leadingEdge, View anchor, SectionData sd, LayoutState state) {
-        final int anchorPosition = mLayoutManager.getPosition(anchor);
-        final int markerLine = mLayoutManager.getDecoratedTop(anchor);
-
-        return fillToStart(leadingEdge, markerLine, anchorPosition - 1, sd, state);
-    }
+//    @Override
+//    public int finishFillToEnd(View anchor, SectionData sectionData, LayoutHelper helper,
+//            Recycler recycler, RecyclerView.State state) {
+//        final int anchorPosition = helper.getPosition(anchor);
+//        final int markerLine = getLowestEdge(sectionData.firstPosition,
+// helper.getChildCount() - 1,
+//                helper.getBottom(anchor));
+//
+//        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sectionData, recycler);
+//    }
 
     @Override
     public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
@@ -271,44 +267,42 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public void getEdgeStates(Rect outRect, View child, SectionData sd, RecyclerView.State state) {
+    public void getEdgeStates(Rect outRect, View child, SectionData sd, LayoutHelper helper) {
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
         final int position = params.getViewPosition();
 
-        final int column = (position - sd.getFirstContentPosition()) % mNumColumns;
-        boolean isLtr = mLayoutManager.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
-        final int ltrColumn = adjustColumnForLayoutDirection(column, isLtr);
+        int firstContentPosition = (sd.hasHeader ?
+                Math.min(sd.firstPosition + 1, sd.lastPosition) :
+                sd.firstPosition);
+        final int column = (position - firstContentPosition) % mNumColumns;
+        final int ltrColumn = adjustColumnForLayoutDirection(column, helper.getLayoutDirection());
 
         outRect.left = ltrColumn == 0 ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
         outRect.right = ltrColumn == mNumColumns - 1 ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
 
-        outRect.top = position - column == sd.getFirstContentPosition() ?
+        outRect.top = position - column == firstContentPosition ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        // Reset position to left column and add num columns, if < itemcount then not last row.
-        if (sd.isLastContentItemFound()) {
-            outRect.bottom = position + (mNumColumns - column) > sd.lastContentPosition ?
-                    ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        } else {
-            outRect.bottom = ItemDecorator.INTERNAL;
-        }
+        outRect.bottom = position + (mNumColumns - column) > sd.lastPosition ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
     @Override
-    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int defaultEdge) {
+    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
+            LayoutHelper helper) {
         int bottomMostEdge = 0;
-        int leftPosition = mLayoutManager.getWidth();
+        int leftPosition = helper.getWidth();
         boolean foundItems = false;
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
-            View look = mLayoutManager.getChildAt(i);
+            View look = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
-            if (params.getFirstPosition() != sectionFirstPosition) {
+            if (!sectionData.containsItem(params.getViewPosition())) {
                 break;
             }
 
-            if (params.isHeader) {
+            if (params.isHeader()) {
                 continue;
             }
 
@@ -319,17 +313,18 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             foundItems = true;
-            bottomMostEdge = Math.max(bottomMostEdge, mLayoutManager.getDecoratedBottom(look));
+            bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
         }
 
         return foundItems ? bottomMostEdge : defaultEdge;
     }
 
-    public GridSLM init(SectionData sd) {
-        super.init(sd);
+    @Override
+    public GridSLM init(SectionData sectionData, LayoutHelper helper) {
+        super.init(sectionData, helper);
 
-        if (sd.headerParams instanceof LayoutParams) {
-            LayoutParams params = (LayoutParams) sd.headerParams;
+        if (sectionData.getSectionParams() instanceof LayoutParams) {
+            LayoutParams params = (LayoutParams) sectionData.getSectionParams();
             int columnWidth = params.getColumnWidth();
             int numColumns = params.getNumColumns();
             if (columnWidth < 0 && numColumns < 0) {
@@ -343,7 +338,7 @@ public class GridSLM extends SectionLayoutManager {
             }
         }
 
-        calculateColumnWidthValues(sd);
+        calculateColumnWidthValues(sectionData, helper);
 
         return this;
     }
@@ -356,31 +351,32 @@ public class GridSLM extends SectionLayoutManager {
      * @param direction       Direction of edge to fill towards.
      * @param measureRowItems Measure the row items.
      * @param sd              Section data.
-     * @param state           Layout state.
+     * @param recycler        Layout recycler.
      * @return The height of the new row.
      */
     public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
-            boolean measureRowItems, SectionData sd, LayoutState state) {
+            boolean measureRowItems, SectionData sd, LayoutHelper helper, Recycler recycler,
+            RecyclerView.State state) {
         int rowHeight = 0;
-        LayoutState.View[] views = new LayoutState.View[mNumColumns];
+        View[] views = new View[mNumColumns];
         for (int i = 0; i < mNumColumns; i++) {
             final int position = anchorPosition + i;
-            if (position >= state.recyclerState.getItemCount()) {
+            if (position >= state.getItemCount()) {
                 break;
             }
 
-            LayoutState.View view = state.getView(position);
-            if (view.getLayoutParams().getFirstPosition() != sd.firstPosition) {
-                state.cacheView(position, view.view);
+            View view = recycler.getView(position);
+            if (!sd.containsItem(helper.getPosition(view))) {
+                recycler.cacheView(position, view);
                 break;
             }
 
             if (measureRowItems) {
-                measureChild(view, sd);
+                measureChild(view, helper);
             } else {
-                state.decacheView(i + anchorPosition);
+                recycler.decacheView(i + anchorPosition);
             }
-            rowHeight = Math.max(rowHeight, mLayoutManager.getDecoratedMeasuredHeight(view.view));
+            rowHeight = Math.max(rowHeight, helper.getMeasuredHeight(view));
             views[i] = view;
         }
 
@@ -394,8 +390,8 @@ public class GridSLM extends SectionLayoutManager {
             if (views[col] == null) {
                 continue;
             }
-            layoutChild(views[col], markerLine, col, rowHeight, sd, state);
-            addView(views[col], col + anchorPosition, direction, state);
+            layoutChild(views[col], markerLine, col, rowHeight, helper);
+            addView(views[col], direction, helper, recycler);
         }
 
         return rowHeight;
@@ -412,8 +408,15 @@ public class GridSLM extends SectionLayoutManager {
         mColumnsSpecified = true;
     }
 
-    private void calculateColumnWidthValues(SectionData sd) {
-        int availableWidth = mLayoutManager.getWidth() - sd.contentStart - sd.contentEnd;
+    private int adjustColumnForLayoutDirection(int col, int layoutDirection) {
+        if (layoutDirection != ViewCompat.LAYOUT_DIRECTION_LTR) {
+            col = mNumColumns - 1 - col;
+        }
+        return col;
+    }
+
+    private void calculateColumnWidthValues(SectionData sd, LayoutHelper helper) {
+        int availableWidth = helper.getWidth();
         if (!mColumnsSpecified) {
             if (mMinimumWidth <= 0) {
                 mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
@@ -440,46 +443,34 @@ public class GridSLM extends SectionLayoutManager {
      * @param top       Line indicating the top edge of the row.
      * @param col       Column view is being placed into.
      * @param rowHeight Height of the row.
-     * @param sd        Section data.
-     * @param state     Layout state.
      */
-    private void layoutChild(LayoutState.View child, int top, int col, int rowHeight,
-            SectionData sd, LayoutState state) {
+    private void layoutChild(View child, int top, int col, int rowHeight, LayoutHelper helper) {
         final int height;
         if (child.getLayoutParams().height == LayoutManager.LayoutParams.MATCH_PARENT) {
             height = rowHeight;
         } else {
-            height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
+            height = helper.getMeasuredHeight(child);
         }
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        final int width = helper.getMeasuredWidth(child);
 
-        col = adjustColumnForLayoutDirection(col, state.isLTR);
+        col = adjustColumnForLayoutDirection(col, helper.getLayoutDirection());
 
         final int bottom = top + height;
-        final int left = (state.isLTR ? sd.contentStart : sd.contentEnd) + col * mColumnWidth;
+        final int left = col * mColumnWidth;
         final int right = left + width;
 
-        mLayoutManager.layoutDecorated(child.view, left, top, right, bottom);
-    }
-
-    private int adjustColumnForLayoutDirection(int col, boolean isLtr) {
-        if (!isLtr) {
-            col = mNumColumns - 1 - col;
-        }
-        return col;
+        helper.layoutChild(child, left, top, right, bottom);
     }
 
     /**
      * Measure view. A view is given an area as wide as a single column with an undefined height.
      *
-     * @param child View to measure.
-     * @param sd    Section data.
+     * @param child  View to measure.
+     * @param helper Layout helper.
      */
-    private void measureChild(LayoutState.View child, SectionData sd) {
-        int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
-        mLayoutManager.measureChildWithMargins(child.view,
-                sd.marginStart + sd.marginEnd + widthOtherColumns,
-                0);
+    private void measureChild(View child, LayoutHelper helper) {
+        final int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
+        helper.measureChild(child, widthOtherColumns, 0);
     }
 
     public static class LayoutParams extends LayoutManager.LayoutParams {
