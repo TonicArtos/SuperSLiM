@@ -827,7 +827,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int markerLine;
         int anchorPosition = getPosition(anchor);
         if (anchorPosition == sd.firstPosition) {
-            markerLine = getDecoratedBottom(anchor);
+            markerLine = getDecoratedTop(anchor);
         } else {
             if (anchorPosition - 1 == sd.firstPosition && sd.hasHeader) {
                 // Already at first content position, so no more to do.
