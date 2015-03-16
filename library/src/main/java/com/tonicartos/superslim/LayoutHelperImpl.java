@@ -7,7 +7,7 @@ import android.view.View;
 
 import java.util.ArrayDeque;
 
-class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
+class LayoutHelperImpl extends LayoutHelper implements LayoutHelperParent, LayoutTrimHelper {
 
     private static ArrayDeque<LayoutHelperImpl> sPool = new ArrayDeque<>(6);
 
@@ -29,11 +29,11 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
 
     private int mStickyEdge;
 
-    LayoutHelperImpl(LayoutHelperImpl parent) {
+    LayoutHelperImpl(LayoutHelperParent parent) {
         setParent(parent);
     }
 
-    private static LayoutHelperImpl getLayoutHelperFromPool(LayoutHelperImpl parent) {
+    static LayoutHelperImpl getLayoutHelperFromPool(LayoutHelperParent parent) {
         if (sPool.size() == 0) {
             return new LayoutHelperImpl(parent);
         }
@@ -100,6 +100,11 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
+    public int getLeadingEdge() {
+        return mLeadingEdge;
+    }
+
+    @Override
     public int getLeft(View child) {
         return mParent.getLeft(child);
     }
@@ -125,6 +130,29 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
+    public SectionData getSectionData(int position) {
+        if (mSectionData.containsItem(position)) {
+            return mSectionData;
+        }
+        return mParent.getSectionData(position);
+    }
+
+    @Override
+    public SectionLayoutManager getSlm(SectionData sectionData) {
+        return mParent.getSlm(sectionData);
+    }
+
+    @Override
+    public LayoutHelper getSubsectionLayoutHelper() {
+        return getLayoutHelperFromPool(this);
+    }
+
+    @Override
+    public LayoutTrimHelper getSubsectionLayoutTrimHelper() {
+        return getLayoutHelperFromPool(this);
+    }
+
+    @Override
     public int getTop(View child) {
         return mParent.getTop(child);
     }
@@ -132,6 +160,30 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     @Override
     public int getWidth() {
         return mWidth;
+    }
+
+    @Override
+    public void init(SectionData sd) {
+        mSectionData = sd;
+    }
+
+    @Override
+    public void init(SectionData sd, int markerLine, int leadingEdge, int stickyEdge) {
+        init(sd, 0, 0, markerLine, leadingEdge, stickyEdge);
+    }
+
+    @Override
+    public void init(SectionData sd, int horizontalOffset, int unavailableWidth, int markerLine,
+            int leadingEdge,
+            int stickyEdge) {
+        mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth - unavailableWidth;
+        mSectionData = sd;
+        mHorizontalOffset = mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR ?
+                sd.startMarginWidth : sd.endMarginWidth;
+        mHorizontalOffset += horizontalOffset;
+        mVerticalOffset = markerLine;
+        mLeadingEdge = leadingEdge - markerLine;
+        mStickyEdge = stickyEdge - markerLine;
     }
 
     @Override
@@ -156,6 +208,12 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
+    public void recycle() {
+        reset();
+        returnToPool(this);
+    }
+
+    @Override
     public void removeAndRecycleView(View child, Recycler recycler) {
         mParent.removeAndRecycleView(child, recycler);
     }
@@ -176,28 +234,12 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
-    public int getLeadingEdge() {
-        return mLeadingEdge;
+    public int translateFillResult(int markerLine) {
+        return markerLine + mVerticalOffset;
     }
 
     @Override
-    public LayoutHelper getSubsectionLayoutHelper() {
-        return getLayoutHelperFromPool(this);
-    }
-
-    @Override
-    public void init(SectionData sd, int markerLine, int leadingEdge, int stickyEdge) {
-        mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth;
-        mSectionData = sd;
-        mHorizontalOffset = mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR ?
-                sd.startMarginWidth : sd.endMarginWidth;
-        mVerticalOffset = markerLine;
-        mLeadingEdge = leadingEdge - markerLine;
-        mStickyEdge = stickyEdge - markerLine;
-    }
-
-    @Override
-    public int layoutHeaderTowardsEnd(final View header, int markerLine,
+    int layoutHeaderTowardsEnd(final View header, int markerLine,
             final RecyclerView.State state) {
         LayoutManager.LayoutParams headerParams =
                 (LayoutManager.LayoutParams) header.getLayoutParams();
@@ -221,7 +263,7 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
     }
 
     @Override
-    public int layoutHeaderTowardsStart(final View header, final int offset, int sectionTop,
+    int layoutHeaderTowardsStart(final View header, final int offset, int sectionTop,
             final int sectionBottom, final RecyclerView.State state) {
         LayoutManager.LayoutParams headerParams =
                 (LayoutManager.LayoutParams) header.getLayoutParams();
@@ -260,16 +302,6 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
         return Math.min(r.top, sectionTop);
     }
 
-    @Override
-    public void recycle() {
-        returnToPool(this);
-    }
-
-    @Override
-    public int translateFillResult(int markerLine) {
-        return markerLine + mVerticalOffset;
-    }
-
     void measureHeader(View header) {
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) header.getLayoutParams();
         int widthUsed = 0; // Depends on header display param.
@@ -285,7 +317,21 @@ class LayoutHelperImpl implements LayoutHelperParent, LayoutHelper {
         mParent.measureHeader(header, widthUsed, 0);
     }
 
-    Rect setHeaderRectSides(Rect r, LayoutManager.LayoutParams headerParams,
+    @Override
+    void updateVerticalOffset(int additionalOffset) {
+        mVerticalOffset += additionalOffset;
+    }
+
+    private void reset() {
+        mWidth = 0;
+        mSectionData = null;
+        mHorizontalOffset = 0;
+        mVerticalOffset = 0;
+        mLeadingEdge = 0;
+        mStickyEdge = 0;
+    }
+
+    private Rect setHeaderRectSides(Rect r, LayoutManager.LayoutParams headerParams,
             RecyclerView.State state) {
         if (headerParams.isHeaderEndAligned()) {
             // Position header from end edge.

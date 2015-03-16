@@ -3,68 +3,46 @@ package com.tonicartos.superslim;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-public interface LayoutHelper {
+public abstract class LayoutHelper implements LayoutQueryHelper, LayoutModifierHelper {
 
-    void addView(View view, int index);
+    public abstract int getLeadingEdge();
 
-    void addView(View view);
+    public abstract LayoutHelper getSubsectionLayoutHelper();
 
-    void detachAndScrapView(View child, Recycler recycler);
+    /**
+     * Init layout helper.
+     *
+     * @param sd          Sublayout's section data.
+     * @param markerLine  Line at which the sublayout will begin.
+     * @param leadingEdge Line up to which the sublayout can fill.
+     * @param stickyEdge  Line at which sticky headers will be aligned.
+     */
+    public abstract void init(SectionData sd, int markerLine, int leadingEdge, int stickyEdge);
 
-    void detachAndScrapViewAt(int index, Recycler recycler);
+    /**
+     * Init layout helper.
+     *
+     * @param sd               Sublayout's section data.
+     * @param horizontalOffset Left position of the sublayout relative to super layout.
+     * @param unavailableWidth Width of super layout unavailable to the sublayout.
+     * @param markerLine       Line at which the sublayout will begin.
+     * @param leadingEdge      Line up to which the sublayout can fill.
+     * @param stickyEdge       Line at which sticky headers will be aligned.
+     */
+    public abstract void init(SectionData sd, int horizontalOffset, int unavailableWidth,
+            int markerLine, int leadingEdge, int stickyEdge);
 
-    void detachView(View child);
+    public abstract void recycle();
 
-    void detachViewAt(int index);
-
-    int getBottom(View child);
-
-    View getChildAt(int index);
-
-    int getChildCount();
-
-    int getHeight();
-
-    int getLayoutDirection();
-
-    int getLeadingEdge();
-
-    int getLeft(View child);
-
-    int getMeasuredHeight(View v);
-
-    int getMeasuredWidth(View v);
-
-    int getPosition(View child);
-
-    int getRight(View child);
-
-    LayoutHelper getSubsectionLayoutHelper();
-
-    int getTop(View child);
-
-    int getWidth();
-
-    void init(SectionData sd, int markerLine, int leadingEdge, int stickyEdge);
-
-    void layoutChild(final View v, int l, int t, int r, int b);
-
-    int layoutHeaderTowardsEnd(View header, int markerLine, RecyclerView.State state);
-
-    int layoutHeaderTowardsStart(View header, int offset, int sectionTop, int sectionBottom,
+    abstract int layoutHeaderTowardsEnd(View header, int markerLine,
             RecyclerView.State state);
 
-    void measureChild(View child, int widthUsed, int heightUsed);
+    abstract int layoutHeaderTowardsStart(View header, int offset, int sectionTop,
+            int sectionBottom, RecyclerView.State state);
 
-    void recycle();
+    abstract void measureHeader(View header);
 
-    void removeAndRecycleView(View child, Recycler recycler);
+    abstract int translateFillResult(int markerLine);
 
-    void removeAndRecycleViewAt(int index, Recycler recycler);
-
-    void removeView(View child);
-
-    void removeViewAt(int index);
-
-    int translateFillResult(int markerLine);
+    abstract void updateVerticalOffset(int markerLine);
 }

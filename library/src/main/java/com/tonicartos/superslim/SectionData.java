@@ -42,13 +42,14 @@ public class SectionData {
         return mSectionParams;
     }
 
-    static ArrayList<SectionData> processSections(List<Integer> sectionStartPositions,
-            int lastPosition) {
+    static ArrayList<SectionData> processSections(int lastPosition,
+            List<Integer> sectionStartPositions) {
         if (sectionStartPositions == null || sectionStartPositions.size() == 0) {
             return null;
         }
         ArrayList<SectionData> sections = new ArrayList<>();
         int lastStart = sectionStartPositions.get(0);
+
         for (int i = 1; i < sectionStartPositions.size(); i++) {
             int nextStart = sectionStartPositions.get(i);
             sections.add(new SectionData(lastStart, nextStart - 1));
@@ -105,14 +106,14 @@ public class SectionData {
             }
         }
 
-        subsections = processSections(mSectionParams.getSections(), lastPosition);
+        subsections = processSections(lastPosition, mSectionParams.getSections());
 
         mIsInitialised = true;
     }
 
 
     // TODO: insertion, moving, changing, and removal
-
+//
 //    public int itemChanged(int position) {
 //        return itemsChanged(position, 1);
 //    }
@@ -171,6 +172,8 @@ public class SectionData {
 //        for (SectionData subsection : subsections) {
 //            subsection.itemsInserted(position, count);
 //        }
+//
+//        return count - (itemsBeforeSection + itemsInSection);
 //    }
 //
 //    public int itemsRemoved(int position, int count) {

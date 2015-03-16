@@ -70,8 +70,160 @@ public class GridSLM extends SectionLayoutManager {
         }
     }
 
+    /**
+     * Fill a row.
+     *
+     * @param markerLine      Line indicating the top edge of the row.
+     * @param anchorPosition  Position of the first view in the row.
+     * @param direction       Direction of edge to fill towards.
+     * @param measureRowItems Measure the row items.
+     * @param sd              Section data.
+     * @param recycler        Layout recycler.
+     * @return The height of the new row.
+     */
+    public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
+            boolean measureRowItems, SectionData sd, LayoutHelper helper, Recycler recycler,
+            RecyclerView.State state) {
+        int rowHeight = 0;
+        View[] views = new View[mNumColumns];
+        for (int i = 0; i < mNumColumns; i++) {
+            final int position = anchorPosition + i;
+            if (position >= state.getItemCount()) {
+                break;
+            }
+
+            View view = recycler.getView(position);
+            if (!sd.containsItem(helper.getPosition(view))) {
+                recycler.cacheView(position, view);
+                break;
+            }
+
+            if (measureRowItems) {
+                measureChild(view, helper);
+            } else {
+                recycler.decacheView(i + anchorPosition);
+            }
+            rowHeight = Math.max(rowHeight, helper.getMeasuredHeight(view));
+            views[i] = view;
+        }
+
+        boolean directionIsStart = direction == LayoutManager.Direction.START;
+        if (directionIsStart) {
+            markerLine -= rowHeight;
+        }
+
+        for (int i = 0; i < mNumColumns; i++) {
+            int col = directionIsStart ? mNumColumns - i - 1 : i;
+            if (views[col] == null) {
+                continue;
+            }
+            layoutChild(views[col], markerLine, col, rowHeight, helper);
+            addView(views[col], direction, helper, recycler);
+        }
+
+        return rowHeight;
+    }
+
     @Override
-    public int fillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    public RecyclerView.LayoutParams generateLayoutParams(RecyclerView.LayoutParams params) {
+        return new LayoutParams(params);
+    }
+
+//    @Override
+//    public int finishFillToEnd(View anchor, SectionData sectionData, LayoutHelper helper,
+//            Recycler recycler, RecyclerView.State state) {
+//        final int anchorPosition = helper.getPosition(anchor);
+//        final int markerLine = getLowestEdge(sectionData.firstPosition,
+// helper.getChildCount() - 1,
+//                helper.getBottom(anchor));
+//
+//        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sectionData, recycler);
+//    }
+
+    @Override
+    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+        return new LayoutParams(c, attrs);
+    }
+
+    @Override
+    public void getEdgeStates(Rect outRect, View child, SectionData sd, int layoutDirection) {
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
+        final int position = params.getViewPosition();
+
+        int firstContentPosition = (sd.hasHeader ?
+                Math.min(sd.firstPosition + 1, sd.lastPosition) :
+                sd.firstPosition);
+        final int column = (position - firstContentPosition) % mNumColumns;
+        final int ltrColumn = adjustColumnForLayoutDirection(column, layoutDirection);
+
+        outRect.left = ltrColumn == 0 ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.right = ltrColumn == mNumColumns - 1 ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+
+        outRect.top = position - column == firstContentPosition ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+        outRect.bottom = position + (mNumColumns - column) > sd.lastPosition ?
+                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
+    }
+
+    @Override
+    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
+            LayoutQueryHelper layout) {
+        int bottomMostEdge = 0;
+        int leftPosition = layout.getWidth();
+        boolean foundItems = false;
+        // Look from end to find children that are the lowest.
+        for (int i = lastIndex; i >= 0; i--) {
+            View look = layout.getChildAt(i);
+            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
+            if (!sectionData.containsItem(params.getViewPosition())) {
+                break;
+            }
+
+            if (params.isHeader()) {
+                continue;
+            }
+
+            if (look.getLeft() < leftPosition) {
+                leftPosition = look.getLeft();
+            } else {
+                break;
+            }
+
+            foundItems = true;
+            bottomMostEdge = Math.max(bottomMostEdge, layout.getBottom(look));
+        }
+
+        return foundItems ? bottomMostEdge : defaultEdge;
+    }
+
+    @Override
+    public GridSLM init(SectionData sectionData, LayoutQueryHelper helper) {
+        super.init(sectionData, helper);
+
+        if (sectionData.getSectionParams() instanceof LayoutParams) {
+            LayoutParams params = (LayoutParams) sectionData.getSectionParams();
+            int columnWidth = params.getColumnWidth();
+            int numColumns = params.getNumColumns();
+            if (columnWidth < 0 && numColumns < 0) {
+                numColumns = DEFAULT_NUM_COLUMNS;
+            }
+
+            if (numColumns == AUTO_FIT) {
+                setColumnWidth(columnWidth);
+            } else {
+                setNumColumns(numColumns);
+            }
+        }
+
+        calculateColumnWidthValues(sectionData, helper);
+
+        return this;
+    }
+
+    @Override
+    public int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         int markerLine = 0;
         final int leadingEdge = helper.getLeadingEdge();
@@ -134,7 +286,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
+    public int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         final int leadingEdge = helper.getLeadingEdge();
         int markerLine = 0;
@@ -245,158 +397,6 @@ public class GridSLM extends SectionLayoutManager {
         return markerLine;
     }
 
-//    @Override
-//    public int finishFillToEnd(View anchor, SectionData sectionData, LayoutHelper helper,
-//            Recycler recycler, RecyclerView.State state) {
-//        final int anchorPosition = helper.getPosition(anchor);
-//        final int markerLine = getLowestEdge(sectionData.firstPosition,
-// helper.getChildCount() - 1,
-//                helper.getBottom(anchor));
-//
-//        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sectionData, recycler);
-//    }
-
-    @Override
-    public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
-        return new LayoutParams(params);
-    }
-
-    @Override
-    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
-        return new LayoutParams(c, attrs);
-    }
-
-    @Override
-    public void getEdgeStates(Rect outRect, View child, SectionData sd, LayoutHelper helper) {
-        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
-        final int position = params.getViewPosition();
-
-        int firstContentPosition = (sd.hasHeader ?
-                Math.min(sd.firstPosition + 1, sd.lastPosition) :
-                sd.firstPosition);
-        final int column = (position - firstContentPosition) % mNumColumns;
-        final int ltrColumn = adjustColumnForLayoutDirection(column, helper.getLayoutDirection());
-
-        outRect.left = ltrColumn == 0 ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.right = ltrColumn == mNumColumns - 1 ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-
-        outRect.top = position - column == firstContentPosition ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.bottom = position + (mNumColumns - column) > sd.lastPosition ?
-                ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-    }
-
-    @Override
-    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
-            LayoutHelper helper) {
-        int bottomMostEdge = 0;
-        int leftPosition = helper.getWidth();
-        boolean foundItems = false;
-        // Look from end to find children that are the lowest.
-        for (int i = lastIndex; i >= 0; i--) {
-            View look = helper.getChildAt(i);
-            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
-            if (!sectionData.containsItem(params.getViewPosition())) {
-                break;
-            }
-
-            if (params.isHeader()) {
-                continue;
-            }
-
-            if (look.getLeft() < leftPosition) {
-                leftPosition = look.getLeft();
-            } else {
-                break;
-            }
-
-            foundItems = true;
-            bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
-        }
-
-        return foundItems ? bottomMostEdge : defaultEdge;
-    }
-
-    @Override
-    public GridSLM init(SectionData sectionData, LayoutHelper helper) {
-        super.init(sectionData, helper);
-
-        if (sectionData.getSectionParams() instanceof LayoutParams) {
-            LayoutParams params = (LayoutParams) sectionData.getSectionParams();
-            int columnWidth = params.getColumnWidth();
-            int numColumns = params.getNumColumns();
-            if (columnWidth < 0 && numColumns < 0) {
-                numColumns = DEFAULT_NUM_COLUMNS;
-            }
-
-            if (numColumns == AUTO_FIT) {
-                setColumnWidth(columnWidth);
-            } else {
-                setNumColumns(numColumns);
-            }
-        }
-
-        calculateColumnWidthValues(sectionData, helper);
-
-        return this;
-    }
-
-    /**
-     * Fill a row.
-     *
-     * @param markerLine      Line indicating the top edge of the row.
-     * @param anchorPosition  Position of the first view in the row.
-     * @param direction       Direction of edge to fill towards.
-     * @param measureRowItems Measure the row items.
-     * @param sd              Section data.
-     * @param recycler        Layout recycler.
-     * @return The height of the new row.
-     */
-    public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
-            boolean measureRowItems, SectionData sd, LayoutHelper helper, Recycler recycler,
-            RecyclerView.State state) {
-        int rowHeight = 0;
-        View[] views = new View[mNumColumns];
-        for (int i = 0; i < mNumColumns; i++) {
-            final int position = anchorPosition + i;
-            if (position >= state.getItemCount()) {
-                break;
-            }
-
-            View view = recycler.getView(position);
-            if (!sd.containsItem(helper.getPosition(view))) {
-                recycler.cacheView(position, view);
-                break;
-            }
-
-            if (measureRowItems) {
-                measureChild(view, helper);
-            } else {
-                recycler.decacheView(i + anchorPosition);
-            }
-            rowHeight = Math.max(rowHeight, helper.getMeasuredHeight(view));
-            views[i] = view;
-        }
-
-        boolean directionIsStart = direction == LayoutManager.Direction.START;
-        if (directionIsStart) {
-            markerLine -= rowHeight;
-        }
-
-        for (int i = 0; i < mNumColumns; i++) {
-            int col = directionIsStart ? mNumColumns - i - 1 : i;
-            if (views[col] == null) {
-                continue;
-            }
-            layoutChild(views[col], markerLine, col, rowHeight, helper);
-            addView(views[col], direction, helper, recycler);
-        }
-
-        return rowHeight;
-    }
-
     public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
@@ -415,7 +415,7 @@ public class GridSLM extends SectionLayoutManager {
         return col;
     }
 
-    private void calculateColumnWidthValues(SectionData sd, LayoutHelper helper) {
+    private void calculateColumnWidthValues(SectionData sd, LayoutQueryHelper helper) {
         int availableWidth = helper.getWidth();
         if (!mColumnsSpecified) {
             if (mMinimumWidth <= 0) {

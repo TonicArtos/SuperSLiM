@@ -37,7 +37,7 @@ public class LinearSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    public int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         final int itemCount = state.getItemCount();
         final int leadingEdge = helper.getLeadingEdge();
@@ -64,7 +64,7 @@ public class LinearSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int fillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    public int onFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         int markerLine = 0;
         final int leadingEdge = helper.getLeadingEdge();
