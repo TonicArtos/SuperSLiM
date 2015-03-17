@@ -38,10 +38,6 @@ public class SectionData {
         this.lastPosition = lastPosition;
     }
 
-    public LayoutManager.LayoutParams getSectionParams() {
-        return mSectionParams;
-    }
-
     static ArrayList<SectionData> processSections(int lastPosition,
             List<Integer> sectionStartPositions) {
         if (sectionStartPositions == null || sectionStartPositions.size() == 0) {
@@ -66,6 +62,10 @@ public class SectionData {
 
     public boolean getIsInitialised() {
         return mIsInitialised;
+    }
+
+    public LayoutManager.LayoutParams getSectionParams() {
+        return mSectionParams;
     }
 
     public void init(LayoutHelperImpl helper, View first) {
@@ -107,11 +107,27 @@ public class SectionData {
         }
 
         subsections = processSections(lastPosition, mSectionParams.getSections());
+        // Check subsection sanity.
+        if (subsections != null) {
+            int firstSubsectionPosition = subsections.get(0).firstPosition;
+            if (hasHeader && firstSubsectionPosition != firstPosition + 1) {
+                throw new SubsectionValidationRuntimeException(
+                        "Subsection content should start at first item after header.");
+            } else if (firstSubsectionPosition != firstPosition) {
+                throw new SubsectionValidationRuntimeException(
+                        "Subsection content should start at first item.");
+            }
+        }
 
         mIsInitialised = true;
     }
 
+    static class SubsectionValidationRuntimeException extends RuntimeException {
 
+        SubsectionValidationRuntimeException(String error) {
+            super(error);
+        }
+    }
     // TODO: insertion, moving, changing, and removal
 //
 //    public int itemChanged(int position) {
