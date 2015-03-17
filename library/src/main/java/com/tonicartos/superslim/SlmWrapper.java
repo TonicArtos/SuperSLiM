@@ -23,12 +23,19 @@ class SlmWrapper extends SectionLayoutManager {
 
     public int beginFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
+        int markerLine = 0;
         if (sectionData.hasHeader) {
+            // Markerline gets shifted here if the header is inline.
             // TODO: Layout header.
         }
-        int markerLine = 0;
         helper.updateVerticalOffset(markerLine);
-        int result = mSlm.beginFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        int result;
+        if (sectionData.subsections != null) {
+            result = onFillSubsectionsToEnd(anchorPosition, sectionData, helper, recycler,
+                    state);
+        } else {
+            result = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        }
         if (sectionData.hasHeader) {
             // TODO: Attach header.
         }
@@ -37,7 +44,13 @@ class SlmWrapper extends SectionLayoutManager {
 
     public int beginFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        int result = mSlm.beginFillToStart(anchorPosition, sectionData, helper, recycler, state);
+        int result;
+        if (sectionData.subsections != null) {
+            result = onFillSubsectionsToStart(anchorPosition, sectionData, helper, recycler,
+                            state);
+        } else {
+            result = onFillToStart(anchorPosition, sectionData, helper, recycler, state);
+        }
         if (sectionData.hasHeader) {
             // TODO: Layout and attach header if needed.
         }
@@ -101,6 +114,18 @@ class SlmWrapper extends SectionLayoutManager {
     public SlmWrapper init(SectionData sd, LayoutQueryHelper helper) {
         mSlm.init(sd, helper);
         return this;
+    }
+
+    @Override
+    protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return mSlm.onFillSubsectionsToEnd(anchorPosition, sectionData, helper, recycler, state);
+    }
+
+    @Override
+    protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return mSlm.onFillSubsectionsToStart(anchorPosition, sectionData, helper, recycler, state);
     }
 
     public int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,

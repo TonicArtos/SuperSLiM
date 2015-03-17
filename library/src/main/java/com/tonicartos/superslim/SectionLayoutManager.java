@@ -24,12 +24,7 @@ public abstract class SectionLayoutManager {
      */
     public int beginFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        // TODO: Layout header.
-        int markerLine = 0;
-        helper.updateVerticalOffset(markerLine);
-        int result = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
-        // TODO: Attach header.
-        return result;
+        return 0;
     }
 
     /**
@@ -43,9 +38,7 @@ public abstract class SectionLayoutManager {
      */
     public int beginFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        int result = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
-        // TODO: Layout and attach header if needed.
-        return result;
+        return 0;
     }
 
     /**
@@ -62,17 +55,6 @@ public abstract class SectionLayoutManager {
      */
     public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
             LayoutHelper helper, Recycler state);
-
-    /**
-     * Basic implementation. Does a linear search from the super's first visible index for the first
-     * visible index of the subsection.
-     *
-     * @param supersFirstVisibleIndex The child index that is visible. It is
-     * @return -1 if none found, or
-     */
-    public int findSubsectionsFirstVisibleIndex(int supersFirstVisibleIndex, SectionData subSd) {
-        return 0;
-    }
 
     /**
      * Finish filling a section towards the end.
@@ -221,6 +203,12 @@ public abstract class SectionLayoutManager {
         return this;
     }
 
+    protected abstract int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state);
+
+    protected abstract int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state);
+
     /**
      * Fill section content towards the end.
      *
@@ -230,7 +218,7 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public abstract int onFillToEnd(int anchorPosition, SectionData sectionData,
+    protected abstract int onFillToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper,
             Recycler recycler, RecyclerView.State state);
 
@@ -243,7 +231,7 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public abstract int onFillToStart(int anchorPosition, SectionData sectionData,
+    protected abstract int onFillToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
     public void onPreTrimAtEndEdge(final int endEdge, final SectionData sectionData,

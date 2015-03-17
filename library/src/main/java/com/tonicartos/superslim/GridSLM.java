@@ -222,8 +222,19 @@ public class GridSLM extends SectionLayoutManager {
         return this;
     }
 
+    public void setColumnWidth(int minimumWidth) {
+        mMinimumWidth = minimumWidth;
+        mColumnsSpecified = false;
+    }
+
+    public void setNumColumns(int numColumns) {
+        mNumColumns = numColumns;
+        mMinimumWidth = 0;
+        mColumnsSpecified = true;
+    }
+
     @Override
-    public int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    protected int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         int markerLine = 0;
         final int leadingEdge = helper.getLeadingEdge();
@@ -286,7 +297,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
+    protected int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         final int leadingEdge = helper.getLeadingEdge();
         int markerLine = 0;
@@ -395,17 +406,6 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         return markerLine;
-    }
-
-    public void setColumnWidth(int minimumWidth) {
-        mMinimumWidth = minimumWidth;
-        mColumnsSpecified = false;
-    }
-
-    public void setNumColumns(int numColumns) {
-        mNumColumns = numColumns;
-        mMinimumWidth = 0;
-        mColumnsSpecified = true;
     }
 
     private int adjustColumnForLayoutDirection(int col, int layoutDirection) {
