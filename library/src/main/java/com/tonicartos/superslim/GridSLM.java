@@ -169,13 +169,13 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
-            LayoutQueryHelper layout) {
+            LayoutQueryHelper helper) {
         int bottomMostEdge = 0;
-        int leftPosition = layout.getWidth();
+        int leftPosition = helper.getWidth();
         boolean foundItems = false;
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
-            View look = layout.getChildAt(i);
+            View look = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
             if (!sectionData.containsItem(params.getViewPosition())) {
                 break;
@@ -192,7 +192,7 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             foundItems = true;
-            bottomMostEdge = Math.max(bottomMostEdge, layout.getBottom(look));
+            bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
         }
 
         return foundItems ? bottomMostEdge : defaultEdge;

@@ -7,7 +7,7 @@ import android.view.View;
 
 import java.util.ArrayDeque;
 
-class LayoutHelperImpl extends LayoutHelper implements LayoutHelperParent, LayoutTrimHelper {
+class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, LayoutTrimHelper {
 
     private static ArrayDeque<LayoutHelperImpl> sPool = new ArrayDeque<>(6);
 
@@ -21,7 +21,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelperParent, Layou
 
     private int mLayoutDirection;
 
-    private LayoutHelperParent mParent;
+    private Parent mParent;
 
     private SectionData mSectionData;
 
@@ -29,11 +29,11 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelperParent, Layou
 
     private int mStickyEdge;
 
-    LayoutHelperImpl(LayoutHelperParent parent) {
+    LayoutHelperImpl(Parent parent) {
         setParent(parent);
     }
 
-    static LayoutHelperImpl getLayoutHelperFromPool(LayoutHelperParent parent) {
+    static LayoutHelperImpl getLayoutHelperFromPool(Parent parent) {
         if (sPool.size() == 0) {
             return new LayoutHelperImpl(parent);
         }
@@ -382,7 +382,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelperParent, Layou
         return r;
     }
 
-    private LayoutHelperImpl setParent(LayoutHelperParent parent) {
+    private LayoutHelperImpl setParent(Parent parent) {
         mParent = parent;
         mLayoutDirection = mParent.getLayoutDirection();
         return this;

@@ -52,7 +52,7 @@ class BaseLayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mSmoothScrollEnabled = true;
 
-    private LayoutHelperParent mHelperDelegate;
+    private LayoutHelper.Parent mHelperDelegate;
 
     private ArrayList<SectionData> mSections;
 
@@ -1638,7 +1638,7 @@ class BaseLayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
-    private class LayoutHelperDelegate implements LayoutHelperParent {
+    private class LayoutHelperDelegate implements LayoutHelper.Parent {
 
         private final BaseLayoutManager mLayoutManager;
 

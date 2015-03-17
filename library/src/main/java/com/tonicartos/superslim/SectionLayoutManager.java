@@ -142,10 +142,10 @@ public abstract class SectionLayoutManager {
      * @return Top (attached) edge of the section.
      */
     public int getHighestEdge(int firstIndex, int defaultEdge, SectionData sectionData,
-            LayoutQueryHelper layout) {
+            LayoutQueryHelper helper) {
         // Look from start to find children that are the highest.
-        for (int i = firstIndex; i < layout.getChildCount(); i++) {
-            View child = layout.getChildAt(i);
+        for (int i = firstIndex; i < helper.getChildCount(); i++) {
+            View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
             if (sectionData.containsItem(params.getViewPosition())) {
@@ -155,7 +155,7 @@ public abstract class SectionLayoutManager {
                 continue;
             }
             // A more interesting layout would have to do something more here.
-            return layout.getTop(child);
+            return helper.getTop(child);
         }
         return defaultEdge;
     }
@@ -170,10 +170,10 @@ public abstract class SectionLayoutManager {
      * @return Lowest (attached) edge of the section.
      */
     public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
-            LayoutQueryHelper layout) {
+            LayoutQueryHelper helper) {
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
-            View child = layout.getChildAt(i);
+            View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
             if (sectionData.containsItem(params.getViewPosition())) {
@@ -183,7 +183,7 @@ public abstract class SectionLayoutManager {
                 continue;
             }
             // A more interesting layout would have to do something more here.
-            return layout.getBottom(child);
+            return helper.getBottom(child);
         }
         return defaultEdge;
     }

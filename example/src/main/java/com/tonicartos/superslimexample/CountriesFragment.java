@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import com.tonicartos.superslim.GridSLM;
 import com.tonicartos.superslim.ItemDecorator;
+import com.tonicartos.superslim.LayoutHelper;
 import com.tonicartos.superslim.LayoutManager;
 import com.tonicartos.superslim.LinearSLM;
 

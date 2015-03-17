@@ -2040,7 +2040,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
-    private class LayoutHelperDelegate implements LayoutHelperParent {
+    private class LayoutHelperDelegate implements LayoutHelper.Parent {
 
         private final LayoutManager mLayoutManager;
 

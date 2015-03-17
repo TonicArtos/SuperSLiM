@@ -81,13 +81,13 @@ class SlmWrapper extends SectionLayoutManager {
     }
 
     public int getHighestEdge(int firstIndex, int defaultEdge, SectionData sectionData,
-            LayoutQueryHelper layout) {
-        return mSlm.getHighestEdge(firstIndex, defaultEdge, sectionData, layout);
+            LayoutQueryHelper helper) {
+        return mSlm.getHighestEdge(firstIndex, defaultEdge, sectionData, helper);
     }
 
     public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
-            LayoutQueryHelper layout) {
-        return mSlm.getLowestEdge(lastIndex, defaultEdge, sectionData, layout);
+            LayoutQueryHelper helper) {
+        return mSlm.getLowestEdge(lastIndex, defaultEdge, sectionData, helper);
     }
 
     public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
@@ -139,61 +139,6 @@ class SlmWrapper extends SectionLayoutManager {
         return mSlm.addView(child, direction, helper, recycler);
     }
 
-    private int getHeaderViewIndex(int fvi, SectionData sectionData, LayoutQueryHelper helper) {
-        final int count = helper.getChildCount();
-        int fvp = helper.getPosition(helper.getChildAt(fvi));
-        // Header is always attached after other section items. So start looking from there, and
-        // back towards the current fvi.
-        for (int i = Math.min(sectionData.lastPosition - fvp + 1 + fvi, count - 1); i >= 0; i--) {
-            View check = helper.getChildAt(i);
-            if (helper.getPosition(check) == sectionData.firstPosition) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void updateHeaderForStartEdgeTrim(int startEdge, int fvi, SectionData sectionData,
-            LayoutTrimHelper helper) {
-        if (!sectionData.hasHeader) {
-            return;
-        }
-        final int count = helper.getChildCount();
-
-        int headerIndex = getHeaderViewIndex(fvi, sectionData, helper);
-        if (headerIndex == -1) {
-            // No header found to update. It must not need to be updated.
-            return;
-        }
-
-        final View header = helper.getChildAt(headerIndex);
-        BaseLayoutManager.LayoutParams headerParams =
-                (BaseLayoutManager.LayoutParams) header.getLayoutParams();
-
-        final int sectionBottom = getSectionBottom(sectionData, helper, count, headerIndex, header);
-
-        //HEREEREREHER
-        header.offsetTopAndBottom(delta);
-    }
-
-    private int getSectionBottom(SectionData sectionData, LayoutQueryHelper helper, int count,
-            int headerIndex, View header) {
-        int sectionBottom = helper.getBottom(header);
-        if (headerIndex + 1 < count) {
-            View nextInNextSection = helper.getChildAt(headerIndex + 1);
-            if (!sectionData.containsItem(helper.getPosition(nextInNextSection))) {
-                View firstItemInNextSection = findAttachedHeaderOrFirstViewFor(
-                        headerIndex + 1, helper);
-                if (firstItemInNextSection == null) {
-                    sectionBottom = helper.getTop(nextInNextSection);
-                } else {
-                    sectionBottom = helper.getTop(firstItemInNextSection);
-                }
-            }
-        }
-        return sectionBottom;
-    }
-
     /**
      * Find header or, if it cannot be found, the first view for a section.
      *
@@ -222,5 +167,77 @@ class SlmWrapper extends SectionLayoutManager {
         }
 
         return null;
+    }
+
+    private int getHeaderViewIndex(int fvi, SectionData sectionData, LayoutQueryHelper helper) {
+        final int count = helper.getChildCount();
+        int fvp = helper.getPosition(helper.getChildAt(fvi));
+        // Header is always attached after other section items. So start looking from there, and
+        // back towards the current fvi.
+        for (int i = Math.min(sectionData.lastPosition - fvp + 1 + fvi, count - 1); i >= 0; i--) {
+            View check = helper.getChildAt(i);
+            if (helper.getPosition(check) == sectionData.firstPosition) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+//    private int getSectionBottom(int headerIndex, SectionData sectionData,
+// LayoutQueryHelper helper) {
+//        final int count = helper.getChildCount();
+//        View header = helper.getChildAt(headerIndex);
+//        int sectionBottom = helper.getBottom(header);
+//        if (headerIndex + 1 < count) {
+//            View nextInNextSection = helper.getChildAt(headerIndex + 1);
+//            if (!sectionData.containsItem(helper.getPosition(nextInNextSection))) {
+//                View firstItemInNextSection = findAttachedHeaderOrFirstViewFor(
+//                        headerIndex + 1, helper);
+//                if (firstItemInNextSection == null) {
+//                    sectionBottom = helper.getTop(nextInNextSection);
+//                } else {
+//                    sectionBottom = helper.getTop(firstItemInNextSection);
+//                }
+//            }
+//        }
+//        return sectionBottom;
+//    }
+
+    private void updateHeaderForStartEdgeTrim(int startEdge, int fvi, SectionData sectionData,
+            LayoutTrimHelper helper) {
+        if (!sectionData.hasHeader) {
+            return;
+        }
+
+        int headerIndex = getHeaderViewIndex(fvi, sectionData, helper);
+        if (headerIndex == -1) {
+            // No header found to update. It must not need to be updated.
+            return;
+        }
+
+        final View header = helper.getChildAt(headerIndex);
+        final BaseLayoutManager.LayoutParams headerParams =
+                (BaseLayoutManager.LayoutParams) header.getLayoutParams();
+        if (!headerParams.isHeaderSticky()) {
+            // Only need to update stickied headers.
+            return;
+        }
+
+        final int headerTop = helper.getTop(header);
+        if (headerTop >= startEdge) {
+            // Only need to update sticky headers if they are above the start edge.
+            return;
+        }
+
+        SectionLayoutManager slm = helper.getSlm(sectionData);
+        final int sectionBottom = slm.getLowestEdge(
+                headerIndex, helper.getBottom(header), sectionData, helper);
+
+        final int headerHeight = helper.getMeasuredHeight(header);
+        int top = headerHeight + startEdge > sectionBottom ?
+                sectionBottom - headerHeight : startEdge;
+
+        int delta = headerTop - top;
+        header.offsetTopAndBottom(-delta);
     }
 }
