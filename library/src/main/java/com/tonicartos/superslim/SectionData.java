@@ -82,7 +82,7 @@ public class SectionData {
         return mSectionParams;
     }
 
-    public void init(LayoutHelperImpl helper, View first) {
+    public void init(LayoutHelper helper, View first) {
         mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
 
         hasHeader = mSectionParams.isHeader();
