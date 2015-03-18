@@ -33,20 +33,22 @@ class SlmWrapper extends SectionLayoutManager {
                 helper.measureHeader(header);
             }
             markerLine = helper.layoutHeaderTowardsEnd(header, markerLine, state);
+            helper.updateVerticalOffset(markerLine);
+            anchorPosition += 1;
         }
-        helper.updateVerticalOffset(markerLine);
-        int result;
+
         if (sd.subsections != null) {
-            result = onFillSubsectionsToEnd(anchorPosition, sd, helper, recycler,
+            markerLine = onFillSubsectionsToEnd(anchorPosition, sd, helper, recycler,
                     state);
         } else {
-            result = onFillToEnd(anchorPosition, sd, helper, recycler, state);
+            markerLine = onFillToEnd(anchorPosition, sd, helper, recycler, state);
         }
+
         if (sd.hasHeader) {
             addView(header, helper, recycler);
             recycler.decacheView(sd.firstPosition);
         }
-        return result;
+        return markerLine;
     }
 
     public int beginFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
