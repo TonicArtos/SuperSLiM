@@ -88,7 +88,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getBottom(View child) {
-        return mParent.getBottom(child);
+        return mParent.getBottom(child) - mVerticalOffset;
     }
 
     @Override
@@ -118,7 +118,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getLeft(View child) {
-        return mParent.getLeft(child);
+        return mParent.getLeft(child) - mHorizontalOffset;
     }
 
     @Override
@@ -138,7 +138,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getRight(View child) {
-        return mParent.getRight(child);
+        return mParent.getRight(child) - mHorizontalOffset;
     }
 
     @Override
@@ -176,7 +176,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getTop(View child) {
-        return mParent.getTop(child);
+        return mParent.getTop(child) - mVerticalOffset;
     }
 
     @Override
