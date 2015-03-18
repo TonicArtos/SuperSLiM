@@ -13,7 +13,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     private static Rect sRect = new Rect();
 
-    private int mHorizontalOffset;
+    private int mChildHorizontalOffset;
 
     private int mVerticalOffset;
 
@@ -30,6 +30,10 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     private int mStickyEdge;
 
     private int mTrimEdge;
+
+    private int mHeaderHorizontalOffset;
+
+    private int mUnavailableWidth;
 
     LayoutHelperImpl(Parent parent) {
         setParent(parent);
@@ -118,7 +122,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getLeft(View child) {
-        return mParent.getLeft(child) - mHorizontalOffset;
+        return mParent.getLeft(child) - mChildHorizontalOffset;
     }
 
     @Override
@@ -138,7 +142,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public int getRight(View child) {
-        return mParent.getRight(child) - mHorizontalOffset;
+        return mParent.getRight(child) - mChildHorizontalOffset;
     }
 
     @Override
@@ -160,11 +164,6 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     }
 
     @Override
-    public int getTrimEdge() {
-        return mTrimEdge;
-    }
-
-    @Override
     public LayoutHelper getSubsectionLayoutHelper() {
         return getLayoutHelperFromPool(this);
     }
@@ -177,6 +176,11 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     @Override
     public int getTop(View child) {
         return mParent.getTop(child) - mVerticalOffset;
+    }
+
+    @Override
+    public int getTrimEdge() {
+        return mTrimEdge;
     }
 
     @Override
@@ -200,10 +204,13 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     public void init(SectionData sd, int horizontalOffset, int unavailableWidth, int markerLine,
             int leadingEdge, int stickyEdge) {
         mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth - unavailableWidth;
+        mUnavailableWidth = unavailableWidth;
+
         mSectionData = sd;
-        mHorizontalOffset = mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR ?
+        mChildHorizontalOffset = mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR ?
                 sd.startMarginWidth : sd.endMarginWidth;
-        mHorizontalOffset += horizontalOffset;
+        mChildHorizontalOffset += horizontalOffset;
+        mHeaderHorizontalOffset = horizontalOffset;
         mVerticalOffset = markerLine;
         mLeadingEdge = leadingEdge - markerLine;
         mStickyEdge = stickyEdge - markerLine;
@@ -211,9 +218,9 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void layoutChild(final View v, int l, int t, int r, int b) {
-        l += mHorizontalOffset;
+        l += mChildHorizontalOffset;
         t += mVerticalOffset;
-        r += mHorizontalOffset;
+        r += mChildHorizontalOffset;
         b += mVerticalOffset;
         mParent.layoutChild(v, l, t, r, b);
     }
@@ -280,7 +287,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
             r.bottom = r.top + mSectionData.headerHeight;
         }
 
-        mParent.layoutChild(header, r.left, r.top, r.right, r.bottom);
+        layoutHeader(header, r.left, r.top, r.right, r.bottom);
 
         return markerLine;
     }
@@ -320,7 +327,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
             r.top = r.bottom - mSectionData.headerHeight;
         }
 
-        mParent.layoutChild(header, r.left, r.top, r.right, r.bottom);
+        layoutHeader(header, r.left, r.top, r.right, r.bottom);
 
         return Math.min(r.top, sectionTop);
     }
@@ -345,13 +352,23 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
         mVerticalOffset += additionalOffset;
     }
 
+    private void layoutHeader(View header, int l, int t, int r, int b) {
+        l += mHeaderHorizontalOffset;
+        t += mVerticalOffset;
+        r += mHeaderHorizontalOffset;
+        b += mVerticalOffset;
+        mParent.layoutChild(header, l, t, r, b);
+    }
+
     private void reset() {
         mWidth = 0;
         mSectionData = null;
-        mHorizontalOffset = 0;
+        mHeaderHorizontalOffset = 0;
+        mChildHorizontalOffset = 0;
         mVerticalOffset = 0;
         mLeadingEdge = 0;
         mStickyEdge = 0;
+        mTrimEdge = 0;
     }
 
     private Rect setHeaderRectSides(Rect r, LayoutManager.LayoutParams headerParams,

@@ -7,7 +7,6 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -27,9 +26,13 @@ class SlmWrapper extends SectionLayoutManager {
     public int beginFillToEnd(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         int markerLine = 0;
+        View header = null;
         if (sd.hasHeader) {
-            // Markerline gets shifted here if the header is inline.
-            // TODO: Layout header.
+            header = recycler.getView(sd.firstPosition);
+            if (recycler.getCachedView(sd.firstPosition) == null) {
+                helper.measureHeader(header);
+            }
+            markerLine = helper.layoutHeaderTowardsEnd(header, markerLine, state);
         }
         helper.updateVerticalOffset(markerLine);
         int result;
@@ -40,24 +43,35 @@ class SlmWrapper extends SectionLayoutManager {
             result = onFillToEnd(anchorPosition, sd, helper, recycler, state);
         }
         if (sd.hasHeader) {
-            // TODO: Attach header.
+            addView(header, helper, recycler);
+            recycler.decacheView(sd.firstPosition);
         }
         return result;
     }
 
     public int beginFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        int result;
+        final int countBeforeFill = helper.getChildCount();
+        int markerLine;
         if (sd.subsections != null) {
-            result = onFillSubsectionsToStart(anchorPosition, sd, helper, recycler,
+            markerLine = onFillSubsectionsToStart(anchorPosition, sd, helper, recycler,
                     state);
         } else {
-            result = onFillToStart(anchorPosition, sd, helper, recycler, state);
+            markerLine = onFillToStart(anchorPosition, sd, helper, recycler, state);
         }
         if (sd.hasHeader) {
-            // TODO: Layout and attach header if needed.
+            View header = recycler.getView(sd.firstPosition);
+            if (recycler.getCachedView(sd.firstPosition) == null) {
+                helper.measureHeader(header);
+            }
+            final int offset = getHeaderOffset(sd, helper, recycler, header);
+            markerLine = helper.layoutHeaderTowardsStart(header, offset, markerLine, 0, state);
+
+            int attachIndex = helper.getChildCount() - countBeforeFill;
+            addView(header, attachIndex, helper, recycler);
+            recycler.decacheView(sd.firstPosition);
         }
-        return result;
+        return markerLine;
     }
 
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
@@ -67,11 +81,16 @@ class SlmWrapper extends SectionLayoutManager {
 
     public int finishFillToEnd(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
+        int countBeforeFill = helper.getChildCount();
         int markerLine = mSlm.onFillToEnd(anchorPosition, sd, helper, recycler, state);
         if (sd.hasHeader) {
             // Shuffle header to end of section (child index). This is the easiest way to ensure
             // the header is drawn after any other section content.
-            int headerIndex = findHeaderIndexFromLastIndex(helper.getChildCount() - 1, sd, helper);
+//            int headerIndex = findHeaderIndexFromLastIndex(helper.getChildCount() - 1, sd,
+// helper);
+            // The last index before the fill must be the header for the current section because
+            // we always keep it at the back.
+            int headerIndex = countBeforeFill - 1;
             if (headerIndex != INVALID_INDEX) {
                 View header = helper.getChildAt(headerIndex);
                 helper.detachView(header);
@@ -91,17 +110,15 @@ class SlmWrapper extends SectionLayoutManager {
             final View header;
             if (headerIndex == INVALID_INDEX) {
                 header = recycler.getView(sd.firstPosition);
+                if (recycler.getCachedView(sd.firstPosition) == null) {
+                    helper.measureHeader(header);
+                }
             } else {
                 header = helper.getChildAt(headerIndex);
                 helper.detachViewAt(headerIndex);
             }
 
-            final int offset;
-            if (needHeaderOffset(header)) {
-                offset = mSlm.computeHeaderOffset(0, sd, helper, recycler);
-            } else {
-                offset = 0;
-            }
+            final int offset = getHeaderOffset(sd, helper, recycler, header);
 
             final int sectionBottom = mSlm.getLowestEdge(
                     findLastIndexForSection(sd, helper), helper.getHeight(), sd, helper);
@@ -440,10 +457,17 @@ class SlmWrapper extends SectionLayoutManager {
         return INVALID_INDEX;
     }
 
-    private boolean needHeaderOffset(View header) {
+    private int getHeaderOffset(SectionData sd, LayoutHelper helper, Recycler recycler,
+            View header) {
+        final int offset;
         final BaseLayoutManager.LayoutParams layoutParams =
                 (BaseLayoutManager.LayoutParams) header.getLayoutParams();
-        return !layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline();
+        if (!layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline()) {
+            offset = mSlm.computeHeaderOffset(0, sd, helper, recycler);
+        } else {
+            offset = 0;
+        }
+        return offset;
     }
 
     private int updateHeader(int headerIndex, SectionData sd, LayoutQueryHelper helper) {

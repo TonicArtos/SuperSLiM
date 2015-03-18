@@ -34,8 +34,7 @@ public abstract class LayoutHelper implements LayoutQueryHelper, LayoutModifierH
 
     public abstract void recycle();
 
-    abstract int layoutHeaderTowardsEnd(View header, int markerLine,
-            RecyclerView.State state);
+    abstract int layoutHeaderTowardsEnd(View header, int markerLine, RecyclerView.State state);
 
     abstract int layoutHeaderTowardsStart(View header, int offset, int sectionTop,
             int sectionBottom, RecyclerView.State state);
