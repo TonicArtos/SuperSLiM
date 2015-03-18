@@ -1186,7 +1186,8 @@ class BaseLayoutManager extends RecyclerView.LayoutManager {
         // Perform tasks prior to trim.
         final SectionData sd = getSectionData(getPosition(anchor));
         final LayoutHelperImpl helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        getSlm(sd).onPreTrimAtStartEdge(0, anchorIndex, sd, helper);
+        helper.init(sd, 0, 0);
+        getSlm(sd).onPreTrimAtStartEdge(anchorIndex, sd, helper);
         helper.recycle();
 
         // Now trim views before the first visible item.

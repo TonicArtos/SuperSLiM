@@ -5,7 +5,6 @@ import android.view.View;
 
 public abstract class LayoutHelper implements LayoutQueryHelper, LayoutModifierHelper {
 
-
     public abstract int getLeadingEdge();
 
     public abstract LayoutHelper getSubsectionLayoutHelper();

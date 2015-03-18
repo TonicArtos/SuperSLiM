@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -109,24 +110,17 @@ class SlmWrapper extends SectionLayoutManager {
                     .layoutHeaderTowardsStart(header, offset, markerLine, sectionBottom, state);
 
             // Make sure to attach after section content and to clean up any caching.
-            if (recycler.getCachedView(sd.firstPosition) != null
-                    && helper.getBottom(header) > helper.getLeadingEdge()) {
-                final int attachIndex = findLastIndexForSection(sd, helper) + 1;
-                if (headerIndex == INVALID_INDEX) {
-                    helper.addView(header, attachIndex);
-                } else {
-                    helper.attachView(header, attachIndex);
-                }
-                recycler.decacheView(sd.firstPosition);
+            final int attachIndex = findLastIndexForSection(sd, helper) + 1;
+            if (headerIndex == INVALID_INDEX) {
+                helper.addView(header, attachIndex);
+            } else {
+                helper.attachView(header, attachIndex);
             }
+            recycler.decacheView(sd.firstPosition);
+            sd.setTempHeaderIndex(attachIndex);
         }
+        sd.recentlyFinishFilledToStart = true;
         return markerLine;
-    }
-
-    private boolean needHeaderOffset(View header) {
-        return !((BaseLayoutManager.LayoutParams) header
-                            .getLayoutParams()).isHeaderSticky() || !((BaseLayoutManager.LayoutParams) header
-                                                .getLayoutParams()).isHeaderInline();
     }
 
     public RecyclerView.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
@@ -164,50 +158,41 @@ class SlmWrapper extends SectionLayoutManager {
         return this;
     }
 
-    public int onFillToEnd(int anchorPosition, SectionData sd, LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
-        return mSlm.onFillToEnd(anchorPosition, sd, helper, recycler, state);
-    }
-
-    public int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
-        return mSlm.onFillToStart(anchorPosition, sd, helper, recycler, state);
-    }
-
     @Override
-    public void onPreTrimAtEndEdge(int endEdge, int lvi, SectionData sd, LayoutTrimHelper helper) {
+    public void onPreTrimAtEndEdge(int lvi, SectionData sd, LayoutTrimHelper helper) {
         if (sd.subsections == null) {
             return;
         }
         HashMap<SectionData, Integer> selectedSubsections =
-                getSectionsIntersectingEndEdge(endEdge, lvi, sd, helper);
+                getSectionsIntersectingEndEdge(helper.getTrimEdge(), lvi, sd, helper);
 
         for (SectionData subSd : selectedSubsections.keySet()) {
             LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
-            subsectionHelper.init(subSd);
-            helper.getSlm(subSd).onPreTrimAtEndEdge(
-                    endEdge, selectedSubsections.get(subSd), subSd, subsectionHelper);
+            subsectionHelper.init(subSd, helper.getTrimEdge(), helper.getStickyEdge());
+            helper.getSlm(subSd).
+                    onPreTrimAtEndEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
             subsectionHelper.recycle();
         }
     }
 
     @Override
-    public void onPreTrimAtStartEdge(int startEdge, int firstVisibleIndex, SectionData sd,
+    public void onPreTrimAtStartEdge(int firstVisibleIndex, SectionData sd,
             LayoutTrimHelper helper) {
-        mSlm.onPreTrimAtStartEdge(startEdge, firstVisibleIndex, sd, helper);
-        updateHeaderForStartEdgeTrim(startEdge, firstVisibleIndex, sd, helper);
+        mSlm.onPreTrimAtStartEdge(firstVisibleIndex, sd, helper);
+        int subsectionStickyEdge = updateHeaderForStartEdgeTrim(firstVisibleIndex, sd, helper);
 
         if (sd.subsections == null) {
             return;
         }
         HashMap<SectionData, Integer> selectedSubsections =
-                getSectionsIntersectingStartEdge(startEdge, firstVisibleIndex, sd, helper);
+                getSectionsIntersectingStartEdge(subsectionStickyEdge, firstVisibleIndex, sd,
+                        helper);
 
         for (SectionData subSd : selectedSubsections.keySet()) {
             LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
-            subsectionHelper.init(subSd);
-            helper.getSlm(subSd).onPreTrimAtStartEdge(
-                    startEdge, selectedSubsections.get(subSd), subSd, subsectionHelper);
+            subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
+            helper.getSlm(subSd).
+                    onPreTrimAtStartEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
             subsectionHelper.recycle();
         }
     }
@@ -307,6 +292,37 @@ class SlmWrapper extends SectionLayoutManager {
         return mSlm.onFillSubsectionsToStart(anchorPosition, sd, helper, recycler, state);
     }
 
+    protected int onFillToEnd(int anchorPosition, SectionData sd, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return mSlm.onFillToEnd(anchorPosition, sd, helper, recycler, state);
+    }
+
+    protected int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return mSlm.onFillToStart(anchorPosition, sd, helper, recycler, state);
+    }
+
+    @Override
+    void onPostFinishFillToStart(SectionData sd, LayoutTrimHelper helper) {
+        final int headerIndex = sd.getTempHeaderIndex();
+        sd.clearTempHeaderIndex();
+        final int subsectionStickyEdge = updateHeader(headerIndex, sd, helper);
+
+        if (sd.subsections == null) {
+            return;
+        }
+
+        for (SectionData subSd : sd.subsections) {
+            if (sd.recentlyFinishFilledToStart) {
+                sd.recentlyFinishFilledToStart = false;
+                LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
+                subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
+                helper.getSlm(subSd).onPostFinishFillToStart(sd, subsectionHelper);
+                subsectionHelper.recycle();
+            }
+        }
+    }
+
     private int binarySearchForLastPosition(int min, int max, SectionData sd,
             LayoutQueryHelper helper) {
         if (max < min) {
@@ -370,6 +386,19 @@ class SlmWrapper extends SectionLayoutManager {
         return INVALID_INDEX;
     }
 
+    private int findHeaderIndexFromFirstIndex(int fvi, SectionData sd, LayoutQueryHelper helper) {
+        final int count = helper.getChildCount();
+        int fvp = helper.getPosition(helper.getChildAt(fvi));
+        // Header is always attached after other section items. So start looking from there, and
+        // back towards the current fvi.
+        for (int i = Math.min(sd.lastPosition - fvp + 1 + fvi, count - 1); i >= fvi; i--) {
+            View check = helper.getChildAt(i);
+            if (helper.getPosition(check) == sd.firstPosition) {
+                return i;
+            }
+        }
+        return INVALID_INDEX;
+    }
 
     /**
      * The header is almost guaranteed to be at the end so just use look there.
@@ -385,20 +414,6 @@ class SlmWrapper extends SectionLayoutManager {
             if (!sd.containsItem(position)) {
                 break;
             } else if (sd.firstPosition == position) {
-                return i;
-            }
-        }
-        return INVALID_INDEX;
-    }
-
-    private int findHeaderIndexFromFirstIndex(int fvi, SectionData sd, LayoutQueryHelper helper) {
-        final int count = helper.getChildCount();
-        int fvp = helper.getPosition(helper.getChildAt(fvi));
-        // Header is always attached after other section items. So start looking from there, and
-        // back towards the current fvi.
-        for (int i = Math.min(sd.lastPosition - fvp + 1 + fvi, count - 1); i >= fvi; i--) {
-            View check = helper.getChildAt(i);
-            if (helper.getPosition(check) == sd.firstPosition) {
                 return i;
             }
         }
@@ -425,16 +440,17 @@ class SlmWrapper extends SectionLayoutManager {
         return INVALID_INDEX;
     }
 
-    private void updateHeaderForStartEdgeTrim(int startEdge, int fvi, SectionData sd,
-            LayoutTrimHelper helper) {
-        if (!sd.hasHeader) {
-            return;
-        }
+    private boolean needHeaderOffset(View header) {
+        final BaseLayoutManager.LayoutParams layoutParams =
+                (BaseLayoutManager.LayoutParams) header.getLayoutParams();
+        return !layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline();
+    }
 
-        int headerIndex = findHeaderIndexFromFirstIndex(fvi, sd, helper);
+    private int updateHeader(int headerIndex, SectionData sd, LayoutQueryHelper helper) {
+        final int stickyEdge = helper.getStickyEdge();
         if (headerIndex == INVALID_INDEX) {
             // No header found to update. It must not need to be updated.
-            return;
+            return stickyEdge;
         }
 
         final View header = helper.getChildAt(headerIndex);
@@ -442,13 +458,13 @@ class SlmWrapper extends SectionLayoutManager {
                 (BaseLayoutManager.LayoutParams) header.getLayoutParams();
         if (!headerParams.isHeaderSticky()) {
             // Only need to update stickied headers.
-            return;
+            return stickyEdge;
         }
 
         final int headerTop = helper.getTop(header);
-        if (headerTop >= startEdge) {
-            // Only need to update sticky headers if they are above the start edge.
-            return;
+        if (headerTop >= stickyEdge) {
+            // Only need to update sticky headers if they are above the sticky edge.
+            return stickyEdge;
         }
 
         SectionLayoutManager slm = helper.getSlm(sd);
@@ -456,10 +472,24 @@ class SlmWrapper extends SectionLayoutManager {
                 headerIndex, helper.getBottom(header), sd, helper);
 
         final int headerHeight = helper.getMeasuredHeight(header);
-        int top = headerHeight + startEdge > sectionBottom ?
-                sectionBottom - headerHeight : startEdge;
+        int top = headerHeight + stickyEdge > sectionBottom ?
+                sectionBottom - headerHeight : stickyEdge;
 
         int delta = headerTop - top;
         header.offsetTopAndBottom(-delta);
+
+        if (headerParams.isHeaderInline()) {
+            return stickyEdge - delta + headerHeight;
+        }
+        return stickyEdge;
+    }
+
+    private int updateHeaderForStartEdgeTrim(int fvi, SectionData sd, LayoutQueryHelper helper) {
+        if (!sd.hasHeader) {
+            return helper.getStickyEdge();
+        }
+
+        int headerIndex = findHeaderIndexFromFirstIndex(fvi, sd, helper);
+        return updateHeader(headerIndex, sd, helper);
     }
 }

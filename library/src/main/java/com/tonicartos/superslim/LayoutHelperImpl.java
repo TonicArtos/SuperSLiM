@@ -29,6 +29,8 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     private int mStickyEdge;
 
+    private int mTrimEdge;
+
     LayoutHelperImpl(Parent parent) {
         setParent(parent);
     }
@@ -153,6 +155,16 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     }
 
     @Override
+    public int getStickyEdge() {
+        return mStickyEdge;
+    }
+
+    @Override
+    public int getTrimEdge() {
+        return mTrimEdge;
+    }
+
+    @Override
     public LayoutHelper getSubsectionLayoutHelper() {
         return getLayoutHelperFromPool(this);
     }
@@ -173,8 +185,10 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     }
 
     @Override
-    public void init(SectionData sd) {
+    public void init(SectionData sd, int trimEdge, int newStickyEdge) {
         mSectionData = sd;
+        mStickyEdge = newStickyEdge;
+        mTrimEdge = trimEdge;
     }
 
     @Override

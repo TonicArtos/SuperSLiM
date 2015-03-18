@@ -249,13 +249,12 @@ public abstract class SectionLayoutManager {
      * opportunity to update views before they might otherwise be trimmed for being beyond the
      * edge.
      *
-     * @param endEdge          Line after which content will be trimmed.
      * @param lastVisibleIndex Index of last item in this section that is visible.
      * @param sectionData      Section data.
      * @param helper           Layout query helper.
      */
-    protected void onPreTrimAtEndEdge(final int endEdge, final int lastVisibleIndex,
-            final SectionData sectionData, final LayoutTrimHelper helper) {
+    protected void onPreTrimAtEndEdge(final int lastVisibleIndex, final SectionData sectionData,
+            final LayoutTrimHelper helper) {
 
     }
 
@@ -264,13 +263,21 @@ public abstract class SectionLayoutManager {
      * opportunity to update views before they might otherwise be trimmed for being beyond the
      * edge.
      *
-     * @param startEdge         Line before which content will be trimmed.
      * @param firstVisibleIndex Index of first item in this section that is visible.
      * @param sectionData       Section data.
      * @param helper            Layout query helper.
      */
-    protected void onPreTrimAtStartEdge(final int startEdge, final int firstVisibleIndex,
-            final SectionData sectionData, final LayoutTrimHelper helper) {
+    protected void onPreTrimAtStartEdge(final int firstVisibleIndex, final SectionData sectionData,
+            final LayoutTrimHelper helper) {
+    }
+
+    /**
+     * There exists a problem in that when filling towards the start edge, that headers can only be
+     * added after the section content has been placed. However, a subsection's sticky header's
+     * position is dependent on the supersection's sticky header position and height. So that means
+     * we have to make a second pass to make sure all the sticky headers are properly positioned.
+     */
+    void onPostFinishFillToStart(SectionData sectionData, LayoutTrimHelper helper) {
     }
 
 }

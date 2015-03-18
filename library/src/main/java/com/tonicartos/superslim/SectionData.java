@@ -34,6 +34,10 @@ public class SectionData {
 
     private LayoutManager.LayoutParams mSectionParams;
 
+    private int mTempHeaderIndex;
+
+    boolean recentlyFinishFilledToStart = false;
+
     private SectionData(int firstPosition, int lastPosition) {
         this.firstPosition = firstPosition;
         this.lastPosition = lastPosition;
@@ -55,6 +59,10 @@ public class SectionData {
         sections.add(new SectionData(lastStart, lastPosition));
 
         return sections;
+    }
+
+    public void clearTempHeaderIndex() {
+        mTempHeaderIndex = -1;
     }
 
     public boolean containsItem(int viewPosition) {
@@ -126,6 +134,14 @@ public class SectionData {
         }
 
         mIsInitialised = true;
+    }
+
+    int getTempHeaderIndex() {
+        return mTempHeaderIndex;
+    }
+
+    void setTempHeaderIndex(int headerIndex) {
+        mTempHeaderIndex = headerIndex;
     }
 
     static class SubsectionValidationRuntimeException extends RuntimeException {

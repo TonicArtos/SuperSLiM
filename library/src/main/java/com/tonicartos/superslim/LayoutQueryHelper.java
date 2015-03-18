@@ -4,6 +4,8 @@ import android.view.View;
 
 public interface LayoutQueryHelper {
 
+    int getStickyEdge();
+
     SectionData getSectionData(int position);
 
     int getBottom(View child);
