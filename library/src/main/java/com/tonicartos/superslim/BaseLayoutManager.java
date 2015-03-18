@@ -1659,6 +1659,16 @@ class BaseLayoutManager extends RecyclerView.LayoutManager {
         }
 
         @Override
+        public void attachView(View header, int i) {
+            mLayoutManager.attachView(header, i);
+        }
+
+        @Override
+        public void attachView(View header) {
+            mLayoutManager.attachView(header);
+        }
+
+        @Override
         public void detachAndScrapViewAt(int index, Recycler recycler) {
             mLayoutManager.detachAndScrapViewAt(index, recycler.inner);
         }

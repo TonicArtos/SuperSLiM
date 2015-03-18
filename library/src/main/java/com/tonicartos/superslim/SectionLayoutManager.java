@@ -49,12 +49,12 @@ public abstract class SectionLayoutManager {
      * @param firstVisiblePosition Position of first visible item in section.
      * @param sectionData          Section data.
      * @param helper               Layout helper.
-     * @param state                Layout state.
+     * @param recycler             Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
     public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
-            LayoutHelper helper, Recycler state);
+            LayoutHelper helper, Recycler recycler);
 
     /**
      * Finish filling a section towards the end.
@@ -203,6 +203,16 @@ public abstract class SectionLayoutManager {
         return this;
     }
 
+    protected void addView(View child, LayoutHelper helper, Recycler recycler) {
+        recycler.decacheView(helper.getPosition(child));
+        helper.addView(child);
+    }
+
+    protected void addView(View child, int index, LayoutHelper helper, Recycler recycler) {
+        recycler.decacheView(helper.getPosition(child));
+        helper.addView(child, index);
+    }
+
     protected abstract int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
@@ -234,8 +244,18 @@ public abstract class SectionLayoutManager {
     protected abstract int onFillToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
-    public void onPreTrimAtEndEdge(final int endEdge, final SectionData sectionData,
-            final LayoutTrimHelper helper) {
+    /**
+     * Called before items are trimmed for any section that intersects the end edge. This is the
+     * opportunity to update views before they might otherwise be trimmed for being beyond the
+     * edge.
+     *
+     * @param endEdge          Line after which content will be trimmed.
+     * @param lastVisibleIndex Index of last item in this section that is visible.
+     * @param sectionData      Section data.
+     * @param helper           Layout query helper.
+     */
+    protected void onPreTrimAtEndEdge(final int endEdge, final int lastVisibleIndex,
+            final SectionData sectionData, final LayoutTrimHelper helper) {
 
     }
 
@@ -244,98 +264,13 @@ public abstract class SectionLayoutManager {
      * opportunity to update views before they might otherwise be trimmed for being beyond the
      * edge.
      *
-     * @param sectionData       Section data.
+     * @param startEdge         Line before which content will be trimmed.
      * @param firstVisibleIndex Index of first item in this section that is visible.
+     * @param sectionData       Section data.
      * @param helper            Layout query helper.
      */
-    public void onPreTrimAtStartEdge(final int startEdge, final int firstVisibleIndex,
+    protected void onPreTrimAtStartEdge(final int startEdge, final int firstVisibleIndex,
             final SectionData sectionData, final LayoutTrimHelper helper) {
     }
 
-    /**
-     * Called when the section is being trimmed at the end edge.
-     *
-     * @param edgeLine Edge line. Generally equals the height of the recycler view.
-     */
-    public void trimAtEndEdge(int edgeLine) {
-    }
-
-    protected int addView(View child, LayoutManager.Direction direction, LayoutHelper helper,
-            Recycler recycler) {
-        int addIndex;
-        if (direction == LayoutManager.Direction.START) {
-            addIndex = 0;
-        } else {
-            addIndex = helper.getChildCount();
-        }
-
-        recycler.decacheView(helper.getPosition(child));
-        helper.addView(child, addIndex);
-
-        return addIndex;
-    }
-
-    /**
-     * Get a map of sections and their first visible positions that intersect the start edge.
-     *
-     * <p>The basic implementation looks through all attached child views for this section. You
-     * should consider an implementation that constrains the search to a minimal range.</p>
-     *
-     * @param startEdge         Edge line. Generally 0.
-     * @param firstVisibleIndex First visible index for this section.
-     * @param sectionData       Section data.
-     * @param helper            Layout query helper.
-     * @return Map of subsection data to subsection first visible edges.
-     */
-    protected HashMap<SectionData, Integer> getSectionsIntersectingStartEdge(int startEdge,
-            int firstVisibleIndex, SectionData sectionData, LayoutQueryHelper helper) {
-        // Work out max number of items we have to check to find sections which intersect start
-        // edge. Also, cap to  number of items after fvi.
-        int range = Math.min(sectionData.lastPosition
-                        - helper.getPosition(helper.getChildAt(firstVisibleIndex)) + 1,
-                helper.getChildCount() - firstVisibleIndex);
-
-        // Select subsections which have items overlapping or before the start edge.
-        HashMap<SectionData, Integer> selectedSubsections = new HashMap<>();
-        for (int i = 0; i < range; i++) {
-            int childIndex = i + firstVisibleIndex;
-            View child = helper.getChildAt(childIndex);
-            if (helper.getTop(child) < startEdge) {
-                int childPosition = helper.getPosition(child);
-                for (SectionData sd : sectionData.subsections) {
-                    if (selectedSubsections.get(sd) == null && sd.containsItem(childPosition)) {
-                        int subsectionFvi = findFirstVisibleIndex(startEdge, childIndex, sd,
-                                helper);
-                        if (subsectionFvi != -1) {
-                            selectedSubsections.put(sd, subsectionFvi);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (selectedSubsections.size() == sectionData.subsections.size()) {
-                // Already added every section.
-                break;
-            }
-        }
-        return selectedSubsections;
-    }
-
-    private int findFirstVisibleIndex(int edge, int anchorIndex, SectionData sd,
-            LayoutQueryHelper helper) {
-        final int childCount = helper.getChildCount();
-        for (int i = anchorIndex; i < childCount; i++) {
-            View child = helper.getChildAt(i);
-            if (!sd.containsItem(helper.getPosition(child))) {
-                break;
-            }
-
-            if (helper.getBottom(child) > edge) {
-                return i;
-            }
-        }
-
-        return -1;
-    }
 }

@@ -1,5 +1,6 @@
 package com.tonicartos.superslim;
 
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -58,6 +59,11 @@ public class SectionData {
 
     public boolean containsItem(int viewPosition) {
         return firstPosition <= viewPosition && viewPosition <= lastPosition;
+    }
+
+    public boolean containsItem(View child) {
+        return containsItem(
+                ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewPosition());
     }
 
     public boolean getIsInitialised() {

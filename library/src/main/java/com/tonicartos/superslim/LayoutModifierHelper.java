@@ -8,6 +8,10 @@ public interface LayoutModifierHelper {
 
     void addView(View view);
 
+    void attachView(View header, int i);
+
+    void attachView(View header);
+
     void detachAndScrapView(View child, Recycler recycler);
 
     void detachAndScrapViewAt(int index, Recycler recycler);

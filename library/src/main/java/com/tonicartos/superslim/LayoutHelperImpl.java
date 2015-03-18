@@ -55,6 +55,16 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     }
 
     @Override
+    public void attachView(View header, int i) {
+        mParent.attachView(header, i);
+    }
+
+    @Override
+    public void attachView(View header) {
+        mParent.attachView(header);
+    }
+
+    @Override
     public void detachAndScrapView(View child, Recycler recycler) {
         mParent.detachAndScrapView(child, recycler);
     }
@@ -174,8 +184,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void init(SectionData sd, int horizontalOffset, int unavailableWidth, int markerLine,
-            int leadingEdge,
-            int stickyEdge) {
+            int leadingEdge, int stickyEdge) {
         mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth - unavailableWidth;
         mSectionData = sd;
         mHorizontalOffset = mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR ?

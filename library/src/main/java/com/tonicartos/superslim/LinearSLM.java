@@ -9,7 +9,7 @@ public class LinearSLM extends SectionLayoutManager {
 
     @Override
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
-            LayoutHelper helper, Recycler state) {
+            LayoutHelper helper, Recycler recycler) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -20,11 +20,11 @@ public class LinearSLM extends SectionLayoutManager {
                 areaAbove < sectionData.headerHeight && position < firstVisiblePosition;
                 position++) {
             // Look to see if the header overlaps with the displayed area of the mSection.
-            View child = state.getView(position);
+            View child = recycler.getView(position);
             measureChild(child, helper);
 
             areaAbove += helper.getMeasuredHeight(child);
-            state.cacheView(position, child);
+            recycler.cacheView(position, child);
         }
 
         if (areaAbove == sectionData.headerHeight) {
