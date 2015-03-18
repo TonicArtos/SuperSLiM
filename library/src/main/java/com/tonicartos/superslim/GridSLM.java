@@ -118,7 +118,7 @@ public class GridSLM extends SectionLayoutManager {
                 continue;
             }
             layoutChild(views[col], markerLine, col, rowHeight, helper);
-            addView(views[col], direction, helper, recycler);
+            addView(views[col], directionIsStart ? 0 : -1, helper, recycler);
         }
 
         return rowHeight;

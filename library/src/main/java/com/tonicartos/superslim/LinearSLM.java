@@ -57,7 +57,7 @@ public class LinearSLM extends SectionLayoutManager {
             measureChild(next, helper);
             markerLine = layoutChild(next, markerLine, LayoutManager.Direction.END, sectionData,
                     helper);
-            addView(next, LayoutManager.Direction.END, helper, recycler);
+            addView(next, helper, recycler);
         }
 
         return markerLine;
@@ -151,7 +151,7 @@ public class LinearSLM extends SectionLayoutManager {
             }
             markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sectionData,
                     helper);
-            addView(next, LayoutManager.Direction.START, helper, recycler);
+            addView(next, 0, helper, recycler);
         }
 
         return markerLine;
