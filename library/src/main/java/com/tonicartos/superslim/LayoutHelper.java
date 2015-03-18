@@ -45,7 +45,7 @@ public abstract class LayoutHelper implements LayoutQueryHelper, LayoutModifierH
 
     abstract void updateVerticalOffset(int markerLine);
 
-    static interface Parent extends LayoutQueryHelper, LayoutModifierHelper {
+    static interface Parent extends BaseLayoutQueryHelper, LayoutModifierHelper {
 
         void measureHeader(View header, int widthUsed, int heightUsed);
     }
