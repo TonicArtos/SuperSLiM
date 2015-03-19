@@ -15,8 +15,6 @@ import java.util.HashMap;
  */
 class SlmWrapper extends SectionLayoutManager {
 
-    public static final int INVALID_INDEX = -1;
-
     private SectionLayoutManager mSlm;
 
     SlmWrapper(SectionLayoutManager slm) {
@@ -27,7 +25,7 @@ class SlmWrapper extends SectionLayoutManager {
             Recycler recycler, RecyclerView.State state) {
         int markerLine = 0;
         View header = null;
-        if (sd.hasHeader) {
+        if (sd.hasHeader && anchorPosition == sd.firstPosition) {
             header = recycler.getView(sd.firstPosition);
             if (recycler.getCachedView(sd.firstPosition) == null) {
                 helper.measureHeader(header);
@@ -44,7 +42,7 @@ class SlmWrapper extends SectionLayoutManager {
             markerLine = onFillToEnd(anchorPosition, sd, helper, recycler, state);
         }
 
-        if (sd.hasHeader) {
+        if (sd.hasHeader && header != null) {
             addView(header, helper, recycler);
             recycler.decacheView(sd.firstPosition);
         }
@@ -93,13 +91,17 @@ class SlmWrapper extends SectionLayoutManager {
             // The last index before the fill must be the header for the current section because
             // we always keep it at the back.
             int headerIndex = countBeforeFill - 1;
-            if (headerIndex != INVALID_INDEX) {
+            if (headerIndex != Utils.INVALID_INDEX) {
                 View header = helper.getChildAt(headerIndex);
-                helper.detachView(header);
-                helper.attachView(header);
+                if (helper.getPosition(header) == sd.firstPosition) {
+                    helper.detachView(header);
+                    helper.attachView(header);
 
-                return Math.max(markerLine, helper.getBottom(header));
+                    return Math.max(markerLine, helper.getBottom(header));
+                }
             }
+
+
         }
         return markerLine;
     }
@@ -108,9 +110,9 @@ class SlmWrapper extends SectionLayoutManager {
             Recycler recycler, RecyclerView.State state) {
         int markerLine = mSlm.onFillToStart(anchorPosition, sd, helper, recycler, state);
         if (sd.hasHeader) {
-            final int headerIndex = findHeaderIndexFromFirstIndex(0, sd, helper);
+            final int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, sd, helper);
             final View header;
-            if (headerIndex == INVALID_INDEX) {
+            if (headerIndex == Utils.INVALID_INDEX) {
                 header = recycler.getView(sd.firstPosition);
                 if (recycler.getCachedView(sd.firstPosition) == null) {
                     helper.measureHeader(header);
@@ -123,14 +125,14 @@ class SlmWrapper extends SectionLayoutManager {
             final int offset = getHeaderOffset(sd, helper, recycler, header);
 
             final int sectionBottom = mSlm.getLowestEdge(
-                    findLastIndexForSection(sd, helper), helper.getHeight(), sd, helper);
+                    Utils.findLastIndexForSection(sd, helper), helper.getHeight(), sd, helper);
 
             markerLine = helper
                     .layoutHeaderTowardsStart(header, offset, markerLine, sectionBottom, state);
 
             // Make sure to attach after section content and to clean up any caching.
-            final int attachIndex = findLastIndexForSection(sd, helper) + 1;
-            if (headerIndex == INVALID_INDEX) {
+            final int attachIndex = Utils.findLastIndexForSection(sd, helper) + 1;
+            if (headerIndex == Utils.INVALID_INDEX) {
                 helper.addView(header, attachIndex);
             } else {
                 helper.attachView(header, attachIndex);
@@ -172,8 +174,8 @@ class SlmWrapper extends SectionLayoutManager {
         return mSlm.howManyMissingBelow(lastPosition, positionsOffscreen);
     }
 
-    public SlmWrapper init(SectionData sd, LayoutQueryHelper helper) {
-        mSlm.init(sd, helper);
+    public SlmWrapper init(SectionData sectionData, LayoutQueryHelper helper) {
+        mSlm.init(sectionData, helper);
         return this;
     }
 
@@ -216,41 +218,6 @@ class SlmWrapper extends SectionLayoutManager {
         }
     }
 
-    protected HashMap<SectionData, Integer> getSectionsIntersectingEndEdge(int endEdge,
-            int lastVisibleIndex, SectionData sd, LayoutQueryHelper helper) {
-        // Work out max number of items we have to check to find sections which intersect start
-        // edge. Also, cap to  number of items after fvi.
-        int range = Math.min(helper.getPosition(helper.getChildAt(lastVisibleIndex)) -
-                sd.firstPosition + 1, lastVisibleIndex + 1);
-
-        // Select subsections which have items overlapping or before the start edge.
-        HashMap<SectionData, Integer> selectedSubsections = new HashMap<>();
-        for (int i = 0; i < range; i++) {
-            int childIndex = lastVisibleIndex - i;
-            View child = helper.getChildAt(childIndex);
-            if (endEdge < helper.getBottom(child)) {
-                int childPosition = helper.getPosition(child);
-                for (SectionData subSd : sd.subsections) {
-                    if (selectedSubsections.get(subSd) == null && subSd
-                            .containsItem(childPosition)) {
-                        int subsectionLvi = findLastVisibleIndex(endEdge, childIndex, subSd,
-                                helper);
-                        if (subsectionLvi != INVALID_INDEX) {
-                            selectedSubsections.put(subSd, subsectionLvi);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (selectedSubsections.size() == sd.subsections.size()) {
-                // Already added every section.
-                break;
-            }
-        }
-        return selectedSubsections;
-    }
-
     /**
      * Get a map of sections and their first visible positions that intersect the start edge.
      *
@@ -281,9 +248,10 @@ class SlmWrapper extends SectionLayoutManager {
                 for (SectionData subSd : sd.subsections) {
                     if (selectedSubsections.get(subSd) == null && subSd
                             .containsItem(childPosition)) {
-                        int subsectionFvi = findFirstVisibleIndex(startEdge, childIndex, subSd,
-                                helper);
-                        if (subsectionFvi != INVALID_INDEX) {
+                        int subsectionFvi = Utils
+                                .findFirstVisibleIndex(startEdge, childIndex, subSd,
+                                        helper);
+                        if (subsectionFvi != Utils.INVALID_INDEX) {
                             selectedSubsections.put(subSd, subsectionFvi);
                         }
                         break;
@@ -342,123 +310,6 @@ class SlmWrapper extends SectionLayoutManager {
         }
     }
 
-    private int binarySearchForLastPosition(int min, int max, SectionData sd,
-            LayoutQueryHelper helper) {
-        if (max < min) {
-            return INVALID_INDEX;
-        }
-
-        final int count = helper.getChildCount();
-
-        int mid = min + (max - min) / 2;
-
-        View candidate = helper.getChildAt(mid);
-        BaseLayoutManager.LayoutParams params = (BaseLayoutManager.LayoutParams) candidate
-                .getLayoutParams();
-        int candidatePosition = params.getViewPosition();
-        if (candidatePosition < sd.firstPosition) {
-            return binarySearchForLastPosition(mid + 1, max, sd, helper);
-        }
-
-        if (candidatePosition > sd.lastPosition || params.isHeader()) {
-            return binarySearchForLastPosition(min, mid - 1, sd, helper);
-        }
-
-        if (mid == count - 1) {
-            return mid;
-        }
-
-        View next = helper.getChildAt(mid + 1);
-        BaseLayoutManager.LayoutParams lp = (BaseLayoutManager.LayoutParams) next.getLayoutParams();
-        if (!sd.containsItem(lp.getViewPosition())) {
-            return mid;
-        }
-
-        if (lp.isHeader()) {
-            if (mid + 1 == count - 1) {
-                return mid;
-            }
-
-            next = helper.getChildAt(mid + 2);
-            if (sd.containsItem(next)) {
-                return mid;
-            }
-        }
-
-        return binarySearchForLastPosition(mid + 1, max, sd, helper);
-    }
-
-    private int findFirstVisibleIndex(int edge, int anchorIndex, SectionData sd,
-            LayoutQueryHelper helper) {
-        final int childCount = helper.getChildCount();
-        for (int i = anchorIndex; i < childCount; i++) {
-            View child = helper.getChildAt(i);
-            if (!sd.containsItem(helper.getPosition(child))) {
-                break;
-            }
-
-            if (helper.getBottom(child) > edge) {
-                return i;
-            }
-        }
-
-        return INVALID_INDEX;
-    }
-
-    private int findHeaderIndexFromFirstIndex(int fvi, SectionData sd, LayoutQueryHelper helper) {
-        final int count = helper.getChildCount();
-        int fvp = helper.getPosition(helper.getChildAt(fvi));
-        // Header is always attached after other section items. So start looking from there, and
-        // back towards the current fvi.
-        for (int i = Math.min(sd.lastPosition - fvp + 1 + fvi, count - 1); i >= fvi; i--) {
-            View check = helper.getChildAt(i);
-            if (helper.getPosition(check) == sd.firstPosition) {
-                return i;
-            }
-        }
-        return INVALID_INDEX;
-    }
-
-    /**
-     * The header is almost guaranteed to be at the end so just use look there.
-     *
-     * @param sd Section data.
-     * @return Header, or null if not found.
-     */
-    private int findHeaderIndexFromLastIndex(int lastIndex, SectionData sd,
-            LayoutQueryHelper helper) {
-        for (int i = lastIndex; i >= 0; i--) {
-            View child = helper.getChildAt(i);
-            int position = helper.getPosition(child);
-            if (!sd.containsItem(position)) {
-                break;
-            } else if (sd.firstPosition == position) {
-                return i;
-            }
-        }
-        return INVALID_INDEX;
-    }
-
-    private int findLastIndexForSection(SectionData sd, LayoutQueryHelper helper) {
-        return binarySearchForLastPosition(0, helper.getChildCount() - 1, sd, helper);
-    }
-
-    private int findLastVisibleIndex(int edge, int anchorIndex, SectionData sd,
-            LayoutQueryHelper helper) {
-        for (int i = anchorIndex; i >= 0; i--) {
-            View child = helper.getChildAt(i);
-            if (!sd.containsItem(helper.getPosition(child))) {
-                break;
-            }
-
-            if (helper.getTop(child) < edge) {
-                return i;
-            }
-        }
-
-        return INVALID_INDEX;
-    }
-
     private int getHeaderOffset(SectionData sd, LayoutHelper helper, Recycler recycler,
             View header) {
         final int offset;
@@ -472,9 +323,45 @@ class SlmWrapper extends SectionLayoutManager {
         return offset;
     }
 
+    private HashMap<SectionData, Integer> getSectionsIntersectingEndEdge(int endEdge,
+            int lastVisibleIndex, SectionData sd, LayoutQueryHelper helper) {
+        // Work out max number of items we have to check to find sections which intersect start
+        // edge. Also, cap to  number of items after fvi.
+        int range = Math.min(helper.getPosition(helper.getChildAt(lastVisibleIndex)) -
+                sd.firstPosition + 1, lastVisibleIndex + 1);
+
+        // Select subsections which have items overlapping or before the edge.
+        HashMap<SectionData, Integer> selectedSubsections = new HashMap<>();
+        for (int i = 0; i < range; i++) {
+            int childIndex = lastVisibleIndex - i;
+            View child = helper.getChildAt(childIndex);
+            if (endEdge < helper.getBottom(child)) {
+                int childPosition = helper.getPosition(child);
+                for (SectionData subSd : sd.subsections) {
+                    if (selectedSubsections.get(subSd) == null && subSd
+                            .containsItem(childPosition)) {
+                        int subsectionLvi = Utils
+                                .findLastVisibleIndex(endEdge, childIndex, subSd,
+                                        helper);
+                        if (subsectionLvi != Utils.INVALID_INDEX) {
+                            selectedSubsections.put(subSd, subsectionLvi);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (selectedSubsections.size() == sd.subsections.size()) {
+                // Already added every section.
+                break;
+            }
+        }
+        return selectedSubsections;
+    }
+
     private int updateHeader(int headerIndex, SectionData sd, LayoutQueryHelper helper) {
         final int stickyEdge = helper.getStickyEdge();
-        if (headerIndex == INVALID_INDEX) {
+        if (headerIndex == Utils.INVALID_INDEX) {
             // No header found to update. It must not need to be updated.
             return stickyEdge;
         }
@@ -515,7 +402,7 @@ class SlmWrapper extends SectionLayoutManager {
             return helper.getStickyEdge();
         }
 
-        int headerIndex = findHeaderIndexFromFirstIndex(fvi, sd, helper);
+        int headerIndex = Utils.findHeaderIndexFromFirstIndex(fvi, sd, helper);
         return updateHeader(headerIndex, sd, helper);
     }
 }
