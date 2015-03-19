@@ -2,16 +2,17 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public abstract class SectionLayoutManager {
+
+    private HashMap<SectionData, Bundle> mSavedConfiguration = new HashMap<>();
 
     /**
      * Start filling a new section towards the end. Might end out filling out the entire section.
@@ -199,10 +200,6 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
-    public SectionLayoutManager init(SectionData sd, LayoutQueryHelper helper) {
-        return this;
-    }
-
     protected void addView(View child, LayoutHelper helper, Recycler recycler) {
         recycler.decacheView(helper.getPosition(child));
         helper.addView(child);
@@ -244,6 +241,10 @@ public abstract class SectionLayoutManager {
     protected abstract int onFillToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
+    protected void onInit(Bundle savedConfiguration, SectionData sectionData,
+            LayoutQueryHelper helper) {
+    }
+
     /**
      * Called before items are trimmed for any section that intersects the end edge. This is the
      * opportunity to update views before they might otherwise be trimmed for being beyond the
@@ -271,6 +272,18 @@ public abstract class SectionLayoutManager {
             final LayoutTrimHelper helper) {
     }
 
+    protected void onReset() {
+    }
+
+    protected void saveConfiguration(SectionData sectionData, Bundle configuration) {
+        mSavedConfiguration.put(sectionData, configuration);
+    }
+
+    SectionLayoutManager init(SectionData sectionData, LayoutQueryHelper helper) {
+        onInit(mSavedConfiguration.get(sectionData), sectionData, helper);
+        return this;
+    }
+
     /**
      * There exists a problem in that when filling towards the start edge, that headers can only be
      * added after the section content has been placed. However, a subsection's sticky header's
@@ -278,6 +291,11 @@ public abstract class SectionLayoutManager {
      * we have to make a second pass to make sure all the sticky headers are properly positioned.
      */
     void onPostFinishFillToStart(SectionData sectionData, LayoutTrimHelper helper) {
+    }
+
+    void reset() {
+        mSavedConfiguration.clear();
+        onReset();
     }
 
 }

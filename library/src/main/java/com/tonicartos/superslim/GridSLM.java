@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -22,17 +23,17 @@ public class GridSLM extends SectionLayoutManager {
 
     private static final int DEFAULT_NUM_COLUMNS = 1;
 
+    private static final String NUM_COLUMNS = "num_columns";
+
+    private static final String COLUMN_WIDTH = "column_width";
+
     public static int ID = LayoutManager.SECTION_MANAGER_GRID;
 
     private final Context mContext;
 
-    private int mMinimumWidth = 0;
-
     private int mNumColumns = 0;
 
     private int mColumnWidth;
-
-    private boolean mColumnsSpecified;
 
     public GridSLM(Context context) {
         mContext = context;
@@ -199,38 +200,57 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public GridSLM init(SectionData sectionData, LayoutQueryHelper helper) {
-        super.init(sectionData, helper);
+    public void onInit(Bundle savedConfig, SectionData sectionData, LayoutQueryHelper helper) {
+        if (savedConfig != null) {
+            mNumColumns = savedConfig.getInt(NUM_COLUMNS);
+            mColumnWidth = savedConfig.getInt(COLUMN_WIDTH);
+        } else {
+            int mMinimumWidth = 0;
+            boolean mColumnsSpecified = false;
 
-        if (sectionData.getSectionParams() instanceof LayoutParams) {
-            LayoutParams params = (LayoutParams) sectionData.getSectionParams();
-            int columnWidth = params.getColumnWidth();
-            int numColumns = params.getNumColumns();
-            if (columnWidth < 0 && numColumns < 0) {
-                numColumns = DEFAULT_NUM_COLUMNS;
+            if (sectionData.getSectionParams() instanceof LayoutParams) {
+                LayoutParams params = (LayoutParams) sectionData.getSectionParams();
+                int columnWidth = params.getColumnWidth();
+                int numColumns = params.getNumColumns();
+                if (columnWidth < 0 && numColumns < 0) {
+                    numColumns = DEFAULT_NUM_COLUMNS;
+                }
+
+                if (numColumns == AUTO_FIT) {
+                    mMinimumWidth = columnWidth;
+                    mColumnsSpecified = false;
+                } else {
+                    mNumColumns = numColumns;
+                    mMinimumWidth = 0;
+                    mColumnsSpecified = true;
+                }
             }
 
-            if (numColumns == AUTO_FIT) {
-                setColumnWidth(columnWidth);
-            } else {
-                setNumColumns(numColumns);
+            int availableWidth = helper.getWidth();
+            if (!mColumnsSpecified) {
+                if (mMinimumWidth <= 0) {
+                    mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
+                            mContext.getResources().getDisplayMetrics());
+                }
+                mNumColumns = availableWidth / Math.abs(mMinimumWidth);
             }
+            if (mNumColumns < 1) {
+                mNumColumns = 1;
+            }
+            mColumnWidth = availableWidth / mNumColumns;
+            if (mColumnWidth == 0) {
+                Log.e("GridSection",
+                        "Too many columns (" + mNumColumns + ") for available width "
+                                + availableWidth
+                                + ".");
+            }
+
+            // Store new configuration for this section.
+            Bundle config = new Bundle();
+            config.putInt(NUM_COLUMNS, mNumColumns);
+            config.putInt(COLUMN_WIDTH, mColumnWidth);
+            saveConfiguration(sectionData, config);
         }
-
-        calculateColumnWidthValues(sectionData, helper);
-
-        return this;
-    }
-
-    public void setColumnWidth(int minimumWidth) {
-        mMinimumWidth = minimumWidth;
-        mColumnsSpecified = false;
-    }
-
-    public void setNumColumns(int numColumns) {
-        mNumColumns = numColumns;
-        mMinimumWidth = 0;
-        mColumnsSpecified = true;
     }
 
     @Override
@@ -413,26 +433,6 @@ public class GridSLM extends SectionLayoutManager {
             col = mNumColumns - 1 - col;
         }
         return col;
-    }
-
-    private void calculateColumnWidthValues(SectionData sd, LayoutQueryHelper helper) {
-        int availableWidth = helper.getWidth();
-        if (!mColumnsSpecified) {
-            if (mMinimumWidth <= 0) {
-                mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
-                        mContext.getResources().getDisplayMetrics());
-            }
-            mNumColumns = availableWidth / Math.abs(mMinimumWidth);
-        }
-        if (mNumColumns < 1) {
-            mNumColumns = 1;
-        }
-        mColumnWidth = availableWidth / mNumColumns;
-        if (mColumnWidth == 0) {
-            Log.e("GridSection",
-                    "Too many columns (" + mNumColumns + ") for available width" + availableWidth
-                            + ".");
-        }
     }
 
     /**
