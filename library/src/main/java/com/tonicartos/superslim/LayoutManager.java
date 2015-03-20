@@ -98,7 +98,7 @@ class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollExtent(RecyclerView.State state) {
-        if (state.getItemCount() == 0) {
+        if (getChildCount() == 0 || state.getItemCount() == 0) {
             return 0;
         }
 
@@ -117,7 +117,7 @@ class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int computeVerticalScrollOffset(RecyclerView.State state) {
-        if (state.getItemCount() == 0) {
+        if (getChildCount() == 0 || state.getItemCount() == 0) {
             return 0;
         }
 
