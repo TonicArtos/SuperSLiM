@@ -289,6 +289,10 @@ public abstract class SectionLayoutManager {
      * added after the section content has been placed. However, a subsection's sticky header's
      * position is dependent on the supersection's sticky header position and height. So that means
      * we have to make a second pass to make sure all the sticky headers are properly positioned.
+     *
+     * In other words, this method exists only to fix nested sticky headers and is implemented
+     * solely by the SlmWrapper, but needs to be called by the LayoutManager, which is why it is
+     * package private.
      */
     void onPostFinishFillToStart(SectionData sectionData, LayoutTrimHelper helper) {
     }
