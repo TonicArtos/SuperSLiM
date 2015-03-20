@@ -2,7 +2,7 @@ package com.tonicartos.superslim;
 
 import android.view.View;
 
-interface LayoutQueryHelper {
+public interface LayoutQueryHelper {
 
     int getStickyEdge();
 
