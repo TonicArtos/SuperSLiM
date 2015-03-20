@@ -2,7 +2,7 @@ package com.tonicartos.superslim;
 
 import android.view.View;
 
-public interface LayoutModifierHelper {
+interface LayoutModifierHelper {
 
     void addView(View view, int index);
 
