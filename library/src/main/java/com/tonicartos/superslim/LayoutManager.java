@@ -15,6 +15,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -93,6 +94,50 @@ class LayoutManager extends RecyclerView.LayoutManager {
     @Override
     public boolean canScrollVertically() {
         return true;
+    }
+
+    @Override
+    public int computeVerticalScrollExtent(RecyclerView.State state) {
+        if (state.getItemCount() == 0) {
+            return 0;
+        }
+
+        if (!mSmoothScrollEnabled) {
+            return getChildCount();
+        }
+
+        float contentInView = getChildCount();
+
+        // Work out fraction of content lost off top and bottom.
+        contentInView -= getFractionOfContentAbove(state, true);
+        contentInView -= getFractionOfContentBelow(state, true);
+
+        return (int) (contentInView / state.getItemCount() * getHeight());
+    }
+
+    @Override
+    public int computeVerticalScrollOffset(RecyclerView.State state) {
+        if (state.getItemCount() == 0) {
+            return 0;
+        }
+
+        final View child = getChildAt(0);
+        if (!mSmoothScrollEnabled) {
+            return getPosition(child);
+        }
+
+        float contentAbove = getPosition(child);
+        contentAbove += getFractionOfContentAbove(state, false);
+        return (int) (contentAbove / state.getItemCount() * getHeight());
+    }
+
+    @Override
+    public int computeVerticalScrollRange(RecyclerView.State state) {
+        if (!mSmoothScrollEnabled) {
+            return state.getItemCount();
+        }
+
+        return getHeight();
     }
 
     public int findFirstCompletelyVisibleItemPosition() {
@@ -777,6 +822,125 @@ class LayoutManager extends RecyclerView.LayoutManager {
         SectionData sd = getSectionData(getPosition(child));
         final View firstVisibleView = findOneVisibleChild(0, getChildCount(), false);
         return targetPosition < getPosition(firstVisibleView) ? -1 : 1;
+    }
+
+    private float getFractionOfContentAbove(RecyclerView.State state, boolean ignorePosition) {
+        float fractionOffscreen = 0;
+
+        View child = getChildAt(0);
+
+        final int anchorPosition = getPosition(child);
+        int numBeforeAnchor = 0;
+
+        float top = getDecoratedTop(child);
+        float bottom = getDecoratedBottom(child);
+        if (bottom < 0) {
+            fractionOffscreen = 1;
+        } else if (0 <= top) {
+            fractionOffscreen = 0;
+        } else {
+            float height = getDecoratedMeasuredHeight(child);
+            fractionOffscreen = -top / height;
+        }
+
+        SectionData sd = getSectionData(getPosition(child));
+        if (sd.getSectionParams().isHeader() && sd.getSectionParams().isHeaderInline()) {
+            // Header must not be stickied as it is not attached after section items.
+            return fractionOffscreen;
+        }
+
+        // Run through all views in the section and add up values offscreen.
+        int firstPosition = -1;
+        SparseArray<Boolean> positionsOffscreen = new SparseArray<>();
+        for (int i = 1; i < getChildCount(); i++) {
+            child = getChildAt(i);
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            if (!sd.containsItem(lp.getViewPosition())) {
+                break;
+            }
+
+            final int position = getPosition(child);
+            if (!ignorePosition && position < anchorPosition) {
+                numBeforeAnchor += 1;
+            }
+
+            top = getDecoratedTop(child);
+            bottom = getDecoratedBottom(child);
+            if (bottom < 0) {
+                fractionOffscreen += 1;
+            } else if (0 <= top) {
+                continue;
+            } else {
+                float height = getDecoratedMeasuredHeight(child);
+                fractionOffscreen += -top / height;
+            }
+
+            if (!lp.isHeader()) {
+                if (firstPosition == -1) {
+                    firstPosition = position;
+                }
+                positionsOffscreen.put(position, true);
+            }
+        }
+
+        final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
+        helper.init(sd, 0, 0, 0);
+        final float result = fractionOffscreen - numBeforeAnchor - getSlm(sd, helper)
+                .howManyMissingAbove(firstPosition, positionsOffscreen);
+        helper.recycle();
+        return result;
+    }
+
+    private float getFractionOfContentBelow(RecyclerView.State state, boolean ignorePosition) {
+        final float parentHeight = getHeight();
+        View child = getChildAt(getChildCount() - 1);
+
+        final int anchorPosition = getPosition(child);
+        int countAfter = 0;
+
+        SectionData sd = getSectionData(getPosition(child));
+
+        float fractionOffscreen = 0;
+        int lastPosition = -1;
+        SparseArray<Boolean> positionsOffscreen = new SparseArray<>();
+        // Run through all views in the section and add up values offscreen.
+        for (int i = 1; i <= getChildCount(); i++) {
+            child = getChildAt(getChildCount() - i);
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            if (!sd.containsItem(lp.getViewPosition())) {
+                break;
+            }
+
+            int position = getPosition(child);
+            if (!lp.isHeader() && !ignorePosition && position > anchorPosition) {
+                countAfter += 1;
+            }
+
+            float bottom = getDecoratedBottom(child);
+            float top = getDecoratedTop(child);
+            if (bottom <= parentHeight) {
+                continue;
+            } else if (parentHeight < top) {
+                fractionOffscreen += 1;
+            } else {
+                float height = getDecoratedMeasuredHeight(child);
+                fractionOffscreen += (bottom - parentHeight) / height;
+            }
+
+            if (!lp.isHeader()) {
+                if (lastPosition == -1) {
+                    lastPosition = position;
+                }
+                positionsOffscreen.put(position, true);
+            }
+        }
+
+        final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
+        helper.init(sd, 0, 0, 0);
+        final float result = fractionOffscreen - countAfter - getSlm(sd, helper).
+                howManyMissingBelow(lastPosition, positionsOffscreen);
+        helper.recycle();
+        return result;
     }
 
     private SectionLayoutManager getSlm(int kind, String key) {
