@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="superslim_LayoutManager">
-        <attr name="slm_isHeader" format="boolean" />
         <attr name="slm_headerDisplay">
-            <flag name="inline" value="0x01" />
-            <flag name="start" value="0x02" />
-            <flag name="end" value="0x04" />
-            <flag name="overlay" value="0x08" />
-            <flag name="sticky" value="0x10" />
+            <flag name="inline" value="0x03" />
+            <flag name="start" value="0x01" />
+            <flag name="end" value="0x02" />
+            <flag name="overlay" value="0x04" />
+            <flag name="sticky" value="0x08" />
         </attr>
-        <attr name="slm_section_firstPosition" format="integer" />
         <attr name="slm_section_layoutManager" format="enum|string">
             <enum name="linear" value="0x01" />
             <enum name="grid" value="0x02" />
             <enum name="staggered_grid" value="0x03" />
         </attr>
-        <attr name="slm_section_headerMarginStart" format="enum|dimension">
+        <attr name="slm_section_marginStart" format="enum|dimension">
             <enum name="match_header" value="-1" />
         </attr>
-        <attr name="slm_section_headerMarginEnd" format="enum|dimension">
+        <attr name="slm_section_marginEnd" format="enum|dimension">
             <enum name="match_header" value="-1" />
         </attr>
     </declare-styleable>

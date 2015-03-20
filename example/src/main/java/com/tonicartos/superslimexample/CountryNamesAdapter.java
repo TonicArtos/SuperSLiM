@@ -100,8 +100,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         if (position == item.sectionFirstPosition) {
             lp.setSlm(item.sectionManager == LINEAR ? LinearSLM.ID : GridSLM.ID);
-            lp.headerEndMarginIsAuto = !mMarginsFixed;
-            lp.headerStartMarginIsAuto = !mMarginsFixed;
+            lp.marginEndIsAuto = !mMarginsFixed;
+            lp.marginStartIsAuto = !mMarginsFixed;
             lp.setColumnWidth(mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
         }
 

@@ -1,117 +1,249 @@
 package com.tonicartos.superslim;
 
-import android.text.TextUtils;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SectionData {
 
-    public final int firstPosition;
+    public int firstPosition;
 
-    public final boolean hasHeader;
+    public int lastPosition;
 
-    public final int minimumHeight;
+    public int startMarginWidth;
 
-    public final String sectionManager;
+    public int endMarginWidth;
 
-    public final int sectionManagerKind;
+    public boolean hasHeader;
 
-    public final int headerWidth;
+    public int minimumHeight;
 
-    public final int headerHeight;
+    public String sectionManager;
 
-    public final int contentEnd;
+    public int sectionManagerKind;
 
-    public final int contentStart;
+    public int headerWidth;
 
-    final int marginStart;
+    public int headerHeight;
 
-    final int marginEnd;
+    public ArrayList<SectionData> subsections;
 
-    LayoutManager.LayoutParams headerParams;
+    boolean recentlyFinishFilledToStart = false;
 
-    /**
-     * Last content position should only be set once the last position has been found.
-     */
-    int lastContentPosition = -1;
+    private boolean mIsInitialised = false;
 
-    public SectionData(LayoutManager lm, View first) {
-        final int paddingStart = lm.getPaddingStart();
-        final int paddingEnd = lm.getPaddingEnd();
+    private LayoutManager.LayoutParams mSectionParams;
 
-        headerParams = (LayoutManager.LayoutParams) first.getLayoutParams();
+    private int mTempHeaderIndex;
 
-        if (headerParams.isHeader) {
-            headerWidth = lm.getDecoratedMeasuredWidth(first);
-            headerHeight = lm.getDecoratedMeasuredHeight(first);
+    private SectionData(int firstPosition, int lastPosition) {
+        this.firstPosition = firstPosition;
+        this.lastPosition = lastPosition;
+    }
 
-            if (!headerParams.isHeaderInline() || headerParams.isHeaderOverlay()) {
+    static ArrayList<SectionData> processSections(int lastPosition,
+            List<Integer> sectionStartPositions) {
+        if (sectionStartPositions == null || sectionStartPositions.size() == 0) {
+            return null;
+        }
+        ArrayList<SectionData> sections = new ArrayList<>();
+        int lastStart = sectionStartPositions.get(0);
+
+        for (int i = 1; i < sectionStartPositions.size(); i++) {
+            int nextStart = sectionStartPositions.get(i);
+            sections.add(new SectionData(lastStart, nextStart - 1));
+            lastStart = nextStart;
+        }
+        sections.add(new SectionData(lastStart, lastPosition));
+
+        return sections;
+    }
+
+    public void clearTempHeaderIndex() {
+        mTempHeaderIndex = -1;
+    }
+
+    public boolean containsItem(int viewPosition) {
+        return firstPosition <= viewPosition && viewPosition <= lastPosition;
+    }
+
+    public boolean containsItem(View child) {
+        return containsItem(
+                ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewPosition());
+    }
+
+    public boolean getIsInitialised() {
+        return mIsInitialised;
+    }
+
+    public LayoutManager.LayoutParams getSectionParams() {
+        return mSectionParams;
+    }
+
+    public void init(LayoutHelper helper, View first) {
+        init(helper, first, false);
+    }
+
+    public void init(LayoutHelper helper, View first, boolean forceInitialisation) {
+        if (mIsInitialised && !forceInitialisation) {
+            return;
+        }
+
+        mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
+
+        hasHeader = mSectionParams.isHeader();
+        if (hasHeader) {
+            helper.measureHeader(first);
+            headerWidth = helper.getMeasuredWidth(first);
+            headerHeight = helper.getMeasuredHeight(first);
+
+            if (!mSectionParams.isHeaderInline() || mSectionParams.isHeaderOverlay()) {
                 minimumHeight = headerHeight;
             } else {
                 minimumHeight = 0;
-            }
-
-            if (headerParams.headerStartMarginIsAuto) {
-                if (headerParams.isHeaderStartAligned() && !headerParams.isHeaderOverlay()) {
-                    marginStart = headerWidth;
-                } else {
-                    marginStart = 0;
-                }
-            } else {
-                marginStart = headerParams.headerMarginStart;
-            }
-            if (headerParams.headerEndMarginIsAuto) {
-                if (headerParams.isHeaderEndAligned() && !headerParams.isHeaderOverlay()) {
-                    marginEnd = headerWidth;
-                } else {
-                    marginEnd = 0;
-                }
-            } else {
-                marginEnd = headerParams.headerMarginEnd;
             }
         } else {
             minimumHeight = 0;
             headerHeight = 0;
             headerWidth = 0;
-            marginStart = headerParams.headerMarginStart;
-            marginEnd = headerParams.headerMarginEnd;
+            startMarginWidth = mSectionParams.marginStart;
+            endMarginWidth = mSectionParams.marginEnd;
         }
 
-        contentEnd = marginEnd + paddingEnd;
-        contentStart = marginStart + paddingStart;
-
-        hasHeader = headerParams.isHeader;
-
-        firstPosition = headerParams.getFirstPosition();
-
-        sectionManager = headerParams.sectionManager;
-        sectionManagerKind = headerParams.sectionManagerKind;
-    }
-
-    public int getFirstContentPosition() {
-        if (hasHeader) {
-            if (isLastContentItemFound()) {
-                return lastContentPosition > firstPosition ? firstPosition + 1 : firstPosition;
+        if (startMarginWidth == LayoutManager.LayoutParams.MARGIN_AUTO) {
+            if (mSectionParams.isHeaderStartAligned() && !mSectionParams.isHeaderOverlay()) {
+                startMarginWidth = headerWidth;
             } else {
-                return firstPosition + 1;
+                startMarginWidth = 0;
             }
         }
-        return firstPosition;
+
+        if (endMarginWidth == LayoutManager.LayoutParams.MARGIN_AUTO) {
+            if (mSectionParams.isHeaderEndAligned() && !mSectionParams.isHeaderOverlay()) {
+                endMarginWidth = headerWidth;
+            } else {
+                endMarginWidth = 0;
+            }
+        }
+
+        subsections = processSections(lastPosition, mSectionParams.getSubsections());
+        // Check subsection sanity.
+        if (subsections != null) {
+            int firstSubsectionPosition = subsections.get(0).firstPosition;
+            if (hasHeader && firstSubsectionPosition != firstPosition + 1) {
+                throw new SubsectionValidationRuntimeException(
+                        "Subsection content should start at first item after header.");
+            } else if (firstSubsectionPosition != firstPosition) {
+                throw new SubsectionValidationRuntimeException(
+                        "Subsection content should start at first item.");
+            }
+        }
+
+        mIsInitialised = true;
     }
 
-    public int getLastContentPosition() {
-        return lastContentPosition;
+    int getTempHeaderIndex() {
+        return mTempHeaderIndex;
     }
 
-    public int getTotalMarginWidth() {
-        return marginEnd + marginStart;
+    void setTempHeaderIndex(int headerIndex) {
+        mTempHeaderIndex = headerIndex;
     }
 
-    public boolean isLastContentItemFound() {
-        return lastContentPosition != -1;
-    }
+    static class SubsectionValidationRuntimeException extends RuntimeException {
 
-    public boolean sameSectionManager(LayoutManager.LayoutParams params) {
-        return params.sectionManagerKind == sectionManagerKind ||
-                TextUtils.equals(params.sectionManager, sectionManager);
+        SubsectionValidationRuntimeException(String error) {
+            super(error);
+        }
     }
+    // TODO: insertion, moving, changing, and removal
+//
+//    public int itemChanged(int position) {
+//        return itemsChanged(position, 1);
+//    }
+//
+//    public int itemInserted(int position) {
+//        return itemsInserted(position, 1);
+//    }
+//
+//    public int itemRemoved(int position) {
+//        return itemsRemoved(position, 1);
+//    }
+//
+//    /**
+//     *
+//     * @param position Start position of items changed.
+//     * @param count Range of items changed
+//     * @return Number of items not yet consumed (after this section).
+//     */
+//    public int itemsChanged(int position, int count) {
+//        int itemsInSection = 0;
+//        if (position < firstPosition) {
+//            final int itemsAfterFirst = Math.max(0, position + count - firstPosition);
+//            itemsInSection = Math.min(itemsAfterFirst, lastPosition - firstPosition + 1);
+//            position = firstPosition;
+//        } else if (position <= lastPosition) {
+//            final int maxItemsInSection = Math.max(0, lastPosition - position + 1);
+//            itemsInSection = Math.min(count, maxItemsInSection);
+//        }
+//
+//        int unconsumed = handleItemsChanged(position, itemsInSection);
+//
+//        for (int i = 0; i < subsections.size() && unconsumed > 0; i++) {
+//            SectionData sectionData = subsections.get(i);
+//            position = sectionData.firstPosition;
+//            unconsumed = sectionData.itemsChanged(position, unconsumed);
+//        }
+//
+//        return unconsumed;
+//    }
+//
+//    public int itemsInserted(int position, int count) {
+//        int itemsInSection = 0;
+//        int itemsBeforeSection = 0;
+//        if (position < firstPosition) {
+//            final int itemsAfterFirst = Math.max(0, position + count - firstPosition);
+//            itemsBeforeSection = count - itemsAfterFirst;
+//            itemsInSection = Math.min(itemsAfterFirst, lastPosition - firstPosition + 1);
+//        } else if (position <= lastPosition) {
+//            final int maxItemsInSection = Math.max(0, lastPosition - position + 1);
+//            itemsInSection = Math.min(count, maxItemsInSection);
+//        }
+//
+//        firstPosition += itemsBeforeSection;
+//        lastPosition += itemsBeforeSection + itemsInSection;
+//
+//        for (SectionData subsection : subsections) {
+//            subsection.itemsInserted(position, count);
+//        }
+//
+//        return count - (itemsBeforeSection + itemsInSection);
+//    }
+//
+//    public int itemsRemoved(int position, int count) {
+//        int itemsInSection = 0;
+//        int itemsBeforeSection = 0;
+//        if (position < firstPosition) {
+//            final int itemsAfterFirst = Math.max(0, position + count - firstPosition);
+//            itemsBeforeSection = count - itemsAfterFirst;
+//            itemsInSection = Math.min(itemsAfterFirst, lastPosition - firstPosition + 1);
+//        } else if (position <= lastPosition) {
+//            final int maxItemsInSection = Math.max(0, lastPosition - position + 1);
+//            itemsInSection = Math.min(count, maxItemsInSection);
+//        }
+//
+//        firstPosition -= itemsBeforeSection;
+//        lastPosition -= itemsBeforeSection + itemsInSection;
+//
+//        for (int i = 0; i < subsections.size(); i++) {
+//            SectionData sectionData = subsections.get(i);
+//            sectionData.itemsRemoved(position, count);
+//            if (sectionData.lastPosition < sectionData.firstPosition) {
+//                subsections.remove(i);
+//                i--;
+//            }
+//        }
+//    }
 }

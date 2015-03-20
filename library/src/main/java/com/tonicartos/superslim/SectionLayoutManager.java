@@ -2,19 +2,44 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.View;
 
+import java.util.HashMap;
+
 public abstract class SectionLayoutManager {
 
-    private static final int MARGIN_UNSET = -1;
+    private HashMap<SectionData, Bundle> mSavedConfiguration = new HashMap<>();
 
-    protected LayoutManager mLayoutManager;
+    /**
+     * Start filling a new section towards the end. Might end out filling out the entire section.
+     *
+     * @param anchorPosition Adapter position for the first content item in the section.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
+     * @return Line to which content has been filled.
+     */
+    public int beginFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return 0;
+    }
 
-    public SectionLayoutManager(LayoutManager layoutManager) {
-        mLayoutManager = layoutManager;
+    /**
+     * Start filling a new section towards the start. Might end out filling out the entire section.
+     *
+     * @param anchorPosition Adapter position for the last content item in the section.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
+     * @return Line to which content has been filled.
+     */
+    public int beginFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return 0;
     }
 
     /**
@@ -23,240 +48,44 @@ public abstract class SectionLayoutManager {
      * any +ve number.
      *
      * @param firstVisiblePosition Position of first visible item in section.
-     * @param sd                   Section data.
-     * @param state                Layout state.
+     * @param sectionData          Section data.
+     * @param helper               Layout helper.
+     * @param recycler             Layout state.
      * @return -ve number giving the distance the header should be offset before the anchor view. A
      * +ve number indicates the header is offscreen.
      */
-    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sd,
-            LayoutState state);
+    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler);
 
     /**
-     * Fill section content towards the end.
+     * Finish filling a section towards the end.
      *
-     * @param leadingEdge    Line to fill up to. Content will not be wholly beyond this line.
-     * @param markerLine     Start of the section content area.
      * @param anchorPosition Adapter position for the first content item in the section.
-     * @param sd             Section data.
-     * @param state          Layout state.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public abstract int fillToEnd(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData sd, LayoutState state);
-
-    public abstract int fillToStart(int leadingEdge, int markerLine, int anchorPosition,
-            SectionData sd, LayoutState state);
-
-    /**
-     * Find the position of the first completely visible item of this section.
-     *
-     * @param sectionFirstPosition First position of section being queried.
-     * @return Position of first completely visible item.
-     */
-    public int findFirstCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager
-                .getPosition(findFirstCompletelyVisibleView(sectionFirstPosition, false));
+    public int finishFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
     }
 
     /**
-     * Locate the first view in this section that is completely visible. Will skip headers unless
-     * they are the only one visible.
+     * Finish filling a section towards the start.
      *
-     * @param sectionFirstPosition First position of section being queried.
-     * @param skipHeader           Do not include the section header if it has one.
-     * @return First completely visible item or null.
-     */
-    public View findFirstCompletelyVisibleView(int sectionFirstPosition, boolean skipHeader) {
-        final int topEdge = mLayoutManager.getClipToPadding() ? mLayoutManager.getPaddingTop() : 0;
-        final int bottomEdge = mLayoutManager.getClipToPadding() ?
-                mLayoutManager.getHeight() - mLayoutManager.getPaddingBottom() :
-                mLayoutManager.getHeight();
-
-        int lookAt = 0;
-        int childCount = mLayoutManager.getChildCount();
-        View candidate = null;
-        while (true) {
-            if (lookAt >= childCount) {
-                return candidate;
-            }
-
-            final View view = mLayoutManager.getChildAt(lookAt);
-
-            final boolean topInside = mLayoutManager.getDecoratedTop(view) >= topEdge;
-            final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
-
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getFirstPosition() && topInside && bottomInside) {
-                if (!lp.isHeader || !skipHeader) {
-                    return view;
-                } else {
-                    candidate = view;
-                }
-            } else {
-                // Skipped past section.
-                return candidate;
-            }
-
-            lookAt += 1;
-        }
-    }
-
-    /**
-     * Find the position of the first visible item of the section.
-     *
-     * @param sectionFirstPosition First position of section being queried.
-     * @return Position of first visible item.
-     */
-    public int findFirstVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(findFirstVisibleView(sectionFirstPosition, false));
-    }
-
-    /**
-     * Locate the visible view which has the earliest adapter position. Will skip headers unless
-     * they are the only one visible.
-     *
-     * @param sectionFirstPosition Position of first position of section..
-     * @param skipHeader           Do not include the section header if it has one.
-     * @return View.
-     */
-    public View findFirstVisibleView(int sectionFirstPosition, boolean skipHeader) {
-        int lookAt = 0;
-        int childCount = mLayoutManager.getChildCount();
-        View candidate = null;
-        while (true) {
-            if (lookAt >= childCount) {
-                return candidate;
-            }
-
-            final View view = mLayoutManager.getChildAt(lookAt);
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getFirstPosition()) {
-                if (!lp.isHeader || !skipHeader) {
-                    return view;
-                } else {
-                    candidate = view;
-                }
-            } else {
-                // Skipped past section.
-                return candidate;
-            }
-
-            lookAt += 1;
-        }
-    }
-
-    /**
-     * Find the position of the first visible item of this section.
-     *
-     * @param sectionFirstPosition First position of section being queried.
-     * @return Position of first visible item.
-     */
-    public int findLastCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(findLastCompletelyVisibleView(sectionFirstPosition));
-    }
-
-    /**
-     * Locate the last view in this section that is completely visible. Will skip headers unless
-     * they are the only one visible.
-     *
-     * @param sectionFirstPosition First position of section being queried.
-     * @return Last completely visible item or null.
-     */
-    public View findLastCompletelyVisibleView(int sectionFirstPosition) {
-        final int topEdge = mLayoutManager.getClipToPadding() ? mLayoutManager.getPaddingTop() : 0;
-        final int bottomEdge = mLayoutManager.getClipToPadding() ?
-                mLayoutManager.getHeight() - mLayoutManager.getPaddingBottom() :
-                mLayoutManager.getHeight();
-
-        int lookAt = mLayoutManager.getChildCount() - 1;
-        View candidate = null;
-        while (true) {
-            if (lookAt < 0) {
-                return candidate;
-            }
-
-            final View view = mLayoutManager.getChildAt(lookAt);
-
-            final boolean topInside = mLayoutManager.getDecoratedTop(view) >= topEdge;
-            final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
-
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getFirstPosition()) {
-                if (topInside && bottomInside) {
-                    if (!lp.isHeader) {
-                        return view;
-                    } else {
-                        candidate = view;
-                    }
-                }
-            } else if (candidate == null) {
-                sectionFirstPosition = lp.getFirstPosition();
-                continue;
-            } else {
-                return candidate;
-            }
-
-            lookAt -= 1;
-        }
-    }
-
-    /**
-     * Find the position of the first visible item of the section.
-     *
-     * @param sectionFirstPosition First position of section being queried.
-     * @return Position of first visible item.
-     */
-    public int findLastVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(findLastVisibleView(sectionFirstPosition));
-    }
-
-    /**
-     * Locate the visible view which has the latest adapter position.
-     *
-     * @param sectionFirstPosition Section id.
-     * @return View.
-     */
-    public View findLastVisibleView(int sectionFirstPosition) {
-        int lookAt = mLayoutManager.getChildCount() - 1;
-        View candidate = null;
-        while (true) {
-            if (lookAt < 0) {
-                return candidate;
-            }
-
-            View view = mLayoutManager.getChildAt(lookAt);
-            LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getFirstPosition()) {
-                if (!lp.isHeader) {
-                    return view;
-                } else {
-                    candidate = view;
-                }
-            } else {
-                // Skipped past section.
-                return candidate;
-            }
-
-            lookAt -= 1;
-        }
-    }
-
-    /**
-     * Finish filling an already partially filled section.
-     *
-     * @param leadingEdge Line to fill up to. Content will not be wholly beyond this line.
-     * @param anchor      Last attached content item in this section.
-     * @param sd          Section data.
-     * @param state       Layout state.
+     * @param anchorPosition Adapter position for the last content item in the section.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public abstract int finishFillToEnd(int leadingEdge, View anchor, SectionData sd,
-            LayoutState state);
+    public int finishFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state) {
+        return onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+    }
 
-    public abstract int finishFillToStart(int leadingEdge, View anchor, SectionData sd,
-            LayoutState state);
-
-    public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
+    public RecyclerView.LayoutParams generateLayoutParams(RecyclerView.LayoutParams params) {
         return params;
     }
 
@@ -271,17 +100,19 @@ public abstract class SectionLayoutManager {
      * @param outRect     Rect to load with ege states.
      * @param child       Child to look at.
      * @param sectionData Section data.
-     * @param state       State.
      */
     public void getEdgeStates(Rect outRect, View child, SectionData sectionData,
-            RecyclerView.State state) {
+            int layoutDirection) {
         outRect.left = ItemDecorator.EXTERNAL;
         outRect.right = ItemDecorator.EXTERNAL;
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child.getLayoutParams();
         final int position = params.getViewPosition();
-        outRect.top = position == sectionData.getFirstContentPosition() ?
+        int firstContentPosition = (sectionData.hasHeader ?
+                Math.min(sectionData.firstPosition + 1, sectionData.lastPosition) :
+                sectionData.firstPosition);
+        outRect.top = position == firstContentPosition ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
-        outRect.bottom = position == sectionData.lastContentPosition ?
+        outRect.bottom = position == sectionData.lastPosition ?
                 ItemDecorator.EXTERNAL : ItemDecorator.INTERNAL;
     }
 
@@ -289,25 +120,25 @@ public abstract class SectionLayoutManager {
      * Find the highest displayed edge of the section. If there is no member found then return the
      * default edge instead.
      *
-     * @param sectionFirstPosition Section id, position of first item in the section.
-     * @param firstIndex           Child index to start looking from.
-     * @param defaultEdge          Default value.
+     * @param firstIndex  Child index to start looking from.
+     * @param defaultEdge Default value.
      * @return Top (attached) edge of the section.
      */
-    public int getHighestEdge(int sectionFirstPosition, int firstIndex, int defaultEdge) {
+    public int getHighestEdge(int firstIndex, int defaultEdge, SectionData sectionData,
+            LayoutQueryHelper helper) {
         // Look from start to find children that are the highest.
-        for (int i = firstIndex; i < mLayoutManager.getChildCount(); i++) {
-            View child = mLayoutManager.getChildAt(i);
+        for (int i = firstIndex; i < helper.getChildCount(); i++) {
+            View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.getFirstPosition() != sectionFirstPosition) {
+            if (sectionData.containsItem(params.getViewPosition())) {
                 break;
             }
-            if (params.isHeader) {
+            if (params.isHeader()) {
                 continue;
             }
             // A more interesting layout would have to do something more here.
-            return mLayoutManager.getDecoratedTop(child);
+            return helper.getTop(child);
         }
         return defaultEdge;
     }
@@ -316,26 +147,26 @@ public abstract class SectionLayoutManager {
      * Find the lowest displayed edge of the section. If there is no member found then return the
      * default edge instead.
      *
-     * @param sectionFirstPosition Section id, position of first item in the section.
-     * @param lastIndex            Index to start looking from. Usually the index of the last
-     *                             attached view in this section.
-     * @param defaultEdge          Default value.
+     * @param lastIndex   Index to start looking from. Usually the index of the last attached view
+     *                    in this section.
+     * @param defaultEdge Default value.
      * @return Lowest (attached) edge of the section.
      */
-    public int getLowestEdge(int sectionFirstPosition, int lastIndex, int defaultEdge) {
+    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
+            LayoutQueryHelper helper) {
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
-            View child = mLayoutManager.getChildAt(i);
+            View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (params.getFirstPosition() != sectionFirstPosition) {
+            if (sectionData.containsItem(params.getViewPosition())) {
                 break;
             }
-            if (params.isHeader) {
+            if (params.isHeader()) {
                 continue;
             }
             // A more interesting layout would have to do something more here.
-            return mLayoutManager.getDecoratedBottom(child);
+            return helper.getBottom(child);
         }
         return defaultEdge;
     }
@@ -369,22 +200,106 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
-    public SectionLayoutManager init(SectionData sd) {
+    protected void addView(View child, LayoutHelper helper, Recycler recycler) {
+        recycler.decacheView(helper.getPosition(child));
+        helper.addView(child);
+    }
+
+    protected void addView(View child, int index, LayoutHelper helper, Recycler recycler) {
+        recycler.decacheView(helper.getPosition(child));
+        helper.addView(child, index);
+    }
+
+    protected abstract int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state);
+
+    protected abstract int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state);
+
+    /**
+     * Fill section content towards the end.
+     *
+     * @param anchorPosition Adapter position for the first content item in the section.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
+     * @return Line to which content has been filled.
+     */
+    protected abstract int onFillToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper,
+            Recycler recycler, RecyclerView.State state);
+
+    /**
+     * Fill section content towards the start.
+     *
+     * @param anchorPosition Adapter position for the last content item in the section.
+     * @param sectionData    Section data.
+     * @param helper         Layout helper.
+     * @param recycler       Recycler.
+     * @return Line to which content has been filled.
+     */
+    protected abstract int onFillToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state);
+
+    protected void onInit(Bundle savedConfiguration, SectionData sectionData,
+            LayoutQueryHelper helper) {
+    }
+
+    /**
+     * Called before items are trimmed for any section that intersects the end edge. This is the
+     * opportunity to update views before they might otherwise be trimmed for being beyond the
+     * edge.
+     *
+     * @param lastVisibleIndex Index of last item in this section that is visible.
+     * @param sectionData      Section data.
+     * @param helper           Layout query helper.
+     */
+    protected void onPreTrimAtEndEdge(final int lastVisibleIndex, final SectionData sectionData,
+            final LayoutTrimHelper helper) {
+
+    }
+
+    /**
+     * Called before items are trimmed for any section that intersects the start edge. This is the
+     * opportunity to update views before they might otherwise be trimmed for being beyond the
+     * edge.
+     *
+     * @param firstVisibleIndex Index of first item in this section that is visible.
+     * @param sectionData       Section data.
+     * @param helper            Layout query helper.
+     */
+    protected void onPreTrimAtStartEdge(final int firstVisibleIndex, final SectionData sectionData,
+            final LayoutTrimHelper helper) {
+    }
+
+    protected void onReset() {
+    }
+
+    protected void saveConfiguration(SectionData sectionData, Bundle configuration) {
+        mSavedConfiguration.put(sectionData, configuration);
+    }
+
+    SectionLayoutManager init(SectionData sectionData, LayoutQueryHelper helper) {
+        onInit(mSavedConfiguration.get(sectionData), sectionData, helper);
         return this;
     }
 
-    protected int addView(LayoutState.View child, int position, LayoutManager.Direction direction,
-            LayoutState state) {
-        int addIndex;
-        if (direction == LayoutManager.Direction.START) {
-            addIndex = 0;
-        } else {
-            addIndex = mLayoutManager.getChildCount();
-        }
-
-        state.decacheView(position);
-        mLayoutManager.addView(child.view, addIndex);
-
-        return addIndex;
+    /**
+     * There exists a problem in that when filling towards the start edge, that headers can only be
+     * added after the section content has been placed. However, a subsection's sticky header's
+     * position is dependent on the supersection's sticky header position and height. So that means
+     * we have to make a second pass to make sure all the sticky headers are properly positioned.
+     *
+     * In other words, this method exists only to fix nested sticky headers and is implemented
+     * solely by the SlmWrapper, but needs to be called by the LayoutManager, which is why it is
+     * package private.
+     */
+    void onPostFinishFillToStart(SectionData sectionData, LayoutTrimHelper helper) {
     }
+
+    void reset() {
+        mSavedConfiguration.clear();
+        onReset();
+    }
+
 }
