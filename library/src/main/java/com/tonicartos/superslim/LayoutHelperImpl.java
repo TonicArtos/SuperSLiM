@@ -154,8 +154,8 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     }
 
     @Override
-    public SectionLayoutManager getSlm(SectionData sectionData) {
-        return mParent.getSlm(sectionData);
+    public SectionLayoutManager getSlm(SectionData sectionData, LayoutQueryHelper helper) {
+        return mParent.getSlm(sectionData, helper);
     }
 
     @Override
@@ -266,6 +266,12 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     @Override
     public int translateFillResult(int markerLine) {
         return markerLine + mVerticalOffset;
+    }
+
+    public void updateMarkerLine(int oldMarkerLine, int newMarkerLine) {
+        mVerticalOffset = newMarkerLine;
+        mLeadingEdge += oldMarkerLine - newMarkerLine;
+        mStickyEdge += oldMarkerLine - newMarkerLine;
     }
 
     @Override
