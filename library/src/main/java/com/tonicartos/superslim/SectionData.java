@@ -83,6 +83,14 @@ public class SectionData {
     }
 
     public void init(LayoutHelper helper, View first) {
+        init(helper, first, false);
+    }
+
+    public void init(LayoutHelper helper, View first, boolean forceInitialisation) {
+        if (mIsInitialised && !forceInitialisation) {
+            return;
+        }
+
         mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
 
         hasHeader = mSectionParams.isHeader();
