@@ -30,13 +30,13 @@ public class SectionData {
 
     public ArrayList<SectionData> subsections;
 
+    boolean recentlyFinishFilledToStart = false;
+
     private boolean mIsInitialised = false;
 
     private LayoutManager.LayoutParams mSectionParams;
 
     private int mTempHeaderIndex;
-
-    boolean recentlyFinishFilledToStart = false;
 
     private SectionData(int firstPosition, int lastPosition) {
         this.firstPosition = firstPosition;
@@ -128,7 +128,7 @@ public class SectionData {
             }
         }
 
-        subsections = processSections(lastPosition, mSectionParams.getSections());
+        subsections = processSections(lastPosition, mSectionParams.getSubsections());
         // Check subsection sanity.
         if (subsections != null) {
             int firstSubsectionPosition = subsections.get(0).firstPosition;

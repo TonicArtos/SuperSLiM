@@ -17,7 +17,7 @@ class Utils {
         int mid = min + (max - min) / 2;
 
         View candidate = helper.getChildAt(mid);
-        BaseLayoutManager.LayoutParams params = (BaseLayoutManager.LayoutParams) candidate
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) candidate
                 .getLayoutParams();
         int candidatePosition = params.getViewPosition();
         if (candidatePosition < sd.firstPosition) {
@@ -33,7 +33,7 @@ class Utils {
         }
 
         View next = helper.getChildAt(mid + 1);
-        BaseLayoutManager.LayoutParams lp = (BaseLayoutManager.LayoutParams) next.getLayoutParams();
+        LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) next.getLayoutParams();
         if (!sd.containsItem(lp.getViewPosition())) {
             return mid;
         }

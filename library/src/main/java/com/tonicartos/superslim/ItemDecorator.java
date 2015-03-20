@@ -84,9 +84,9 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             RecyclerView.State state) {
         resolveLayoutDirection(parent);
         // Check decorator is assigned to section by sfp or slm.
-        BaseLayoutManager.LayoutParams params = (BaseLayoutManager.LayoutParams) view
+        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view
                 .getLayoutParams();
-        BaseLayoutManager lm = (BaseLayoutManager) parent.getLayoutManager();
+        LayoutManager lm = (LayoutManager) parent.getLayoutManager();
         if (!assignedTo(lm.getSectionData(params.getViewPosition()), params)) {
             outRect.left = 0;
             outRect.top = 0;
@@ -101,12 +101,12 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
         resolveLayoutDirection(parent);
-        BaseLayoutManager lm = (BaseLayoutManager) parent.getLayoutManager();
+        LayoutManager lm = (LayoutManager) parent.getLayoutManager();
 
         for (int i = 0; i < lm.getChildCount(); i++) {
             View child = lm.getChildAt(i);
-            BaseLayoutManager.LayoutParams params =
-                    (BaseLayoutManager.LayoutParams) child.getLayoutParams();
+            LayoutManager.LayoutParams params =
+                    (LayoutManager.LayoutParams) child.getLayoutParams();
             if (!assignedTo(lm.getSectionData(params.getViewPosition()), params)) {
                 continue;
             }
@@ -185,7 +185,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         super.onDrawOver(c, parent, state);
     }
 
-    private boolean assignedTo(SectionData sectionData, BaseLayoutManager.LayoutParams params) {
+    private boolean assignedTo(SectionData sectionData, LayoutManager.LayoutParams params) {
         if (mCheckers.size() == 0) {
             return true;
         }
@@ -262,7 +262,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
          * @param params Item's layout params.
          * @return True if the decorator should decorate this item.
          */
-        boolean isAssigned(SectionData sectionData, BaseLayoutManager.LayoutParams params);
+        boolean isAssigned(SectionData sectionData, LayoutManager.LayoutParams params);
     }
 
     static class Edge {
@@ -340,11 +340,9 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         private Context mContext;
 
-        public int startPadding = UNSET;
-
         public Builder(Context context) {
             mContext = context;
-        }
+        }        public int startPadding = UNSET;
 
         /**
          * Add an assignment checker for this decorator.
@@ -414,8 +412,6 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
             return decorateSlm(id, CONTENT);
         }
 
-        public int endPadding = UNSET;
-
         /**
          * Decorate items in a section managed by a custom SLM.
          *
@@ -432,7 +428,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         public Builder decoratesPosition(int position) {
             assignments.add(new PositionChecker(position));
             return this;
-        }
+        }        public int endPadding = UNSET;
 
         public Builder setDrawableAbove(int resId) {
             return setDrawableAbove(resId, DEFAULT_FLAGS);
@@ -651,6 +647,10 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
 
+
+
+
+
     }
 
     static class Spacing {
@@ -720,7 +720,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
                     b.bottomPadding, b.bottomPaddingFlags, mask, true);
         }
 
-        public void getOffsets(Rect outRect, View view, BaseLayoutManager lm,
+        public void getOffsets(Rect outRect, View view, LayoutManager lm,
                 RecyclerView.State state) {
             // Reuse the rect to get the edge states, either internal or external.
             lm.getEdgeStates(outRect, view, state);
@@ -794,7 +794,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(SectionData sd, BaseLayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             return params.getViewPosition() == mPosition;
         }
     }
@@ -811,7 +811,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(SectionData sd, BaseLayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             int kind = params.isHeader() ? HEADER : CONTENT;
             return sd.sectionManagerKind == mSlmId && (kind & mTargetKind) != 0;
         }
@@ -829,9 +829,9 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(SectionData sd, BaseLayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             int kind = params.isHeader() ? HEADER : CONTENT;
-            return sd.sectionManagerKind == BaseLayoutManager.SECTION_MANAGER_CUSTOM &&
+            return sd.sectionManagerKind == LayoutManager.SECTION_MANAGER_CUSTOM &&
                     (kind & mTargetKind) != 0 &&
                     TextUtils.equals(sd.sectionManager, mSlmKey);
         }
@@ -850,7 +850,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         }
 
         @Override
-        public boolean isAssigned(SectionData sd, BaseLayoutManager.LayoutParams params) {
+        public boolean isAssigned(SectionData sd, LayoutManager.LayoutParams params) {
             int kind = params.isHeader() ? HEADER : CONTENT;
             return sd.firstPosition == mSfp && (kind & mTargetKind) != 0;
         }

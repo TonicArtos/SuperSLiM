@@ -37,6 +37,18 @@ public class LinearSLM extends SectionLayoutManager {
     }
 
     @Override
+    protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
+    }
+
+    @Override
+    protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
+    }
+
+    @Override
     protected int onFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
         final int itemCount = state.getItemCount();
@@ -55,7 +67,7 @@ public class LinearSLM extends SectionLayoutManager {
             }
 
             measureChild(next, helper);
-            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.END, sectionData,
+            markerLine = layoutChild(next, markerLine, LayoutManager.DIRECTION_END, sectionData,
                     helper);
             addView(next, helper, recycler);
         }
@@ -149,7 +161,7 @@ public class LinearSLM extends SectionLayoutManager {
             } else {
                 recycler.decacheView(i);
             }
-            markerLine = layoutChild(next, markerLine, LayoutManager.Direction.START, sectionData,
+            markerLine = layoutChild(next, markerLine, LayoutManager.DIRECTION_START, sectionData,
                     helper);
             addView(next, 0, helper, recycler);
         }
@@ -157,7 +169,7 @@ public class LinearSLM extends SectionLayoutManager {
         return markerLine;
     }
 
-    private int layoutChild(View child, int markerLine, LayoutManager.Direction direction,
+    private int layoutChild(View child, int markerLine, @LayoutManager.Direction int direction,
             SectionData sd, LayoutHelper helper) {
         final int height = helper.getMeasuredHeight(child);
         final int width = helper.getMeasuredWidth(child);
@@ -167,7 +179,7 @@ public class LinearSLM extends SectionLayoutManager {
         int top;
         int bottom;
 
-        if (direction == LayoutManager.Direction.END) {
+        if (direction == LayoutManager.DIRECTION_END) {
             top = markerLine;
             bottom = top + height;
         } else {
@@ -176,7 +188,7 @@ public class LinearSLM extends SectionLayoutManager {
         }
         helper.layoutChild(child, left, top, right, bottom);
 
-        if (direction == LayoutManager.Direction.END) {
+        if (direction == LayoutManager.DIRECTION_END) {
             markerLine = helper.getBottom(child);
         } else {
             markerLine = helper.getTop(child);

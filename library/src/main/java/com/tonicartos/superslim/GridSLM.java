@@ -82,7 +82,7 @@ public class GridSLM extends SectionLayoutManager {
      * @param recycler        Layout recycler.
      * @return The height of the new row.
      */
-    public int fillRow(int markerLine, int anchorPosition, LayoutManager.Direction direction,
+    public int fillRow(int markerLine, int anchorPosition, @LayoutManager.Direction int direction,
             boolean measureRowItems, SectionData sd, LayoutHelper helper, Recycler recycler,
             RecyclerView.State state) {
         int rowHeight = 0;
@@ -108,7 +108,7 @@ public class GridSLM extends SectionLayoutManager {
             views[i] = view;
         }
 
-        boolean directionIsStart = direction == LayoutManager.Direction.START;
+        boolean directionIsStart = direction == LayoutManager.DIRECTION_START;
         if (directionIsStart) {
             markerLine -= rowHeight;
         }
@@ -197,6 +197,18 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         return foundItems ? bottomMostEdge : defaultEdge;
+    }
+
+    @Override
+    protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
+    }
+
+    @Override
+    protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
     }
 
     @Override
@@ -308,7 +320,7 @@ public class GridSLM extends SectionLayoutManager {
                 break;
             }
 
-            int rowHeight = fillRow(markerLine, i, LayoutManager.Direction.END, true, sectionData,
+            int rowHeight = fillRow(markerLine, i, LayoutManager.DIRECTION_END, true, sectionData,
                     helper, recycler, state);
             markerLine += rowHeight;
         }
@@ -420,7 +432,7 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             boolean measureRowItems = !applyMinHeight || i < measuredPositionsMarker;
-            int rowHeight = fillRow(markerLine, i, LayoutManager.Direction.START, measureRowItems,
+            int rowHeight = fillRow(markerLine, i, LayoutManager.DIRECTION_START, measureRowItems,
                     sd, helper, recycler, state);
             markerLine -= rowHeight;
         }

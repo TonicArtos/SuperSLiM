@@ -190,7 +190,7 @@ class SlmWrapper extends SectionLayoutManager {
         for (SectionData subSd : selectedSubsections.keySet()) {
             LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
             subsectionHelper.init(subSd, helper.getTrimEdge(), helper.getStickyEdge());
-            helper.getSlm(subSd).
+            helper.getSlm(subSd, subsectionHelper).
                     onPreTrimAtEndEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
             subsectionHelper.recycle();
         }
@@ -212,7 +212,7 @@ class SlmWrapper extends SectionLayoutManager {
         for (SectionData subSd : selectedSubsections.keySet()) {
             LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
             subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
-            helper.getSlm(subSd).
+            helper.getSlm(subSd, subsectionHelper).
                     onPreTrimAtStartEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
             subsectionHelper.recycle();
         }
@@ -304,7 +304,7 @@ class SlmWrapper extends SectionLayoutManager {
                 sd.recentlyFinishFilledToStart = false;
                 LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
                 subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
-                helper.getSlm(subSd).onPostFinishFillToStart(sd, subsectionHelper);
+                helper.getSlm(subSd, subsectionHelper).onPostFinishFillToStart(sd, subsectionHelper);
                 subsectionHelper.recycle();
             }
         }
@@ -313,8 +313,8 @@ class SlmWrapper extends SectionLayoutManager {
     private int getHeaderOffset(SectionData sd, LayoutHelper helper, Recycler recycler,
             View header) {
         final int offset;
-        final BaseLayoutManager.LayoutParams layoutParams =
-                (BaseLayoutManager.LayoutParams) header.getLayoutParams();
+        final LayoutManager.LayoutParams layoutParams =
+                (LayoutManager.LayoutParams) header.getLayoutParams();
         if (!layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline()) {
             offset = mSlm.computeHeaderOffset(0, sd, helper, recycler);
         } else {
@@ -367,8 +367,8 @@ class SlmWrapper extends SectionLayoutManager {
         }
 
         final View header = helper.getChildAt(headerIndex);
-        final BaseLayoutManager.LayoutParams headerParams =
-                (BaseLayoutManager.LayoutParams) header.getLayoutParams();
+        final LayoutManager.LayoutParams headerParams =
+                (LayoutManager.LayoutParams) header.getLayoutParams();
         if (!headerParams.isHeaderSticky()) {
             // Only need to update stickied headers.
             return stickyEdge;
@@ -380,7 +380,7 @@ class SlmWrapper extends SectionLayoutManager {
             return stickyEdge;
         }
 
-        SectionLayoutManager slm = helper.getSlm(sd);
+        SectionLayoutManager slm = helper.getSlm(sd, helper);
         final int sectionBottom = slm.getLowestEdge(
                 headerIndex, helper.getBottom(header), sd, helper);
 

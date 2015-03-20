@@ -4,8 +4,6 @@ import android.view.View;
 
 public interface LayoutQueryHelper {
 
-    int getStickyEdge();
-
     int getBottom(View child);
 
     View getChildAt(int index);
@@ -29,6 +27,8 @@ public interface LayoutQueryHelper {
     SectionData getSectionData(int position);
 
     SectionLayoutManager getSlm(SectionData sectionData, LayoutQueryHelper helper);
+
+    int getStickyEdge();
 
     int getTop(View child);
 
