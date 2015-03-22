@@ -30,7 +30,7 @@ import java.util.List;
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
  * sections to view layout managers to layout items.
  */
-class LayoutManager extends RecyclerView.LayoutManager {
+public class LayoutManager extends RecyclerView.LayoutManager {
 
     final static int DIRECTION_END = 0;
 
@@ -65,19 +65,21 @@ class LayoutManager extends RecyclerView.LayoutManager {
     private ArrayList<SectionData> mSections;
 
     public LayoutManager(Context context) {
-        mLinearSlm = new LinearSLM();
-        mGridSlm = new GridSLM(context);
+        mLinearSlm = new SlmWrapper(new LinearSLM());
+        mGridSlm = new SlmWrapper(new GridSLM(context));
         mSlms = new HashMap<>();
         mHelperDelegate = new LayoutHelperDelegate(this);
     }
 
+    // Suppress unchecked list assignment warning.
+    @SuppressWarnings("unchecked")
     LayoutManager(Builder builder) {
-        mLinearSlm = new LinearSLM();
-        mGridSlm = new GridSLM(builder.context);
+        mLinearSlm = new SlmWrapper(new LinearSLM());
+        mGridSlm = new SlmWrapper(new GridSLM(builder.context));
         mSlms = builder.slms;
         SectionAdapter sectionAdapter = (SectionAdapter) builder.adapter;
-        mSections = SectionData.processSections(
-                builder.adapter.getItemCount(), sectionAdapter.getSectionStartPositions());
+        mSections = SectionData.processSectionGraph(
+                builder.adapter.getItemCount(), sectionAdapter.getSections());
         mHelperDelegate = new LayoutHelperDelegate(this);
     }
 
@@ -88,7 +90,7 @@ class LayoutManager extends RecyclerView.LayoutManager {
      * @param slm SectionLayoutManager to add.
      */
     public void addSlm(String key, SectionLayoutManager slm) {
-        mSlms.put(key, slm);
+        mSlms.put(key, new SlmWrapper(slm));
     }
 
     @Override
@@ -303,8 +305,8 @@ class LayoutManager extends RecyclerView.LayoutManager {
             throw new SectionAdapterNotImplementedRuntimeException();
         }
         SectionAdapter sectionAdapter = (SectionAdapter) newAdapter;
-        mSections = SectionData.processSections(
-                newAdapter.getItemCount(), sectionAdapter.getSectionStartPositions());
+        mSections = SectionData.processSectionGraph(
+                newAdapter.getItemCount(), sectionAdapter.getSections());
     }
 
     @Override
@@ -1049,9 +1051,15 @@ class LayoutManager extends RecyclerView.LayoutManager {
         final int bottom = getHeight();
         final int top = 0;
 
+        if (mSections == null) {
+            return 0;
+        }
+
         final SectionData sd = getSectionData(anchorPosition);
         final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        sd.init(helper, recycler.getView(sd.firstPosition));
+        View header = recycler.getView(sd.firstPosition);
+        sd.init(helper, header);
+        recycler.cacheView(header);
         helper.init(sd, borderLine, bottom, 0);
 
         final SectionLayoutManager slm = getSlm(sd, helper);
@@ -1204,9 +1212,10 @@ class LayoutManager extends RecyclerView.LayoutManager {
 
     }
 
-    public static interface SectionAdapter {
+    @IntDef({LinearSLM.ID, GridSLM.ID, SECTION_MANAGER_CUSTOM})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SectionManager {
 
-        List<Integer> getSectionStartPositions();
     }
 
     public static class Builder {
@@ -1230,7 +1239,7 @@ class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public Builder addSlm(String key, SectionLayoutManager slm) {
-            slms.put(key, slm);
+            slms.put(key, new SlmWrapper(slm));
             return this;
         }
 
@@ -1254,6 +1263,8 @@ class LayoutManager extends RecyclerView.LayoutManager {
 
         public static final int HEADER_INLINE = 0x03;
 
+        public static final int HEADER_ALIGNMENT_MASK = 0x03;
+
         public static final int HEADER_OVERLAY = 0x04;
 
         public static final int HEADER_STICKY = 0x08;
@@ -1275,8 +1286,6 @@ class LayoutManager extends RecyclerView.LayoutManager {
         String sectionManager;
 
         int sectionManagerKind;
-
-        private List<Integer> mSubsections;
 
         public LayoutParams(int width, int height) {
             super(width, height);
@@ -1340,36 +1349,28 @@ class LayoutManager extends RecyclerView.LayoutManager {
             return (headerDisplay & flags) == flags;
         }
 
-        public List<Integer> getSubsections() {
-            return mSubsections;
-        }
-
-        public void setSubsections(List<Integer> sectionFirstPositions) {
-            mSubsections = sectionFirstPositions;
-        }
-
         public boolean isHeader() {
             return (headerDisplay & HEADER_INLINE) != 0;
         }
 
         public boolean isHeaderEndAligned() {
-            return (headerDisplay & HEADER_ALIGN_END) != 0;
+            return (headerDisplay & HEADER_ALIGNMENT_MASK) == HEADER_ALIGN_END;
         }
 
         public boolean isHeaderInline() {
-            return (headerDisplay & HEADER_INLINE) == HEADER_INLINE;
+            return (headerDisplay & HEADER_ALIGNMENT_MASK) == HEADER_INLINE;
         }
 
         public boolean isHeaderOverlay() {
-            return (headerDisplay & HEADER_OVERLAY) != 0;
+            return (headerDisplay & HEADER_OVERLAY) == HEADER_OVERLAY;
         }
 
         public boolean isHeaderStartAligned() {
-            return (headerDisplay & HEADER_ALIGN_START) != 0;
+            return (headerDisplay & HEADER_ALIGNMENT_MASK) == HEADER_ALIGN_START;
         }
 
         public boolean isHeaderSticky() {
-            return (headerDisplay & HEADER_STICKY) != 0;
+            return (headerDisplay & HEADER_STICKY) == HEADER_STICKY;
         }
 
         /**

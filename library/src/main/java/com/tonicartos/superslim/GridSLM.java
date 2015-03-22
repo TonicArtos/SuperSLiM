@@ -27,7 +27,7 @@ public class GridSLM extends SectionLayoutManager {
 
     private static final String COLUMN_WIDTH = "column_width";
 
-    public static int ID = LayoutManager.SECTION_MANAGER_GRID;
+    public static final int ID = LayoutManager.SECTION_MANAGER_GRID;
 
     private final Context mContext;
 
@@ -536,6 +536,31 @@ public class GridSLM extends SectionLayoutManager {
                 mNumColumns = AUTO_FIT;
                 mColumnWidth = -1;
             }
+        }
+    }
+
+    public class SlmConfig extends SectionLayoutManager.SlmConfig {
+        int numColumns;
+
+        int columnWidth;
+
+        public SlmConfig(int marginStart, int marginEnd, String sectionManager) {
+            super(marginStart, marginEnd, sectionManager);
+        }
+
+        public SlmConfig(int marginStart, int marginEnd,
+                @LayoutManager.SectionManager int sectionManager) {
+            super(marginStart, marginEnd, sectionManager);
+        }
+
+        public SlmConfig setColumnWidth(int columnWidth) {
+            this.columnWidth = columnWidth;
+            return this;
+        }
+
+        public SlmConfig setNumColumns(int numColumns) {
+            this.numColumns = numColumns;
+            return this;
         }
     }
 }

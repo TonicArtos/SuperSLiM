@@ -302,4 +302,30 @@ public abstract class SectionLayoutManager {
         onReset();
     }
 
+    public class SlmConfig {
+
+        int marginStart;
+
+        int marginEnd;
+
+        @LayoutManager.SectionManager
+        int sectionManagerKind;
+
+        String sectionManager;
+
+        public SlmConfig(int marginStart, int marginEnd, String sectionManager) {
+            this.marginStart = marginStart;
+            this.marginEnd = marginEnd;
+            this.sectionManagerKind = LayoutManager.SECTION_MANAGER_CUSTOM;
+            this.sectionManager = sectionManager;
+        }
+
+        public SlmConfig(int marginStart, int marginEnd,
+                @LayoutManager.SectionManager int sectionManager) {
+            this.marginStart = marginStart;
+            this.marginEnd = marginEnd;
+            this.sectionManagerKind = sectionManager;
+        }
+    }
+
 }
