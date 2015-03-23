@@ -24,7 +24,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * A LayoutManager that lays out mSection headers with optional stickiness and uses a map of
@@ -437,6 +436,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return delta;
     }
 
+
     @Override
     public void smoothScrollToPosition(final RecyclerView recyclerView, RecyclerView.State state,
             final int position) {
@@ -594,7 +594,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     private int fillToEnd(int leadingEdge, Recycler recycler, RecyclerView.State state) {
         final int lastIndex = getChildCount() - 1;
-        final SectionData sd = getSectionData(getPosition(getChildAt(lastIndex)));
+        final View lastChild = getChildAt(lastIndex);
+        final SectionData sd = getSectionData(getPosition(lastChild));
         final LayoutHelperImpl helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
         final int tempMarkerLine = 0;
         helper.init(sd, tempMarkerLine, leadingEdge, leadingEdge);
@@ -602,16 +603,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Get a marker line from the position that content has been filled up to. We don't know
         // how the section lays itself out so we have to ask it for the lowest edge.
         final SectionLayoutManager slm = getSlm(sd, helper);
-        int markerLine = slm.getLowestEdge(lastIndex, leadingEdge, sd, helper);
-        if (sd.hasHeader) {
-            // The header may have a lower edge than the section content.
-            final int headerIndex = Utils.findHeaderIndexFromLastIndex(lastIndex, sd, helper);
-            if (headerIndex != Utils.INVALID_INDEX) {
-                markerLine = Math.max(markerLine, getDecoratedBottom(getChildAt(headerIndex)));
-            }
-        }
+        int markerLine = slm.getLowestEdge(lastIndex, 0, sd, helper);
 
-        int lastPosition = getPosition(getChildAt(lastIndex));
+        int lastPosition = getPosition(lastChild);
         if (sd.hasHeader && lastPosition == sd.firstPosition && lastIndex > 0) {
             final int candidatePosition = getPosition(getChildAt(lastIndex - 1));
             if (sd.containsItem(candidatePosition)) {
@@ -650,7 +644,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             // The header may have a higher edge than the section content.
             final int anchorIndex = Utils.findHeaderIndexFromFirstIndex(firstIndex, sd, helper);
             if (anchorIndex != Utils.INVALID_INDEX) {
-                markerLine = Math.min(markerLine, getDecoratedTop(getChildAt(anchorIndex)));
+                View header = getChildAt(anchorIndex);
+                LayoutParams headerParams = (LayoutParams) header.getLayoutParams();
+                if (headerParams.isHeaderInline() && !headerParams.isHeaderOverlay()) {
+                    markerLine = Math.min(markerLine, getDecoratedTop(header));
+                }
             }
         }
 
@@ -1099,9 +1097,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean scrollToEndCompleted(int leadingEdge, RecyclerView.State state) {
         final int endPosition = getPosition(findAnchorAtEnd());
-        if (endPosition == state.getItemCount() - 1) {
-            return true;
-        }
+//        if (endPosition == state.getItemCount() - 1) {
+//            return true;
+//        }
 
         final SectionData sd = getSectionData(endPosition);
         final SectionLayoutManager slm = getSlm(sd, mHelperDelegate);
@@ -1109,7 +1107,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // End edge is the bottom of the section content, or the bottom of the header, which
         // ever is lowest.
         final int lastIndex = getChildCount() - 1;
-        int endEdge = slm.getLowestEdge(lastIndex, leadingEdge, sd, mHelperDelegate);
+        int endEdge = slm.getLowestEdge(lastIndex, getDecoratedBottom(getChildAt(lastIndex)), sd,
+                mHelperDelegate);
         if (sd.hasHeader) {
             final int endHeaderIndex = Utils
                     .findHeaderIndexFromLastIndex(lastIndex, sd, mHelperDelegate);
@@ -1175,6 +1174,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Now trim views before the first visible item.
         for (int i = 0; i < anchorIndex; i++) {
+//            for (int j = 0; j < getChildCount(); j++) {
+//                Log.d("children" , "index " + j + " position " + getPosition(getChildAt(j)));
+//            }
+//
+//            Log.d("trim", "index " + i + " position " + getPosition(getChildAt(0)));
             removeAndRecycleViewAt(0, recycler.inner);
         }
 

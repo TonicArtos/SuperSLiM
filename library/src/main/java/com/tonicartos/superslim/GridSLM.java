@@ -19,6 +19,8 @@ import android.view.ViewGroup;
  */
 public class GridSLM extends SectionLayoutManager {
 
+    public static final int ID = LayoutManager.SECTION_MANAGER_GRID;
+
     private static final int AUTO_FIT = -1;
 
     private static final int DEFAULT_NUM_COLUMNS = 1;
@@ -26,8 +28,6 @@ public class GridSLM extends SectionLayoutManager {
     private static final String NUM_COLUMNS = "num_columns";
 
     private static final String COLUMN_WIDTH = "column_width";
-
-    public static final int ID = LayoutManager.SECTION_MANAGER_GRID;
 
     private final Context mContext;
 
@@ -37,38 +37,6 @@ public class GridSLM extends SectionLayoutManager {
 
     public GridSLM(Context context) {
         mContext = context;
-    }
-
-    @Override
-    public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
-            Recycler recycler) {
-        /*
-         * Work from an assumed overlap and add heights from the start until the overlap is zero or
-         * less, or the current position (or max items) is reached.
-         */
-        int areaAbove = 0;
-        for (int position = sd.firstPosition + 1;
-                areaAbove < sd.headerHeight && position < firstVisiblePosition;
-                position += mNumColumns) {
-            // Look to see if the header overlaps with the displayed area of the mSection.
-            int rowHeight = 0;
-            for (int col = 0; col < mNumColumns; col++) {
-                View child = recycler.getView(position + col);
-                measureChild(child, helper);
-                rowHeight =
-                        Math.max(rowHeight, helper.getMeasuredHeight(child));
-                recycler.cacheView(position + col, child);
-            }
-            areaAbove += rowHeight;
-        }
-
-        if (areaAbove == sd.headerHeight) {
-            return 0;
-        } else if (areaAbove > sd.headerHeight) {
-            return 1;
-        } else {
-            return -areaAbove;
-        }
     }
 
     /**
@@ -130,6 +98,11 @@ public class GridSLM extends SectionLayoutManager {
         return new LayoutParams(params);
     }
 
+    @Override
+    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+        return new LayoutParams(c, attrs);
+    }
+
 //    @Override
 //    public int finishFillToEnd(View anchor, SectionData sectionData, LayoutHelper helper,
 //            Recycler recycler, RecyclerView.State state) {
@@ -140,11 +113,6 @@ public class GridSLM extends SectionLayoutManager {
 //
 //        return fillToEnd(leadingEdge, markerLine, anchorPosition + 1, sectionData, recycler);
 //    }
-
-    @Override
-    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
-        return new LayoutParams(c, attrs);
-    }
 
     @Override
     public void getEdgeStates(Rect outRect, View child, SectionData sd, int layoutDirection) {
@@ -169,9 +137,9 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
+    public int getLowestEdge(int lastIndex, int altEdge, SectionData sectionData,
             LayoutQueryHelper helper) {
-        int bottomMostEdge = 0;
+        int bottomMostEdge = altEdge;
         int leftPosition = helper.getWidth();
         boolean foundItems = false;
         // Look from end to find children that are the lowest.
@@ -196,19 +164,39 @@ public class GridSLM extends SectionLayoutManager {
             bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
         }
 
-        return foundItems ? bottomMostEdge : defaultEdge;
+        return foundItems ? bottomMostEdge : altEdge;
     }
 
     @Override
-    protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
-    }
+    public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
+            Recycler recycler) {
+        /*
+         * Work from an assumed overlap and add heights from the start until the overlap is zero or
+         * less, or the current position (or max items) is reached.
+         */
+        int areaAbove = 0;
+        for (int position = sd.firstPosition + 1;
+                areaAbove < sd.headerHeight && position < firstVisiblePosition;
+                position += mNumColumns) {
+            // Look to see if the header overlaps with the displayed area of the mSection.
+            int rowHeight = 0;
+            for (int col = 0; col < mNumColumns; col++) {
+                View child = recycler.getView(position + col);
+                measureChild(child, helper);
+                rowHeight =
+                        Math.max(rowHeight, helper.getMeasuredHeight(child));
+                recycler.cacheView(position + col, child);
+            }
+            areaAbove += rowHeight;
+        }
 
-    @Override
-    protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
+        if (areaAbove == sd.headerHeight) {
+            return 0;
+        } else if (areaAbove > sd.headerHeight) {
+            return 1;
+        } else {
+            return -areaAbove;
+        }
     }
 
     @Override
@@ -263,6 +251,18 @@ public class GridSLM extends SectionLayoutManager {
             config.putInt(COLUMN_WIDTH, mColumnWidth);
             saveConfiguration(sectionData, config);
         }
+    }
+
+    @Override
+    protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
+    }
+
+    @Override
+    protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        return 0;
     }
 
     @Override
@@ -544,6 +544,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     public class SlmConfig extends SectionLayoutManager.SlmConfig {
+
         int numColumns;
 
         int columnWidth;

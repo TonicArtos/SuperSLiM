@@ -30,9 +30,7 @@ public abstract class SectionLayoutManager {
         View header = null;
         if (sectionData.hasHeader && anchorPosition == sectionData.firstPosition) {
             header = recycler.getView(sectionData.firstPosition);
-            if (recycler.getCachedView(sectionData.firstPosition) == null) {
-                helper.measureHeader(header);
-            }
+            helper.measureHeader(header);
             markerLine = helper.layoutHeaderTowardsEnd(header, markerLine, state);
             helper.updateVerticalOffset(markerLine);
             anchorPosition += 1;
@@ -130,8 +128,7 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     final public int finishFillToStart(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
         int markerLine = onFillToStart(anchorPosition, sectionData, helper, recycler, state);
         if (sectionData.hasHeader) {
             final int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, sectionData, helper);
@@ -149,7 +146,7 @@ public abstract class SectionLayoutManager {
             final int offset = getHeaderOffset(sectionData, helper, recycler, header);
 
             final int sectionBottom = getLowestEdge(
-                    Utils.findLastIndexForSection(sectionData, helper), helper.getHeight(),
+                    Utils.findLastIndexForSection(sectionData, helper), helper.getBottom(header),
                     sectionData, helper);
 
             markerLine = helper
@@ -231,12 +228,12 @@ public abstract class SectionLayoutManager {
      * Find the lowest displayed edge of the section. If there is no member found then return the
      * default edge instead.
      *
-     * @param lastIndex   Index to start looking from. Usually the index of the last attached view
-     *                    in this section.
-     * @param defaultEdge Default value.
+     * @param lastIndex Index to start looking from. Usually the index of the last attached view in
+     *                  this section.
+     * @param altEdge   Default value.
      * @return Lowest (attached) edge of the section.
      */
-    public int getLowestEdge(int lastIndex, int defaultEdge, SectionData sectionData,
+    public int getLowestEdge(int lastIndex, int altEdge, SectionData sectionData,
             LayoutQueryHelper helper) {
         // Look from end to find children that are the lowest.
         for (int i = lastIndex; i >= 0; i--) {
@@ -250,9 +247,9 @@ public abstract class SectionLayoutManager {
                 continue;
             }
             // A more interesting layout would have to do something more here.
-            return helper.getBottom(child);
+            return Math.max(altEdge, helper.getBottom(child));
         }
-        return defaultEdge;
+        return altEdge;
     }
 
     public int howManyMissingAbove(int firstPosition, SparseArray<Boolean> positionsOffscreen) {
@@ -576,8 +573,8 @@ public abstract class SectionLayoutManager {
         }
 
         SectionLayoutManager slm = helper.getSlm(sd, helper);
-        final int sectionBottom = slm.getLowestEdge(
-                headerIndex, helper.getBottom(header), sd, helper);
+        final int sectionBottom = slm.
+                getLowestEdge(headerIndex, helper.getBottom(header), sd, helper);
 
         final int headerHeight = helper.getMeasuredHeight(header);
         int top = headerHeight + stickyEdge > sectionBottom ?

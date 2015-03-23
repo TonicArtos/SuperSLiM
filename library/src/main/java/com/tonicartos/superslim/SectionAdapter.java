@@ -3,7 +3,7 @@ package com.tonicartos.superslim;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface SectionAdapter<T extends SectionAdapter.Section>  {
+public interface SectionAdapter<T extends SectionAdapter.Section> {
 
     List<T> getSections();
 

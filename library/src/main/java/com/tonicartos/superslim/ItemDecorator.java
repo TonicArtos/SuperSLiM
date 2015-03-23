@@ -342,7 +342,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         public Builder(Context context) {
             mContext = context;
-        }        public int startPadding = UNSET;
+        }
 
         /**
          * Add an assignment checker for this decorator.
@@ -353,7 +353,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         public Builder addAssignmentChecker(AssignmentChecker checker) {
             assignments.add(checker);
             return this;
-        }
+        }        public int startPadding = UNSET;
 
         public ItemDecorator build() {
             return new ItemDecorator(this);
@@ -428,7 +428,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
         public Builder decoratesPosition(int position) {
             assignments.add(new PositionChecker(position));
             return this;
-        }        public int endPadding = UNSET;
+        }
 
         public Builder setDrawableAbove(int resId) {
             return setDrawableAbove(resId, DEFAULT_FLAGS);
@@ -436,7 +436,7 @@ public class ItemDecorator extends RecyclerView.ItemDecoration {
 
         public Builder setDrawableAbove(int resId, int flags) {
             return setDrawableAbove(mContext.getResources().getDrawable(resId), flags);
-        }
+        }        public int endPadding = UNSET;
 
         public Builder setDrawableAbove(Drawable drawable) {
             return setDrawableAbove(drawable, DEFAULT_FLAGS);
