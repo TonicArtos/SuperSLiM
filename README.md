@@ -1,3 +1,5 @@
+* **Warning:** You are current looking at the development branch. For the latest stable branch, please use [early_release_4](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4).*
+
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
 [![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
@@ -26,16 +28,30 @@ SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/w
 See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more details and future development.
 
 ## How do I get it?
-Add the following to your build.gradle file.
+I strongly recommend using the latest stable release, unless you want to test a snapshot on the development branch. The latest stable release can be gotten by adding the following to your build.gradle file.
 ```groovy
 dependencies {
-    compile 'com.tonicartos:superslim:+'
+    compile 'com.tonicartos:superslim:0.4.+'
 }
 ```
-*+ is a wildcard, the latest version is displayed in the maven badge at the top of this page.*
+
+For the latest development snapshot:
+```groovy
+repositories {
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+}
+```
+
+```groovy
+dependencies {
+    compile 'com.tonicartos:superslim:0.5.0-SNAPSHOT'
+}
+```
 
 ## How do I use it?
-Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) wiki page for easy to follow instructions.
+Documentation for the development snapshot is not available. However, the documentation for the latest stable version is available.
+
+Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20started%20with%20version%200.4) wiki page for easy to follow instructions.
 
 SuperSLiM is documented in the [wiki](https://github.com/TonicArtos/SuperSLiM/wiki/) so you can easily get stuck in.
 
