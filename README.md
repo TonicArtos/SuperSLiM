@@ -1,4 +1,4 @@
-* **Warning:** You are current looking at the development branch. For the latest stable branch, please use [early_release_4](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4).*
+_**Warning:** You are current looking at the development branch. For the latest stable branch, please use [early_release_4](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)._
 
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
