@@ -331,6 +331,10 @@ public class GridSLM extends SectionLayoutManager {
     @Override
     protected int onFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
+        if (anchorPosition == sd.firstPosition && sd.hasHeader) {
+            return 0;
+        }
+
         final int leadingEdge = helper.getLeadingEdge();
         int markerLine = 0;
         final int firstContentPosition = sd.hasHeader ? sd.firstPosition + 1 : sd.firstPosition;
@@ -418,7 +422,7 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         // Lay out rows to end.
-        for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
+        for (int i = columnAnchorPosition; i >= firstContentPosition; i -= mNumColumns) {
             if (markerLine - minHeightOffset < leadingEdge) {
                 break;
             }
