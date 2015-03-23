@@ -86,18 +86,14 @@ class SlmWrapper extends SectionLayoutManager {
         if (sd.hasHeader) {
             // Shuffle header to end of section (child index). This is the easiest way to ensure
             // the header is drawn after any other section content.
-//            int headerIndex = findHeaderIndexFromLastIndex(helper.getChildCount() - 1, sd,
-// helper);
-            // The last index before the fill must be the header for the current section because
-            // we always keep it at the back.
-            int headerIndex = countBeforeFill - 1;
+            int headerIndex = countBeforeFill - 1; // Header should always be at the end.
             if (headerIndex != Utils.INVALID_INDEX) {
                 View header = helper.getChildAt(headerIndex);
                 if (helper.getPosition(header) == sd.firstPosition) {
                     helper.detachView(header);
                     helper.attachView(header);
 
-                    return Math.max(markerLine, helper.getBottom(header));
+                    markerLine = Math.max(markerLine, helper.getBottom(header));
                 }
             }
 
@@ -304,7 +300,8 @@ class SlmWrapper extends SectionLayoutManager {
                 sd.recentlyFinishFilledToStart = false;
                 LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
                 subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
-                helper.getSlm(subSd, subsectionHelper).onPostFinishFillToStart(sd, subsectionHelper);
+                helper.getSlm(subSd, subsectionHelper)
+                        .onPostFinishFillToStart(sd, subsectionHelper);
                 subsectionHelper.recycle();
             }
         }

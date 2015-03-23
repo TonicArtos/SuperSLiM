@@ -605,15 +605,23 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int markerLine = slm.getLowestEdge(lastIndex, leadingEdge, sd, helper);
         if (sd.hasHeader) {
             // The header may have a lower edge than the section content.
-            final int anchorIndex = Utils.findHeaderIndexFromLastIndex(lastIndex, sd, helper);
-            if (anchorIndex != Utils.INVALID_INDEX) {
-                markerLine = Math.max(markerLine, getDecoratedBottom(getChildAt(anchorIndex)));
+            final int headerIndex = Utils.findHeaderIndexFromLastIndex(lastIndex, sd, helper);
+            if (headerIndex != Utils.INVALID_INDEX) {
+                markerLine = Math.max(markerLine, getDecoratedBottom(getChildAt(headerIndex)));
+            }
+        }
+
+        int lastPosition = getPosition(getChildAt(lastIndex));
+        if (sd.hasHeader && lastPosition == sd.firstPosition && lastIndex > 0) {
+            final int candidatePosition = getPosition(getChildAt(lastIndex - 1));
+            if (sd.containsItem(candidatePosition)) {
+                lastPosition = candidatePosition;
             }
         }
 
         helper.updateMarkerLine(tempMarkerLine, markerLine);
         helper.init(sd, markerLine, leadingEdge, leadingEdge);
-        markerLine = slm.finishFillToEnd(leadingEdge, sd, helper, recycler, state);
+        markerLine = slm.finishFillToEnd(lastPosition + 1, sd, helper, recycler, state);
         helper.recycle();
 
         return fillNextSectionsToEnd(leadingEdge, markerLine, recycler, state);
@@ -628,7 +636,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     private int fillToStart(int leadingEdge, Recycler recycler, RecyclerView.State state) {
         final int firstIndex = 0;
-        SectionData sd = getSectionData(getPosition(getChildAt(firstIndex)));
+        int firstPosition = getPosition(getChildAt(firstIndex));
+        SectionData sd = getSectionData(firstPosition);
         final LayoutHelperImpl helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
         final int tempMarkerLine = 0;
         helper.init(sd, tempMarkerLine, leadingEdge, leadingEdge);
@@ -647,7 +656,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         helper.updateMarkerLine(tempMarkerLine, markerLine);
         helper.init(sd, markerLine, leadingEdge, leadingEdge);
-        markerLine = slm.finishFillToStart(leadingEdge, sd, helper, recycler, state);
+        markerLine = slm.finishFillToStart(firstPosition - 1, sd, helper, recycler, state);
         helper.recycle();
 
         return fillNextSectionsToStart(leadingEdge, markerLine, recycler, state);

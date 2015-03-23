@@ -131,7 +131,7 @@ public abstract class SectionLayoutManager {
             View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (sectionData.containsItem(params.getViewPosition())) {
+            if (!sectionData.containsItem(params.getViewPosition())) {
                 break;
             }
             if (params.isHeader()) {
@@ -159,7 +159,7 @@ public abstract class SectionLayoutManager {
             View child = helper.getChildAt(i);
             LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) child
                     .getLayoutParams();
-            if (sectionData.containsItem(params.getViewPosition())) {
+            if (!sectionData.containsItem(params.getViewPosition())) {
                 break;
             }
             if (params.isHeader()) {
