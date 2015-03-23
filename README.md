@@ -34,7 +34,7 @@ dependencies {
 ```
 
 ## How do I use it?
-Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) wiki page for easy to follow instructions.
+Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20started%20with%20version%200.4) wiki page for easy to follow instructions.
 
 SuperSLiM is documented in the [wiki](https://github.com/TonicArtos/SuperSLiM/wiki/) so you can easily get stuck in.
 
