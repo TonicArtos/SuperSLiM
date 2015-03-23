@@ -535,7 +535,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionData sd = getSectionData(anchorPosition);
         final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
         sd.init(helper, recycler.getView(sd.firstPosition));
-        helper.init(sd, markerLine, leadingEdge, leadingEdge);
+        helper.init(sd, markerLine, leadingEdge, markerLine);
         final SectionLayoutManager slm = getSlm(sd, helper);
 
         // Layout section.
