@@ -46,7 +46,7 @@ class SlmWrapper extends SectionLayoutManager {
             addView(header, helper, recycler);
             recycler.decacheView(sd.firstPosition);
         }
-        return markerLine;
+        return helper.translateFillResult(markerLine);
     }
 
     public int beginFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
@@ -71,7 +71,7 @@ class SlmWrapper extends SectionLayoutManager {
             addView(header, attachIndex, helper, recycler);
             recycler.decacheView(sd.firstPosition);
         }
-        return markerLine;
+        return helper.translateFillResult(markerLine);
     }
 
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
@@ -103,7 +103,7 @@ class SlmWrapper extends SectionLayoutManager {
 
 
         }
-        return markerLine;
+        return helper.translateFillResult(markerLine);
     }
 
     public int finishFillToStart(int anchorPosition, SectionData sd, LayoutHelper helper,
@@ -141,7 +141,7 @@ class SlmWrapper extends SectionLayoutManager {
             sd.setTempHeaderIndex(attachIndex);
         }
         sd.recentlyFinishFilledToStart = true;
-        return markerLine;
+        return helper.translateFillResult(markerLine);
     }
 
     public RecyclerView.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
