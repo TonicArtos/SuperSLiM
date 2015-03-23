@@ -29,10 +29,9 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 Add the following to your build.gradle file.
 ```groovy
 dependencies {
-    compile 'com.tonicartos:superslim:+'
+    compile 'com.tonicartos:superslim:0.4.7'
 }
 ```
-*+ is a wildcard, the latest version is displayed in the maven badge at the top of this page.*
 
 ## How do I use it?
 Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) wiki page for easy to follow instructions.
