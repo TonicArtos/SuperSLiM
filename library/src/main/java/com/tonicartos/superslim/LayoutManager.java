@@ -1077,6 +1077,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             helper.init(sd, borderLine, top, top);
             markerLineTop = slm.finishFillToStart(anchorPosition - 1, sd, helper, recycler, state);
         }
+        helper.recycle();
 
         // Fill any space left above.
         fillNextSectionsToStart(top, markerLineTop, recycler, state);
