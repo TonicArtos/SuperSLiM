@@ -1291,7 +1291,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         private static final int DEFAULT_HEADER_DISPLAY = 0;
 
-        public int headerDisplay;
+        public @HeaderDisplayOptions int headerDisplay;
 
         public int marginEnd;
 
@@ -1312,6 +1312,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             super(c, attrs);
 
             TypedArray a = c.obtainStyledAttributes(attrs, R.styleable.superslim_LayoutManager);
+            //noinspection ResourceType
             headerDisplay = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_headerDisplay,
                     DEFAULT_HEADER_DISPLAY);
@@ -1455,6 +1456,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         .getInt(R.styleable.superslim_LayoutManager_slm_section_layoutManager,
                                 SECTION_MANAGER_LINEAR);
             }
+        }
+
+        @IntDef(flag = true, value = {
+                HEADER_INLINE,
+                HEADER_ALIGN_START,
+                HEADER_ALIGN_END,
+                HEADER_OVERLAY,
+                HEADER_STICKY
+        })
+        @Retention(RetentionPolicy.SOURCE)
+        public @interface HeaderDisplayOptions {
+
         }
 
         private class MissingFirstPositionException extends RuntimeException {
