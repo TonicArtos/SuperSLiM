@@ -281,7 +281,7 @@ public class GridSLM extends SectionLayoutManager {
 
         View anchor = recycler.getView(anchorPosition);
         recycler.cacheView(anchorPosition, anchor);
-        if (sectionData.containsItem(helper.getPosition(anchor))) {
+        if (!sectionData.containsItem(helper.getPosition(anchor))) {
             return markerLine;
         }
 
