@@ -23,9 +23,33 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public int beginFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    final public int beginFillToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        return 0;
+        int markerLine = 0;
+        View header = null;
+        if (sectionData.hasHeader && anchorPosition == sectionData.firstPosition) {
+            header = recycler.getView(sectionData.firstPosition);
+            if (recycler.getCachedView(sectionData.firstPosition) == null) {
+                helper.measureHeader(header);
+            }
+            markerLine = helper.layoutHeaderTowardsEnd(header, markerLine, state);
+            helper.updateVerticalOffset(markerLine);
+            anchorPosition += 1;
+        }
+
+        if (sectionData.subsections != null) {
+            markerLine = onFillSubsectionsToEnd(anchorPosition, sectionData, helper, recycler,
+                    state);
+        } else {
+            markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        }
+
+        if (sectionData.hasHeader && header != null) {
+            addView(header, helper, recycler);
+            recycler.decacheView(sectionData.firstPosition);
+        }
+        return helper.translateFillResult(markerLine);
     }
 
     /**
@@ -37,25 +61,31 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public int beginFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    final public int beginFillToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        return 0;
-    }
+        final int countBeforeFill = helper.getChildCount();
+        int markerLine;
+        if (sectionData.subsections != null) {
+            markerLine = onFillSubsectionsToStart(anchorPosition, sectionData, helper, recycler,
+                    state);
+        } else {
+            markerLine = onFillToStart(anchorPosition, sectionData, helper, recycler, state);
+        }
+        if (sectionData.hasHeader) {
+            View header = recycler.getView(sectionData.firstPosition);
+            if (recycler.getCachedView(sectionData.firstPosition) == null) {
+                helper.measureHeader(header);
+            }
+            final int offset = getHeaderOffset(sectionData, helper, recycler, header);
+            markerLine = helper.layoutHeaderTowardsStart(header, offset, markerLine, 0, state);
 
-    /**
-     * Compute the offset for side aligned headers. If the height of the non-visible area of the
-     * section is taller than the header, then the header should be offscreen, in that case return
-     * any +ve number.
-     *
-     * @param firstVisiblePosition Position of first visible item in section.
-     * @param sectionData          Section data.
-     * @param helper               Layout helper.
-     * @param recycler             Layout state.
-     * @return -ve number giving the distance the header should be offset before the anchor view. A
-     * +ve number indicates the header is offscreen.
-     */
-    public abstract int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler);
+            int attachIndex = helper.getChildCount() - countBeforeFill;
+            addView(header, attachIndex, helper, recycler);
+            recycler.decacheView(sectionData.firstPosition);
+        }
+        return helper.translateFillResult(markerLine);
+    }
 
     /**
      * Finish filling a section towards the end.
@@ -66,9 +96,28 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public int finishFillToEnd(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    final public int finishFillToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        return onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        int countBeforeFill = helper.getChildCount();
+        int markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        if (sectionData.hasHeader) {
+            // Shuffle header to end of section (child index). This is the easiest way to ensure
+            // the header is drawn after any other section content.
+            int headerIndex = countBeforeFill - 1; // Header should always be at the end.
+            if (headerIndex != Utils.INVALID_INDEX) {
+                View header = helper.getChildAt(headerIndex);
+                if (helper.getPosition(header) == sectionData.firstPosition) {
+                    helper.detachView(header);
+                    helper.attachView(header);
+
+                    markerLine = Math.max(markerLine, helper.getBottom(header));
+                }
+            }
+
+
+        }
+        return helper.translateFillResult(markerLine);
     }
 
     /**
@@ -80,9 +129,44 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    public int finishFillToStart(int anchorPosition, SectionData sectionData, LayoutHelper helper,
+    final public int finishFillToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        return onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        int markerLine = onFillToStart(anchorPosition, sectionData, helper, recycler, state);
+        if (sectionData.hasHeader) {
+            final int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, sectionData, helper);
+            final View header;
+            if (headerIndex == Utils.INVALID_INDEX) {
+                header = recycler.getView(sectionData.firstPosition);
+                if (recycler.getCachedView(sectionData.firstPosition) == null) {
+                    helper.measureHeader(header);
+                }
+            } else {
+                header = helper.getChildAt(headerIndex);
+                helper.detachViewAt(headerIndex);
+            }
+
+            final int offset = getHeaderOffset(sectionData, helper, recycler, header);
+
+            final int sectionBottom = getLowestEdge(
+                    Utils.findLastIndexForSection(sectionData, helper), helper.getHeight(),
+                    sectionData, helper);
+
+            markerLine = helper
+                    .layoutHeaderTowardsStart(header, offset, markerLine, sectionBottom, state);
+
+            // Make sure to attach after section content and to clean up any caching.
+            final int attachIndex = Utils.findLastIndexForSection(sectionData, helper) + 1;
+            if (headerIndex == Utils.INVALID_INDEX) {
+                helper.addView(header, attachIndex);
+            } else {
+                helper.attachView(header, attachIndex);
+            }
+            recycler.decacheView(sectionData.firstPosition);
+            sectionData.setTempHeaderIndex(attachIndex);
+        }
+        sectionData.recentlyFinishFilledToStart = true;
+        return helper.translateFillResult(markerLine);
     }
 
     public RecyclerView.LayoutParams generateLayoutParams(RecyclerView.LayoutParams params) {
@@ -200,6 +284,45 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
+    final public void preTrimAtEndEdge(int lvi, SectionData sd, LayoutTrimHelper helper) {
+        onPreTrimAtEndEdge(lvi, sd, helper);
+
+        if (sd.subsections == null) {
+            return;
+        }
+        HashMap<SectionData, Integer> selectedSubsections =
+                getSectionsIntersectingEndEdge(helper.getTrimEdge(), lvi, sd, helper);
+
+        for (SectionData subSd : selectedSubsections.keySet()) {
+            LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
+            subsectionHelper.init(subSd, helper.getTrimEdge(), helper.getStickyEdge());
+            helper.getSlm(subSd, subsectionHelper).
+                    preTrimAtEndEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
+            subsectionHelper.recycle();
+        }
+    }
+
+    final public void preTrimAtStartEdge(int fvi, SectionData sd, LayoutTrimHelper helper) {
+        onPreTrimAtStartEdge(fvi, sd, helper);
+
+        int subsectionStickyEdge = updateHeaderForStartEdgeTrim(fvi, sd, helper);
+
+        if (sd.subsections == null) {
+            return;
+        }
+        HashMap<SectionData, Integer> selectedSubsections =
+                getSectionsIntersectingStartEdge(subsectionStickyEdge, fvi, sd,
+                        helper);
+
+        for (SectionData subSd : selectedSubsections.keySet()) {
+            LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
+            subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
+            helper.getSlm(subSd, subsectionHelper).
+                    preTrimAtStartEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
+            subsectionHelper.recycle();
+        }
+    }
+
     protected void addView(View child, LayoutHelper helper, Recycler recycler) {
         recycler.decacheView(helper.getPosition(child));
         helper.addView(child);
@@ -210,10 +333,25 @@ public abstract class SectionLayoutManager {
         helper.addView(child, index);
     }
 
-    protected abstract int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
+    /**
+     * Compute the offset for side aligned headers. If the height of the non-visible area of the
+     * section is taller than the header, then the header should be offscreen, in that case return
+     * any +ve number.
+     *
+     * @param firstVisiblePosition Position of first visible item in section.
+     * @param sectionData          Section data.
+     * @param helper               Layout helper.
+     * @param recycler             Layout state.
+     * @return -ve number giving the distance the header should be offset before the anchor view. A
+     * +ve number indicates the header is offscreen.
+     */
+    abstract protected int onComputeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler);
+
+    abstract protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
-    protected abstract int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
+    abstract protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
     /**
@@ -225,7 +363,7 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    protected abstract int onFillToEnd(int anchorPosition, SectionData sectionData,
+    abstract protected int onFillToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper,
             Recycler recycler, RecyclerView.State state);
 
@@ -238,7 +376,7 @@ public abstract class SectionLayoutManager {
      * @param recycler       Recycler.
      * @return Line to which content has been filled.
      */
-    protected abstract int onFillToStart(int anchorPosition, SectionData sectionData,
+    abstract protected int onFillToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state);
 
     protected void onInit(Bundle savedConfiguration, SectionData sectionData,
@@ -256,7 +394,6 @@ public abstract class SectionLayoutManager {
      */
     protected void onPreTrimAtEndEdge(final int lastVisibleIndex, final SectionData sectionData,
             final LayoutTrimHelper helper) {
-
     }
 
     /**
@@ -294,12 +431,174 @@ public abstract class SectionLayoutManager {
      * solely by the SlmWrapper, but needs to be called by the LayoutManager, which is why it is
      * package private.
      */
-    void onPostFinishFillToStart(SectionData sectionData, LayoutTrimHelper helper) {
+    void postFinishFillToStart(SectionData sd, LayoutTrimHelper helper) {
+        final int headerIndex = sd.getTempHeaderIndex();
+        sd.clearTempHeaderIndex();
+        final int subsectionStickyEdge = updateHeader(headerIndex, sd, helper);
+
+        if (sd.subsections == null) {
+            return;
+        }
+
+        for (SectionData subSd : sd.subsections) {
+            if (sd.recentlyFinishFilledToStart) {
+                sd.recentlyFinishFilledToStart = false;
+                LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
+                subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
+                helper.getSlm(subSd, subsectionHelper).postFinishFillToStart(sd, subsectionHelper);
+                subsectionHelper.recycle();
+            }
+        }
     }
 
     void reset() {
         mSavedConfiguration.clear();
         onReset();
+    }
+
+    private int getHeaderOffset(SectionData sd, LayoutHelper helper, Recycler recycler,
+            View header) {
+        final int offset;
+        final LayoutManager.LayoutParams layoutParams =
+                (LayoutManager.LayoutParams) header.getLayoutParams();
+        if (!layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline()) {
+            offset = onComputeHeaderOffset(0, sd, helper, recycler);
+        } else {
+            offset = 0;
+        }
+        return offset;
+    }
+
+    private HashMap<SectionData, Integer> getSectionsIntersectingEndEdge(int endEdge,
+            int lastVisibleIndex, SectionData sd, LayoutQueryHelper helper) {
+        // Work out max number of items we have to check to find sections which intersect start
+        // edge. Also, cap to  number of items after fvi.
+        int range = Math.min(helper.getPosition(helper.getChildAt(lastVisibleIndex)) -
+                sd.firstPosition + 1, lastVisibleIndex + 1);
+
+        // Select subsections which have items overlapping or before the edge.
+        HashMap<SectionData, Integer> selectedSubsections = new HashMap<>();
+        for (int i = 0; i < range; i++) {
+            int childIndex = lastVisibleIndex - i;
+            View child = helper.getChildAt(childIndex);
+            if (endEdge < helper.getBottom(child)) {
+                int childPosition = helper.getPosition(child);
+                for (SectionData subSd : sd.subsections) {
+                    if (selectedSubsections.get(subSd) == null && subSd
+                            .containsItem(childPosition)) {
+                        int subsectionLvi = Utils
+                                .findLastVisibleIndex(endEdge, childIndex, subSd,
+                                        helper);
+                        if (subsectionLvi != Utils.INVALID_INDEX) {
+                            selectedSubsections.put(subSd, subsectionLvi);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (selectedSubsections.size() == sd.subsections.size()) {
+                // Already added every section.
+                break;
+            }
+        }
+        return selectedSubsections;
+    }
+
+    /**
+     * Get a map of sections and their first visible positions that intersect the start edge.
+     *
+     * <p>The basic implementation looks through all attached child views for this section. You
+     * should consider an implementation that constrains the search to a minimal range.</p>
+     *
+     * @param startEdge         Edge line. Generally 0.
+     * @param firstVisibleIndex First visible index for this section.
+     * @param sd                Section data.
+     * @param helper            Layout query helper.
+     * @return Map of subsection data to subsection first visible edges.
+     */
+    private HashMap<SectionData, Integer> getSectionsIntersectingStartEdge(int startEdge,
+            int firstVisibleIndex, SectionData sd, LayoutQueryHelper helper) {
+        // Work out max number of items we have to check to find sections which intersect start
+        // edge. Also, cap to  number of items after fvi.
+        int range = Math.min(sd.lastPosition
+                        - helper.getPosition(helper.getChildAt(firstVisibleIndex)) + 1,
+                helper.getChildCount() - firstVisibleIndex);
+
+        // Select subsections which have items overlapping or before the start edge.
+        HashMap<SectionData, Integer> selectedSubsections = new HashMap<>();
+        for (int i = 0; i < range; i++) {
+            int childIndex = i + firstVisibleIndex;
+            View child = helper.getChildAt(childIndex);
+            if (helper.getTop(child) < startEdge) {
+                int childPosition = helper.getPosition(child);
+                for (SectionData subSd : sd.subsections) {
+                    if (selectedSubsections.get(subSd) == null && subSd
+                            .containsItem(childPosition)) {
+                        int subsectionFvi = Utils
+                                .findFirstVisibleIndex(startEdge, childIndex, subSd,
+                                        helper);
+                        if (subsectionFvi != Utils.INVALID_INDEX) {
+                            selectedSubsections.put(subSd, subsectionFvi);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (selectedSubsections.size() == sd.subsections.size()) {
+                // Already added every section.
+                break;
+            }
+        }
+        return selectedSubsections;
+    }
+
+    private int updateHeader(int headerIndex, SectionData sd, LayoutQueryHelper helper) {
+        final int stickyEdge = helper.getStickyEdge();
+        if (headerIndex == Utils.INVALID_INDEX) {
+            // No header found to update. It must not need to be updated.
+            return stickyEdge;
+        }
+
+        final View header = helper.getChildAt(headerIndex);
+        final LayoutManager.LayoutParams headerParams =
+                (LayoutManager.LayoutParams) header.getLayoutParams();
+        if (!headerParams.isHeaderSticky()) {
+            // Only need to update stickied headers.
+            return stickyEdge;
+        }
+
+        final int headerTop = helper.getTop(header);
+        if (headerTop >= stickyEdge) {
+            // Only need to update sticky headers if they are above the sticky edge.
+            return stickyEdge;
+        }
+
+        SectionLayoutManager slm = helper.getSlm(sd, helper);
+        final int sectionBottom = slm.getLowestEdge(
+                headerIndex, helper.getBottom(header), sd, helper);
+
+        final int headerHeight = helper.getMeasuredHeight(header);
+        int top = headerHeight + stickyEdge > sectionBottom ?
+                sectionBottom - headerHeight : stickyEdge;
+
+        int delta = headerTop - top;
+        header.offsetTopAndBottom(-delta);
+
+        if (headerParams.isHeaderInline()) {
+            return stickyEdge - delta + headerHeight;
+        }
+        return stickyEdge;
+    }
+
+    private int updateHeaderForStartEdgeTrim(int fvi, SectionData sd, LayoutQueryHelper helper) {
+        if (!sd.hasHeader) {
+            return helper.getStickyEdge();
+        }
+
+        int headerIndex = Utils.findHeaderIndexFromFirstIndex(fvi, sd, helper);
+        return updateHeader(headerIndex, sd, helper);
     }
 
     public class SlmConfig {

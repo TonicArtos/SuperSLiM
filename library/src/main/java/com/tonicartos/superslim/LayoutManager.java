@@ -65,8 +65,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private ArrayList<SectionData> mSections;
 
     public LayoutManager(Context context) {
-        mLinearSlm = new SlmWrapper(new LinearSLM());
-        mGridSlm = new SlmWrapper(new GridSLM(context));
+        mLinearSlm = new LinearSLM();
+        mGridSlm = new GridSLM(context);
         mSlms = new HashMap<>();
         mHelperDelegate = new LayoutHelperDelegate(this);
     }
@@ -74,8 +74,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     // Suppress unchecked list assignment warning.
     @SuppressWarnings("unchecked")
     LayoutManager(Builder builder) {
-        mLinearSlm = new SlmWrapper(new LinearSLM());
-        mGridSlm = new SlmWrapper(new GridSLM(builder.context));
+        mLinearSlm = new LinearSLM();
+        mGridSlm = new GridSLM(builder.context);
         mSlms = builder.slms;
         SectionAdapter sectionAdapter = (SectionAdapter) builder.adapter;
         mSections = SectionData.processSectionGraph(
@@ -90,7 +90,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param slm SectionLayoutManager to add.
      */
     public void addSlm(String key, SectionLayoutManager slm) {
-        mSlms.put(key, new SlmWrapper(slm));
+        mSlms.put(key, slm);
     }
 
     @Override
@@ -1170,7 +1170,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final SectionData sd = getSectionData(getPosition(anchor));
         final LayoutHelperImpl helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
         helper.init(sd, 0, 0);
-        getSlm(sd, helper).onPreTrimAtStartEdge(anchorIndex, sd, helper);
+        getSlm(sd, helper).preTrimAtStartEdge(anchorIndex, sd, helper);
         helper.recycle();
 
         // Now trim views before the first visible item.
@@ -1249,7 +1249,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         public Builder addSlm(String key, SectionLayoutManager slm) {
-            slms.put(key, new SlmWrapper(slm));
+            slms.put(key, slm);
             return this;
         }
 

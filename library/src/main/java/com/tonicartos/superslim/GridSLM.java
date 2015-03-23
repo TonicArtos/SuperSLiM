@@ -40,7 +40,7 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
+    public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
             Recycler recycler) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or

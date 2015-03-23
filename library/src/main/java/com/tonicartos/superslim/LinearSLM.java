@@ -8,7 +8,7 @@ public class LinearSLM extends SectionLayoutManager {
     public static final int ID = LayoutManager.SECTION_MANAGER_LINEAR;
 
     @Override
-    public int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
+    public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
