@@ -743,33 +743,50 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         final int top = 0;
         final int bottom = getHeight();
 
-        View selected = null;
+        View visibleAnchor = null;
         final int step = startIndex < lastIndex ? 1 : -1;
         for (int i = startIndex; i != lastIndex; i += step) {
             final View child = getChildAt(i);
             if (isChildVisible(child, top, bottom, completelyVisible)) {
-                selected = child;
+                visibleAnchor = child;
                 break;
             }
         }
 
-        if (step < 0) {
-            return selected;
-        }
-        // Must pay extra attention to headers when looking from start to finish.
 
-        if (selected == null) {
+        if (visibleAnchor == null) {
             return null;
         }
 
-        SectionData sd = getSectionData(getPosition(selected));
+        SectionData sd = getSectionData(getPosition(visibleAnchor));
+        View visibleContent = null;
+        for (int i = startIndex; i != lastIndex; i += step) {
+            final View child = getChildAt(i);
+            if (!sd.containsItem(child)) {
+                break;
+            }
+
+            if (((LayoutParams) child.getLayoutParams()).isHeader()) {
+                continue;
+            }
+
+            if (isChildVisible(child, top, bottom, completelyVisible)) {
+                visibleContent = child;
+                break;
+            }
+        }
+
+        if (step < 0 && visibleContent != null) {
+            return visibleContent;
+        }
+
         final int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, sd, mHelperDelegate);
         if (headerIndex == Utils.INVALID_INDEX) {
-            return selected;
+            return visibleContent;
         }
 
         final View header = getChildAt(headerIndex);
-        return isChildVisible(header, top, bottom, completelyVisible) ? header : selected;
+        return isChildVisible(header, top, bottom, completelyVisible) ? header : visibleContent;
 
     }
 
