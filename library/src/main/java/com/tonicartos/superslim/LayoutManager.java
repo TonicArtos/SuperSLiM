@@ -603,7 +603,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Get a marker line from the position that content has been filled up to. We don't know
         // how the section lays itself out so we have to ask it for the lowest edge.
         final SectionLayoutManager slm = getSlm(sd, helper);
-        int markerLine = slm.getLowestEdge(lastIndex, 0, sd, helper);
+        int markerLine = slm.getLowestEdge(lastIndex, getDecoratedBottom(lastChild), sd, helper);
 
         int lastPosition = getPosition(lastChild);
         if (sd.hasHeader && lastPosition == sd.firstPosition && lastIndex > 0) {
@@ -640,17 +640,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // how the section lays itself out so we have to ask it for the highest edge.
         final SectionLayoutManager slm = getSlm(sd, helper);
         int markerLine = slm.getHighestEdge(firstIndex, tempMarkerLine, sd, helper);
-        if (sd.hasHeader) {
-            // The header may have a higher edge than the section content.
-            final int anchorIndex = Utils.findHeaderIndexFromFirstIndex(firstIndex, sd, helper);
-            if (anchorIndex != Utils.INVALID_INDEX) {
-                View header = getChildAt(anchorIndex);
-                LayoutParams headerParams = (LayoutParams) header.getLayoutParams();
-                if (headerParams.isHeaderInline() && !headerParams.isHeaderOverlay()) {
-                    markerLine = Math.min(markerLine, getDecoratedTop(header));
-                }
-            }
-        }
 
         helper.updateMarkerLine(tempMarkerLine, markerLine);
         helper.init(sd, markerLine, leadingEdge, leadingEdge);
