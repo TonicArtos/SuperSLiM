@@ -152,7 +152,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     public int findLastCompletelyVisibleItemPosition() {
-        View view = findOneVisibleChild(getChildCount() - 1, -1, false);
+        View view = findOneVisibleChild(getChildCount() - 1, -1, true);
         return view == null ? RecyclerView.NO_POSITION : getPosition(view);
     }
 
