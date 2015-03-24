@@ -18,7 +18,8 @@ import java.util.List;
 /**
  *
  */
-public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder> implements SectionAdapter<CountryNamesAdapter.Section> {
+public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
+        implements SectionAdapter<CountryNamesAdapter.Section> {
 
     private static final int VIEW_TYPE_HEADER = 0x01;
 
@@ -113,14 +114,13 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         if (position == item.sectionFirstPosition) {
             lp.setSlm(item.sectionManager == LINEAR ? LinearSLM.ID : GridSLM.ID);
-            if (!mMarginsFixed) {
-                lp.marginEnd = LayoutManager.LayoutParams.MARGIN_AUTO;
-            }
-            if (!mMarginsFixed) {
-                lp.marginStart = LayoutManager.LayoutParams.MARGIN_AUTO;
-            }
-            lp.setColumnWidth(
-                    mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
+            lp.marginEnd = mMarginsFixed ? mContext.getResources()
+                    .getDimensionPixelSize(R.dimen.default_section_marginEnd)
+                    : LayoutManager.LayoutParams.MARGIN_AUTO;
+            lp.marginStart = mMarginsFixed ? mContext.getResources()
+                    .getDimensionPixelSize(R.dimen.default_section_marginStart)
+                    : LayoutManager.LayoutParams.MARGIN_AUTO;
+            lp.setColumnWidth(mContext.getResources().getDimensionPixelSize(R.dimen.grid_column_width));
         }
 
         itemView.setLayoutParams(lp);
@@ -178,6 +178,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
     public static class Section extends SectionAdapter.Section<Section> {
 
         private ArrayList<LineItem> mItems = new ArrayList<>();
+
         private LineItem mHeader;
 
         public Section() {
