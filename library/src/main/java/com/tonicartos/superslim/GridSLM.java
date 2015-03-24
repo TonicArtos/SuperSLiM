@@ -359,6 +359,7 @@ public class GridSLM extends SectionLayoutManager {
 
         // _ _ ^ a b
         final int col = (anchorPosition - firstContentPosition) % mNumColumns;
+        boolean forceFirstRow = col != mNumColumns - 1;
         for (int i = 1; i < mNumColumns - col; i++) {
             // Detach and scrap attached items in this row, so we can re-lay them again. The last
             // child view in the index can be the header so we just skip past it if it last.
@@ -369,6 +370,7 @@ public class GridSLM extends SectionLayoutManager {
                 }
 
                 if (helper.getPosition(child) == anchorPosition + i) {
+                    markerLine = Math.max(markerLine, helper.getBottom(child));
                     helper.detachAndScrapViewAt(j, recycler);
                     break;
                 }
@@ -423,9 +425,10 @@ public class GridSLM extends SectionLayoutManager {
 
         // Lay out rows to end.
         for (int i = columnAnchorPosition; i >= firstContentPosition; i -= mNumColumns) {
-            if (markerLine - minHeightOffset < leadingEdge) {
+            if (markerLine - minHeightOffset < leadingEdge && !forceFirstRow) {
                 break;
             }
+            forceFirstRow = false;
 
             View rowAnchor = recycler.getView(i);
             recycler.cacheView(i, rowAnchor);
