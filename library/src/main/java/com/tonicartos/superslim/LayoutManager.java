@@ -306,16 +306,41 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             throw new SectionAdapterNotImplementedRuntimeException();
         }
         SectionAdapter sectionAdapter = (SectionAdapter) newAdapter;
+        //noinspection unchecked
         mSections = SectionData.processSectionGraph(
                 newAdapter.getItemCount(), sectionAdapter.getSections());
+    }
+
+    @Override
+    public void onItemsChanged(RecyclerView recyclerView) {
+        super.onItemsChanged(recyclerView);
+
+        RecyclerView.Adapter adapter = recyclerView.getAdapter();
+        if (!(adapter instanceof SectionAdapter)) {
+            throw new SectionAdapterNotImplementedRuntimeException();
+        }
+        SectionAdapter sectionAdapter = (SectionAdapter) adapter;
+        //noinspection unchecked
+        mSections = SectionData.processSectionGraph(
+                adapter.getItemCount(), sectionAdapter.getSections());
     }
 
     @Override
     public void onItemsUpdated(RecyclerView recyclerView, int positionStart, int itemCount) {
         super.onItemsUpdated(recyclerView, positionStart, itemCount);
 
+        for (SectionData sd : mSections) {
+            sd.updateInitStatus(positionStart, itemCount);
+            mLinearSlm.clearConfigurationForSection(sd);
+            mGridSlm.clearConfigurationForSection(sd);
+            for (SectionLayoutManager slm : mSlms.values()) {
+                slm.clearConfigurationForSection(sd);
+            }
+        }
+
         View first = getChildAt(0);
-        View last = getChildAt(getChildCount() - 1);
+        int count = getChildCount();
+        View last = getChildAt(count - 1);
         if (positionStart + itemCount <= getPosition(first)) {
             return;
         }

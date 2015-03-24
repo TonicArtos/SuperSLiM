@@ -84,7 +84,7 @@ public class SectionData {
                 ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewPosition());
     }
 
-    public boolean getIsInitialised() {
+    public boolean isInitialised() {
         return mIsInitialised;
     }
 
@@ -177,6 +177,21 @@ public class SectionData {
             super(error);
         }
     }
+
+    public void updateInitStatus(int position, int range) {
+        if (slmConfig == null) {
+            if (position <= firstPosition && firstPosition < position + range) {
+                mIsInitialised = false;
+            }
+        }
+
+        if (subsections != null) {
+            for (SectionData subSd : subsections) {
+                subSd.updateInitStatus(position, range);
+            }
+        }
+    }
+
     // TODO: insertion, moving, changing, and removal
 //
 //    public int itemChanged(int position) {

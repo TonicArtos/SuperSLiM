@@ -415,6 +415,10 @@ public abstract class SectionLayoutManager {
     protected void onReset() {
     }
 
+    void clearConfigurationForSection(SectionData sectionData) {
+        mSavedConfiguration.remove(sectionData);
+    }
+
     protected void saveConfiguration(SectionData sectionData, Bundle configuration) {
         mSavedConfiguration.put(sectionData, configuration);
     }
