@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.graphics.Rect;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayDeque;
@@ -52,22 +53,30 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void addView(View view, int index) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("add view", "position " + params.getViewPosition() + " index " + index);
         mParent.addView(view, index);
     }
 
     @Override
     public void addView(View view) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("add view", "position " + params.getViewPosition());
         mParent.addView(view);
     }
 
     @Override
-    public void attachView(View header, int i) {
-        mParent.attachView(header, i);
+    public void attachView(View view, int index) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("attach view", "position " + params.getViewPosition() + " index " + index);
+        mParent.attachView(view, index);
     }
 
     @Override
-    public void attachView(View header) {
-        mParent.attachView(header);
+    public void attachView(View view) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("attach view", "position " + params.getViewPosition());
+        mParent.attachView(view);
     }
 
     @Override

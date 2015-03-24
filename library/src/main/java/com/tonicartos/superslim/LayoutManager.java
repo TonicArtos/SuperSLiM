@@ -19,6 +19,8 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -436,7 +438,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return delta;
     }
 
-
     @Override
     public void smoothScrollToPosition(final RecyclerView recyclerView, RecyclerView.State state,
             final int position) {
@@ -752,7 +753,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 break;
             }
         }
-
 
         if (visibleAnchor == null) {
             return null;
@@ -1085,7 +1085,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             markerLine = slm.beginFillToEnd(anchorPosition, sd, helper, recycler, state);
         } else {
             markerLine = slm.finishFillToEnd(anchorPosition, sd, helper, recycler, state);
-                // Fill section back to start so we can fill any offset area and add any missed header.
+            // Fill section back to start so we can fill any offset area and add any missed header.
             helper.init(sd, borderLine, top, top);
             markerLineTop = slm.finishFillToStart(anchorPosition - 1, sd, helper, recycler, state);
         }
@@ -1124,6 +1124,17 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         return endEdge < getHeight() - getPaddingBottom();
+    }
+
+    private void showChildIndicies() {
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView) child).setText(String.valueOf(i));
+            } else if (child instanceof LinearLayout) {
+                ((TextView) ((LinearLayout) child).getChildAt(0)).setText(String.valueOf(i));
+            }
+        }
     }
 
     /**
@@ -1296,7 +1307,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         private static final int DEFAULT_HEADER_DISPLAY = 0;
 
-        public @HeaderDisplayOptions int headerDisplay;
+        public
+        @HeaderDisplayOptions
+        int headerDisplay;
 
         public int marginEnd;
 

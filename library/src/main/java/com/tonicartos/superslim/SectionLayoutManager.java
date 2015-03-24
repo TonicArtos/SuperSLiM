@@ -60,8 +60,7 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     final public int beginFillToStart(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
         final int countBeforeFill = helper.getChildCount();
         int markerLine;
         if (sectionData.subsections != null) {
@@ -72,9 +71,7 @@ public abstract class SectionLayoutManager {
         }
         if (sectionData.hasHeader) {
             View header = recycler.getView(sectionData.firstPosition);
-            if (recycler.getCachedView(sectionData.firstPosition) == null) {
                 helper.measureHeader(header);
-            }
             final int offset = getHeaderOffset(sectionData, helper, recycler, header);
             markerLine = helper.layoutHeaderTowardsStart(header, offset, markerLine, 0, state);
 
@@ -129,15 +126,24 @@ public abstract class SectionLayoutManager {
      */
     final public int finishFillToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        // Handle case if we are trying to finish filling content, but all content other than the
+        // header has been trimmed.
+        if (sectionData.hasHeader && anchorPosition == sectionData.firstPosition - 1) {
+            if (helper.getChildCount() > 1 &&
+                    helper.getPosition(helper.getChildAt(1)) > sectionData.lastPosition) {
+                helper.updateVerticalOffset(helper.getBottom(helper.getChildAt(0)));
+                helper.detachAndScrapViewAt(0, recycler);
+                return beginFillToStart(sectionData.lastPosition, sectionData, helper, recycler, state);
+            }
+        }
+
         int markerLine = onFillToStart(anchorPosition, sectionData, helper, recycler, state);
         if (sectionData.hasHeader) {
             final int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, sectionData, helper);
             final View header;
             if (headerIndex == Utils.INVALID_INDEX) {
                 header = recycler.getView(sectionData.firstPosition);
-                if (recycler.getCachedView(sectionData.firstPosition) == null) {
                     helper.measureHeader(header);
-                }
             } else {
                 header = helper.getChildAt(headerIndex);
                 helper.detachViewAt(headerIndex);
