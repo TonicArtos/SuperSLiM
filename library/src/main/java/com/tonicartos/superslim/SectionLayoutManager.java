@@ -97,14 +97,14 @@ public abstract class SectionLayoutManager {
     final public int finishFillToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper,
             Recycler recycler, RecyclerView.State state) {
-        int countBeforeFill = helper.getChildCount();
+        final int countBeforeFill = helper.getChildCount();
         int markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
         if (sectionData.hasHeader) {
             // Shuffle header to end of section (child index). This is the easiest way to ensure
             // the header is drawn after any other section content.
-            int headerIndex = countBeforeFill - 1; // Header should always be at the end.
+            final int headerIndex = countBeforeFill - 1; // Header should always be at the end.
             if (headerIndex != Utils.INVALID_INDEX) {
-                View header = helper.getChildAt(headerIndex);
+                final View header = helper.getChildAt(headerIndex);
                 if (helper.getPosition(header) == sectionData.firstPosition) {
                     helper.detachView(header);
                     helper.attachView(header);

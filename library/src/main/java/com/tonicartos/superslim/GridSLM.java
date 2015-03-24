@@ -87,6 +87,7 @@ public class GridSLM extends SectionLayoutManager {
                 continue;
             }
             layoutChild(views[col], markerLine, col, rowHeight, helper);
+            Log.d("add grid view", "col " + col + "  position " + helper.getPosition(views[col]));
             addView(views[col], directionIsStart ? 0 : -1, helper, recycler);
         }
 
@@ -319,6 +320,7 @@ public class GridSLM extends SectionLayoutManager {
                 recycler.cacheView(i, view);
                 break;
             }
+            recycler.cacheView(i, view);
 
             int rowHeight = fillRow(markerLine, i, LayoutManager.DIRECTION_END, true, sectionData,
                     helper, recycler, state);

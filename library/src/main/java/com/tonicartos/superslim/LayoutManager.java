@@ -865,7 +865,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Run through all views in the section and add up values offscreen.
-        int firstPosition = -1;
+        int firstPosition = fractionOffscreen == 0 ? -1 : anchorPosition;
         SparseArray<Boolean> positionsOffscreen = new SparseArray<>();
         for (int i = 1; i < getChildCount(); i++) {
             child = getChildAt(i);
@@ -1061,6 +1061,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      */
     private int layoutChildren(int anchorPosition, int borderLine, Recycler recycler,
             RecyclerView.State state) {
+        Log.d("layout", "start");
         final int bottom = getHeight();
         final int top = 0;
 
@@ -1079,14 +1080,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         // Layout first section.
         int markerLine;
-        int markerLineTop;
+        int markerLineTop = borderLine;
         if (anchorPosition == sd.firstPosition) {
             markerLine = slm.beginFillToEnd(anchorPosition, sd, helper, recycler, state);
-            markerLineTop = top;
         } else {
             markerLine = slm.finishFillToEnd(anchorPosition, sd, helper, recycler, state);
-
-            // Fill section back to start so we can fill any offset area and add any missed header.
+                // Fill section back to start so we can fill any offset area and add any missed header.
             helper.init(sd, borderLine, top, top);
             markerLineTop = slm.finishFillToStart(anchorPosition - 1, sd, helper, recycler, state);
         }
