@@ -368,7 +368,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             mRequestPositionOffset = 0;
         } else {
             View anchorView = findAnchorChild();
-            requestedPosition = anchorView == null ? 0 : getPosition(anchorView);
+            requestedPosition = anchorView == null ?
+                    0 : Math.min(getPosition(anchorView), itemCount - 1);
             borderLine = getBorderLine(anchorView, DIRECTION_END);
         }
 
