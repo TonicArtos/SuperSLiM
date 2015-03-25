@@ -92,8 +92,7 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     final public int finishFillToEnd(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
         final int countBeforeFill = helper.getChildCount();
         int markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
         if (sectionData.hasHeader) {

@@ -629,7 +629,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Get a marker line from the position that content has been filled up to. We don't know
         // how the section lays itself out so we have to ask it for the lowest edge.
         final SectionLayoutManager slm = getSlm(sd, helper);
-        int markerLine = slm.getLowestEdge(lastIndex, getDecoratedBottom(lastChild), sd, helper);
+        int markerLine = slm.getLowestEdge(lastIndex, 0, sd, helper);
 
         int lastPosition = getPosition(lastChild);
         if (sd.hasHeader && lastPosition == sd.firstPosition && lastIndex > 0) {
