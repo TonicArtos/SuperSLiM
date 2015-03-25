@@ -1591,8 +1591,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         private final LayoutManager mLayoutManager;
 
-        private int mLayoutDirection;
-
         LayoutHelperDelegate(LayoutManager lm) {
             mLayoutManager = lm;
         }
@@ -1659,7 +1657,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         @Override
         public int getLayoutDirection() {
-            return mLayoutDirection;
+            return mLayoutManager.getLayoutDirection();
         }
 
         @Override
@@ -1750,10 +1748,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         @Override
         public void removeViewAt(int index) {
             mLayoutManager.removeViewAt(index);
-        }
-
-        void init(View recyclerView) {
-            mLayoutDirection = ViewCompat.getLayoutDirection(recyclerView);
         }
     }
 
