@@ -389,6 +389,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     private Rect setHeaderRectSides(Rect r, LayoutManager.LayoutParams headerParams,
             RecyclerView.State state) {
+        int width = mParent.getWidth();
         if (headerParams.isHeaderEndAligned()) {
             // Position header from end edge.
             if (!headerParams.isHeaderOverlay() &&
@@ -396,14 +397,14 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
                     mSectionData.endMarginWidth > 0) {
                 // Position inside end margin.
                 if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
-                    r.left = mWidth - mSectionData.endMarginWidth;
-                    r.right = mWidth;
+                    r.left = width - mSectionData.endMarginWidth;
+                    r.right = width;
                 } else {
                     r.right = mSectionData.endMarginWidth;
                     r.left = 0;
                 }
             } else if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
-                r.right = getWidth();
+                r.right = width;
                 r.left = r.right - mSectionData.headerWidth;
             } else {
                 r.left = 0;
@@ -419,14 +420,14 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
                     r.right = mSectionData.startMarginWidth;
                     r.left = 0;
                 } else {
-                    r.left = mWidth - mSectionData.startMarginWidth;
-                    r.right = mWidth;
+                    r.left = width - mSectionData.startMarginWidth;
+                    r.right = width;
                 }
             } else if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
                 r.left = 0;
                 r.right = r.left + mSectionData.headerWidth;
             } else {
-                r.right = mWidth;
+                r.right = width;
                 r.left = r.right - mSectionData.headerWidth;
             }
         } else {
