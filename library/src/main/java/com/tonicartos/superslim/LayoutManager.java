@@ -112,8 +112,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         float contentInView = getChildCount();
 
         // Work out fraction of content lost off top and bottom.
-        contentInView -= getFractionOfContentAbove(state, true);
-        contentInView -= getFractionOfContentBelow(state, true);
+        contentInView -= getFractionOfContentAbove(true);
+        contentInView -= getFractionOfContentBelow(true);
 
         return (int) (contentInView / state.getItemCount() * getHeight());
     }
@@ -130,7 +130,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         float contentAbove = getPosition(child);
-        contentAbove += getFractionOfContentAbove(state, false);
+        contentAbove += getFractionOfContentAbove(false);
         return (int) (contentAbove / state.getItemCount() * getHeight());
     }
 
@@ -864,7 +864,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return targetPosition < getPosition(firstVisibleView) ? -1 : 1;
     }
 
-    private float getFractionOfContentAbove(RecyclerView.State state, boolean ignorePosition) {
+    private float getFractionOfContentAbove(boolean ignorePosition) {
         float fractionOffscreen = 0;
 
         View child = getChildAt(0);
@@ -931,7 +931,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         return result;
     }
 
-    private float getFractionOfContentBelow(RecyclerView.State state, boolean ignorePosition) {
+    private float getFractionOfContentBelow(boolean ignorePosition) {
         final float parentHeight = getHeight();
         View child = getChildAt(getChildCount() - 1);
 
