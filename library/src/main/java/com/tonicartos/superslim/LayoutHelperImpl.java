@@ -354,10 +354,10 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
         if (!params.isHeaderInline() && !params.isHeaderOverlay()) {
             if (params.isHeaderStartAligned() &&
                     params.marginStart != LayoutManager.LayoutParams.MARGIN_AUTO) {
-                widthUsed = mWidth - params.marginStart;
+                widthUsed = mParent.getWidth() - params.marginStart;
             } else if (params.isHeaderEndAligned() &&
                     params.marginEnd != LayoutManager.LayoutParams.MARGIN_AUTO) {
-                widthUsed = mWidth - params.marginEnd;
+                widthUsed = mParent.getWidth() - params.marginEnd;
             }
         }
         mParent.measureHeader(header, widthUsed, 0);
