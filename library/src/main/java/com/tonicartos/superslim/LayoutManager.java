@@ -1106,7 +1106,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Layout first section.
         int markerLine;
         int markerLineTop = borderLine;
-        if (anchorPosition == sd.firstPosition) {
+        if (anchorPosition == sd.firstPosition || (sd.hasHeader && anchorPosition == sd.firstPosition + 1)) {
             markerLine = slm.beginFillToEnd(anchorPosition, sd, helper, recycler, state);
         } else {
             markerLine = slm.finishFillToEnd(anchorPosition, sd, helper, recycler, state);

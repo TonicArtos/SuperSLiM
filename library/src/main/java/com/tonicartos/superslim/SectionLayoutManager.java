@@ -24,11 +24,12 @@ public abstract class SectionLayoutManager {
      * @return Line to which content has been filled.
      */
     final public int beginFillToEnd(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper,
-            Recycler recycler, RecyclerView.State state) {
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final int countBeforeFill = helper.getChildCount();
+
         int markerLine = 0;
         View header = null;
-        if (sectionData.hasHeader && anchorPosition == sectionData.firstPosition) {
+        if (sectionData.hasHeader) {
             header = recycler.getView(sectionData.firstPosition);
             helper.measureHeader(header);
             markerLine = helper.layoutHeaderTowardsEnd(header, markerLine, state);
@@ -37,14 +38,22 @@ public abstract class SectionLayoutManager {
         }
 
         if (sectionData.subsections != null) {
-            markerLine = onFillSubsectionsToEnd(anchorPosition, sectionData, helper, recycler,
-                    state);
+            markerLine = onFillSubsectionsToEnd(
+                    anchorPosition, sectionData, helper, recycler, state);
         } else {
             markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
         }
 
         if (sectionData.hasHeader && header != null) {
+            if (helper.getPosition(helper.getChildAt(helper.getChildCount() - 1)) ==
+                    sectionData.lastPosition && helper.getBottom(header) > markerLine &&
+                    helper.getTop(header) > 0) {
+                int delta = Math.max(markerLine - helper.getBottom(header), 0 - helper.getTop(header));
+                header.offsetTopAndBottom(delta);
+            }
+
             addView(header, helper, recycler);
+            markerLine = Math.max(markerLine, helper.getBottom(header));
             recycler.decacheView(sectionData.firstPosition);
         }
         return helper.translateFillResult(markerLine);
@@ -71,7 +80,7 @@ public abstract class SectionLayoutManager {
         }
         if (sectionData.hasHeader) {
             View header = recycler.getView(sectionData.firstPosition);
-                helper.measureHeader(header);
+            helper.measureHeader(header);
             final int offset = getHeaderOffset(sectionData, helper, recycler, header);
             markerLine = helper.layoutHeaderTowardsStart(header, offset, markerLine, 0, state);
 
@@ -108,8 +117,6 @@ public abstract class SectionLayoutManager {
                     markerLine = Math.max(markerLine, helper.getBottom(header));
                 }
             }
-
-
         }
         return helper.translateFillResult(markerLine);
     }
@@ -132,7 +139,8 @@ public abstract class SectionLayoutManager {
                     helper.getPosition(helper.getChildAt(1)) > sectionData.lastPosition) {
                 helper.updateVerticalOffset(helper.getBottom(helper.getChildAt(0)));
                 helper.detachAndScrapViewAt(0, recycler);
-                return beginFillToStart(sectionData.lastPosition, sectionData, helper, recycler, state);
+                return beginFillToStart(sectionData.lastPosition, sectionData, helper, recycler,
+                        state);
             }
         }
 
@@ -142,7 +150,7 @@ public abstract class SectionLayoutManager {
             final View header;
             if (headerIndex == Utils.INVALID_INDEX) {
                 header = recycler.getView(sectionData.firstPosition);
-                    helper.measureHeader(header);
+                helper.measureHeader(header);
             } else {
                 header = helper.getChildAt(headerIndex);
                 helper.detachViewAt(headerIndex);
