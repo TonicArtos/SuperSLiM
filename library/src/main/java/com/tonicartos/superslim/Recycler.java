@@ -18,7 +18,12 @@ public class Recycler {
         inner = recycler;
     }
 
-    public void cacheView(int position, android.view.View view) {
+    public void cacheView(View view) {
+        RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) view.getLayoutParams();
+        viewCache.put(params.getViewPosition(), view);
+    }
+
+    public void cacheView(int position, View view) {
         viewCache.put(position, view);
     }
 

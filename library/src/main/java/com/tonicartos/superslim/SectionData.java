@@ -30,6 +30,8 @@ public class SectionData {
 
     public ArrayList<SectionData> subsections;
 
+    public SectionLayoutManager.SlmConfig slmConfig;
+
     boolean recentlyFinishFilledToStart = false;
 
     private boolean mIsInitialised = false;
@@ -43,22 +45,30 @@ public class SectionData {
         this.lastPosition = lastPosition;
     }
 
-    static ArrayList<SectionData> processSections(int lastPosition,
-            List<Integer> sectionStartPositions) {
-        if (sectionStartPositions == null || sectionStartPositions.size() == 0) {
+    static ArrayList<SectionData> processSectionGraph(int lastPosition,
+            List<? extends SectionAdapter.Section> sections) {
+        if (sections == null || sections.size() == 0) {
             return null;
         }
-        ArrayList<SectionData> sections = new ArrayList<>();
-        int lastStart = sectionStartPositions.get(0);
 
-        for (int i = 1; i < sectionStartPositions.size(); i++) {
-            int nextStart = sectionStartPositions.get(i);
-            sections.add(new SectionData(lastStart, nextStart - 1));
-            lastStart = nextStart;
+        ArrayList<SectionData> sectionData = new ArrayList<>();
+        for (int i = sections.size() - 1; i >= 0; i--) {
+            SectionAdapter.Section s = sections.get(i);
+            if (s.end != SectionAdapter.Section.NO_POSITION) {
+                // Doing this will allow intermingling subsections and items.
+                lastPosition = s.end;
+            }
+
+            SectionData sd = new SectionData(s.start, lastPosition);
+            sd.subsections = processSectionGraph(sd.lastPosition, s.getSubsections());
+            sd.slmConfig = s.getSlmConfig();
+            sectionData.add(0, sd);
+
+            // Prime for next iteration.
+            lastPosition = sd.firstPosition - 1;
         }
-        sections.add(new SectionData(lastStart, lastPosition));
 
-        return sections;
+        return sectionData;
     }
 
     public void clearTempHeaderIndex() {
@@ -74,7 +84,7 @@ public class SectionData {
                 ((RecyclerView.LayoutParams) child.getLayoutParams()).getViewPosition());
     }
 
-    public boolean getIsInitialised() {
+    public boolean isInitialised() {
         return mIsInitialised;
     }
 
@@ -93,6 +103,18 @@ public class SectionData {
 
         mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
 
+        if (slmConfig == null) {
+            sectionManagerKind = mSectionParams.sectionManagerKind;
+            sectionManager = mSectionParams.sectionManager;
+            startMarginWidth = mSectionParams.marginStart;
+            endMarginWidth = mSectionParams.marginEnd;
+        } else {
+            sectionManagerKind = slmConfig.sectionManagerKind;
+            sectionManager = slmConfig.sectionManager;
+            startMarginWidth = slmConfig.marginStart;
+            endMarginWidth = slmConfig.marginEnd;
+        }
+
         hasHeader = mSectionParams.isHeader();
         if (hasHeader) {
             helper.measureHeader(first);
@@ -108,8 +130,6 @@ public class SectionData {
             minimumHeight = 0;
             headerHeight = 0;
             headerWidth = 0;
-            startMarginWidth = mSectionParams.marginStart;
-            endMarginWidth = mSectionParams.marginEnd;
         }
 
         if (startMarginWidth == LayoutManager.LayoutParams.MARGIN_AUTO) {
@@ -128,7 +148,6 @@ public class SectionData {
             }
         }
 
-        subsections = processSections(lastPosition, mSectionParams.getSubsections());
         // Check subsection sanity.
         if (subsections != null) {
             int firstSubsectionPosition = subsections.get(0).firstPosition;
@@ -158,6 +177,21 @@ public class SectionData {
             super(error);
         }
     }
+
+    public void updateInitStatus(int position, int range) {
+        if (slmConfig == null) {
+            if (position <= firstPosition && firstPosition < position + range) {
+                mIsInitialised = false;
+            }
+        }
+
+        if (subsections != null) {
+            for (SectionData subSd : subsections) {
+                subSd.updateInitStatus(position, range);
+            }
+        }
+    }
+
     // TODO: insertion, moving, changing, and removal
 //
 //    public int itemChanged(int position) {

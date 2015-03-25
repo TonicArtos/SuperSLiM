@@ -5,10 +5,10 @@ import android.view.View;
 
 public class LinearSLM extends SectionLayoutManager {
 
-    public static int ID = LayoutManager.SECTION_MANAGER_LINEAR;
+    public static final int ID = LayoutManager.SECTION_MANAGER_LINEAR;
 
     @Override
-    public int computeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
+    public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler) {
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
@@ -198,6 +198,6 @@ public class LinearSLM extends SectionLayoutManager {
     }
 
     private void measureChild(View child, LayoutHelper helper) {
-        helper.measureChild(child, helper.getWidth(), 0);
+        helper.measureChild(child, 0, 0);
     }
 }

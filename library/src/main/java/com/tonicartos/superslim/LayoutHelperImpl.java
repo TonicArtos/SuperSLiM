@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.graphics.Rect;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayDeque;
@@ -52,22 +53,30 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void addView(View view, int index) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("add view", "position " + params.getViewPosition() + " index " + index);
         mParent.addView(view, index);
     }
 
     @Override
     public void addView(View view) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("add view", "position " + params.getViewPosition());
         mParent.addView(view);
     }
 
     @Override
-    public void attachView(View header, int i) {
-        mParent.attachView(header, i);
+    public void attachView(View view, int index) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("attach view", "position " + params.getViewPosition() + " index " + index);
+        mParent.attachView(view, index);
     }
 
     @Override
-    public void attachView(View header) {
-        mParent.attachView(header);
+    public void attachView(View view) {
+//        LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) view.getLayoutParams();
+//        Log.d("attach view", "position " + params.getViewPosition());
+        mParent.attachView(view);
     }
 
     @Override
@@ -190,6 +199,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void init(SectionData sd, int trimEdge, int newStickyEdge) {
+        mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth;
         mSectionData = sd;
         mStickyEdge = newStickyEdge;
         mTrimEdge = trimEdge;
@@ -344,10 +354,10 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
         if (!params.isHeaderInline() && !params.isHeaderOverlay()) {
             if (params.isHeaderStartAligned() &&
                     params.marginStart != LayoutManager.LayoutParams.MARGIN_AUTO) {
-                widthUsed = mWidth - params.marginStart;
+                widthUsed = mParent.getWidth() - params.marginStart;
             } else if (params.isHeaderEndAligned() &&
                     params.marginEnd != LayoutManager.LayoutParams.MARGIN_AUTO) {
-                widthUsed = mWidth - params.marginEnd;
+                widthUsed = mParent.getWidth() - params.marginEnd;
             }
         }
         mParent.measureHeader(header, widthUsed, 0);
@@ -379,6 +389,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     private Rect setHeaderRectSides(Rect r, LayoutManager.LayoutParams headerParams,
             RecyclerView.State state) {
+        int width = mParent.getWidth();
         if (headerParams.isHeaderEndAligned()) {
             // Position header from end edge.
             if (!headerParams.isHeaderOverlay() &&
@@ -386,14 +397,14 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
                     mSectionData.endMarginWidth > 0) {
                 // Position inside end margin.
                 if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
-                    r.left = mWidth - mSectionData.endMarginWidth;
-                    r.right = mWidth;
+                    r.left = width - mSectionData.endMarginWidth;
+                    r.right = width;
                 } else {
                     r.right = mSectionData.endMarginWidth;
                     r.left = 0;
                 }
             } else if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
-                r.right = getWidth();
+                r.right = width;
                 r.left = r.right - mSectionData.headerWidth;
             } else {
                 r.left = 0;
@@ -409,14 +420,14 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
                     r.right = mSectionData.startMarginWidth;
                     r.left = 0;
                 } else {
-                    r.left = mWidth - mSectionData.startMarginWidth;
-                    r.right = mWidth;
+                    r.left = width - mSectionData.startMarginWidth;
+                    r.right = width;
                 }
             } else if (mLayoutDirection == ViewCompat.LAYOUT_DIRECTION_LTR) {
                 r.left = 0;
                 r.right = r.left + mSectionData.headerWidth;
             } else {
-                r.right = mWidth;
+                r.right = width;
                 r.left = r.right - mSectionData.headerWidth;
             }
         } else {
