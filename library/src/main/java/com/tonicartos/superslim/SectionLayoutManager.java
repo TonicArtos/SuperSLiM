@@ -476,7 +476,8 @@ public abstract class SectionLayoutManager {
         final LayoutManager.LayoutParams layoutParams =
                 (LayoutManager.LayoutParams) header.getLayoutParams();
         if (!layoutParams.isHeaderSticky() || !layoutParams.isHeaderInline()) {
-            offset = onComputeHeaderOffset(0, sd, helper, recycler);
+            offset = onComputeHeaderOffset(
+                    helper.getPosition(helper.getChildAt(0)), sd, helper, recycler);
         } else {
             offset = 0;
         }
