@@ -13,7 +13,7 @@ android {
 
     }
     defaultConfig {
-        applicationId 'com.tonicartos.superslim.example'
+        applicationId 'com.tonicartos.superslim.example.countries'
         versionCode 1
         versionName '0.1'
         minSdkVersion 9
