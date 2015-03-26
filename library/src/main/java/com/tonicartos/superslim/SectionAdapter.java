@@ -1,6 +1,5 @@
 package com.tonicartos.superslim;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface SectionAdapter<T extends SectionAdapter.Section> {
@@ -11,13 +10,13 @@ public interface SectionAdapter<T extends SectionAdapter.Section> {
 
         static final int NO_POSITION = -1;
 
-        public int end = NO_POSITION;
+        protected int mEnd = NO_POSITION;
 
-        public int start;
+        protected int mStart;
 
-        public List<T> subsections;
+        protected List<T> mSubsections;
 
-        public SectionLayoutManager.SlmConfig slmConfig;
+        protected SectionLayoutManager.SlmConfig mSlmConfig;
 
         public Section() {
 
@@ -37,45 +36,45 @@ public interface SectionAdapter<T extends SectionAdapter.Section> {
 
         public Section(int start, int end, List<T> subsections,
                 SectionLayoutManager.SlmConfig config) {
-            this.start = start;
-            this.end = end;
-            this.subsections = subsections;
-            this.slmConfig = config;
+            this.mStart = start;
+            this.mEnd = end;
+            this.mSubsections = subsections;
+            this.mSlmConfig = config;
         }
 
         public int getEnd() {
-            return end;
+            return mEnd;
         }
 
         public Section setEnd(int end) {
-            this.end = end;
+            this.mEnd = end;
             return this;
         }
 
         public SectionLayoutManager.SlmConfig getSlmConfig() {
-            return null;
+            return mSlmConfig;
         }
 
         public Section setSlmConfig(SectionLayoutManager.SlmConfig config) {
-            slmConfig = config;
+            mSlmConfig = config;
             return this;
         }
 
         public int getStart() {
-            return start;
+            return mStart;
         }
 
         public Section setStart(int start) {
-            this.start = start;
+            this.mStart = start;
             return this;
         }
 
         public List<T> getSubsections() {
-            return subsections;
+            return mSubsections;
         }
 
         public Section setSubsections(List<T> subsections) {
-            this.subsections = subsections;
+            this.mSubsections = subsections;
             return this;
         }
     }

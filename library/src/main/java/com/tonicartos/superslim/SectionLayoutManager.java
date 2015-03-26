@@ -616,7 +616,7 @@ public abstract class SectionLayoutManager {
         return updateHeader(headerIndex, sd, helper);
     }
 
-    public class SlmConfig {
+    public static class SlmConfig {
 
         int marginStart;
 

@@ -576,7 +576,7 @@ public class GridSLM extends SectionLayoutManager {
         }
     }
 
-    public class SlmConfig extends SectionLayoutManager.SlmConfig {
+    public static class SlmConfig extends SectionLayoutManager.SlmConfig {
 
         int numColumns;
 

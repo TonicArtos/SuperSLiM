@@ -54,12 +54,12 @@ public class SectionData {
         ArrayList<SectionData> sectionData = new ArrayList<>();
         for (int i = sections.size() - 1; i >= 0; i--) {
             SectionAdapter.Section s = sections.get(i);
-            if (s.end != SectionAdapter.Section.NO_POSITION) {
+            if (s.mEnd != SectionAdapter.Section.NO_POSITION) {
                 // Doing this will allow intermingling subsections and items.
-                lastPosition = s.end;
+                lastPosition = s.mEnd;
             }
 
-            SectionData sd = new SectionData(s.start, lastPosition);
+            SectionData sd = new SectionData(s.mStart, lastPosition);
             sd.subsections = processSectionGraph(sd.lastPosition, s.getSubsections());
             sd.slmConfig = s.getSlmConfig();
             sectionData.add(0, sd);
