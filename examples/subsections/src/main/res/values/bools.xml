@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="default_margins_fixed">true</bool>
+    <bool name="default_headers_sticky">true</bool>
+    <bool name="default_headers_overlaid">false</bool>
+</resources>

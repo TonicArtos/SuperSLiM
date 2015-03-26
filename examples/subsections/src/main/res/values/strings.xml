@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SuperSLiM Subsections Example</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_sticky">Sticky headers</string>
+    <string name="menu_header_mode">Header position</string>
+    <string name="action_header_inline">Inline</string>
+    <string name="action_header_start">Start</string>
+    <string name="action_header_end">End</string>
+    <string name="action_header_overlay">Overlay headers</string>
+    <string name="menu_fixed_margins">Fixed margins</string>
+    <string name="menu_random_scroll">Random scroll</string>
+    <string name="menu_random_smooth_scroll">Random smooth scroll</string>
+
+</resources>

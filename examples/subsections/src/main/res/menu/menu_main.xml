@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <item
+        android:id="@+id/action_random_scroll"
+        android:orderInCategory="90"
+        android:title="@string/menu_random_scroll"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_random_smooth_scroll"
+        android:orderInCategory="90"
+        android:title="@string/menu_random_smooth_scroll"
+        app:showAsAction="never" />
+</menu>
