@@ -1,5 +1,6 @@
 package com.tonicartos.superslim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface SectionAdapter<T extends SectionAdapter.Section> {
@@ -14,7 +15,7 @@ public interface SectionAdapter<T extends SectionAdapter.Section> {
 
         protected int mStart;
 
-        protected List<T> mSubsections;
+        protected List<T> mSubsections = new ArrayList<>();
 
         protected SectionLayoutManager.SlmConfig mSlmConfig;
 

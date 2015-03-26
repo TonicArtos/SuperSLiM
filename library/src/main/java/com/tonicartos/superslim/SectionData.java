@@ -154,7 +154,7 @@ public class SectionData {
             if (hasHeader && firstSubsectionPosition != firstPosition + 1) {
                 throw new SubsectionValidationRuntimeException(
                         "Subsection content should start at first item after header.");
-            } else if (firstSubsectionPosition != firstPosition) {
+            } else if (!hasHeader && firstSubsectionPosition != firstPosition) {
                 throw new SubsectionValidationRuntimeException(
                         "Subsection content should start at first item.");
             }
