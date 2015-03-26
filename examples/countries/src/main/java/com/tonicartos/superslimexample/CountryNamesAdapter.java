@@ -41,7 +41,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
         mHeaderDisplay = headerMode;
 
-        //Insert headers into list of items.
+        //Insert headers into list of mItems.
         String lastHeaderText = "";
         int sectionManager = -1;
         int headerCount = 0;
@@ -199,17 +199,17 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         }
 
         public Section addSubsection(Section section) {
-            if (subsections == null) {
-                subsections = new ArrayList<>();
+            if (mSubsections == null) {
+                mSubsections = new ArrayList<>();
             }
-            subsections.add(section);
+            mSubsections.add(section);
             return this;
         }
 
         public int getCount() {
             int sum = mHeader == null ? 0 : 1;
-            if (subsections != null && subsections.size() != 0) {
-                for (Section sub : subsections) {
+            if (mSubsections != null && mSubsections.size() != 0) {
+                for (Section sub : mSubsections) {
                     sum += sub.getCount();
                 }
             } else {
@@ -220,23 +220,23 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         }
 
         public LineItem getItem(int position) {
-            if (mHeader != null && position == start) {
+            if (mHeader != null && position == mStart) {
                 return mHeader;
             }
 
-            if (subsections != null) {
-                for (Section sub : subsections) {
+            if (mSubsections != null) {
+                for (Section sub : mSubsections) {
                     if (sub.contains(position)) {
                         return sub.getItem(position);
                     }
                 }
             }
 
-            return mItems.get(position - start - (mHeader != null ? 1 : 0));
+            return mItems.get(position - mStart - (mHeader != null ? 1 : 0));
         }
 
         private boolean contains(int position) {
-            return start <= position && position <= end;
+            return mStart <= position && position <= mEnd;
         }
     }
 }
