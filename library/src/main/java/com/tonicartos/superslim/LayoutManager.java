@@ -562,7 +562,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Setup section.
         final SectionData sd = getSectionData(anchorPosition);
         final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        sd.init(helper, recycler.getView(sd.firstPosition));
+        sd.init(helper, recycler);
         helper.init(sd, markerLine, leadingEdge, markerLine);
         final SectionLayoutManager slm = getSlm(sd, helper);
 
@@ -600,7 +600,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         // Fill section to start.
         final SectionData sd = getSectionData(anchorPosition);
         final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        sd.init(helper, recycler.getView(sd.firstPosition));
+        sd.init(helper, recycler);
         helper.init(sd, markerLine, leadingEdge, leadingEdge);
 
         final SectionLayoutManager slm = getSlm(sd, helper);
@@ -1098,9 +1098,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         final SectionData sd = getSectionData(anchorPosition);
         final LayoutHelper helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        View header = recycler.getView(sd.firstPosition);
-        sd.init(helper, header);
-        recycler.cacheView(header);
+        sd.init(helper, recycler);
         helper.init(sd, borderLine, bottom, 0);
 
         final SectionLayoutManager slm = getSlm(sd, helper);

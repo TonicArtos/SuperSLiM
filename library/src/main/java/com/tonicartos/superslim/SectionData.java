@@ -92,6 +92,12 @@ public class SectionData {
         return mSectionParams;
     }
 
+    public void init(LayoutHelper helper, Recycler recycler) {
+        View first = recycler.getView(firstPosition);
+        recycler.cacheView(firstPosition, first);
+        init(helper, first);
+    }
+
     public void init(LayoutHelper helper, View first) {
         init(helper, first, false);
     }

@@ -39,13 +39,125 @@ public class LinearSLM extends SectionLayoutManager {
     @Override
     protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        int markerLine = 0;
+        if (markerLine >= leadingEdge) {
+            return markerLine;
+        }
+
+        // Find anchor section.
+        SectionData anchorSd = null;
+        int nextSd = 0;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            final SectionData sd = sectionData.subsections.get(i);
+            if (sd.containsItem(anchorPosition)) {
+                anchorSd = sd;
+                nextSd = i + 1;
+                break;
+            }
+        }
+
+        if (anchorSd == null) {
+            return markerLine;
+        }
+
+        final View anchorSectionFirst;
+        if (anchorPosition == anchorSd.firstPosition) {
+            anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
+            recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
+        } else {
+            int headerIndex = Utils
+                    .findHeaderIndexFromLastIndex(helper.getChildCount() - 1, anchorSd, helper);
+            if (headerIndex == Utils.INVALID_INDEX) {
+                anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
+                recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
+            } else {
+                anchorSectionFirst = helper.getChildAt(headerIndex);
+            }
+        }
+
+        LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        anchorSd.init(subHelper, anchorSectionFirst);
+        subHelper.init(anchorSd, markerLine, leadingEdge, stickyEdge);
+        SectionLayoutManager slm = helper.getSlm(anchorSd, subHelper);
+        if (anchorPosition == anchorSd.firstPosition) {
+            markerLine = slm.beginFillToEnd(anchorPosition, anchorSd, subHelper, recycler, state);
+        } else {
+            markerLine = slm.finishFillToEnd(anchorPosition, anchorSd, subHelper, recycler, state);
+        }
+
+        for (int i = nextSd; markerLine < leadingEdge && i < sectionData.subsections.size(); i++) {
+            SectionData sd = sectionData.subsections.get(i);
+            sd.init(subHelper, recycler);
+            subHelper.init(sd, markerLine, leadingEdge, stickyEdge);
+            markerLine = slm.beginFillToEnd(sd.firstPosition, sd, subHelper, recycler, state);
+        }
+        subHelper.recycle();
+
+        return markerLine;
     }
 
     @Override
     protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        int markerLine = 0;
+        if (markerLine <= leadingEdge) {
+            return markerLine;
+        }
+
+        // Find anchor section.
+        SectionData anchorSd = null;
+        int nextSd = 0;
+        for (int i = sectionData.subsections.size() - 1; i >= 0; i--) {
+            final SectionData sd = sectionData.subsections.get(i);
+            if (sd.containsItem(anchorPosition)) {
+                anchorSd = sd;
+                nextSd = i - 1;
+                break;
+            }
+        }
+
+        if (anchorSd == null) {
+            return markerLine;
+        }
+
+        final View anchorSectionFirst;
+        if (anchorPosition == anchorSd.lastPosition) {
+            anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
+            recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
+        } else {
+            int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, anchorSd, helper);
+            if (headerIndex == Utils.INVALID_INDEX) {
+                anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
+                recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
+            } else {
+                anchorSectionFirst = helper.getChildAt(headerIndex);
+            }
+        }
+
+        LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        anchorSd.init(subHelper, anchorSectionFirst);
+        subHelper.init(anchorSd, markerLine, leadingEdge, stickyEdge);
+        SectionLayoutManager slm = helper.getSlm(anchorSd, subHelper);
+        if (anchorPosition == anchorSd.lastPosition) {
+            markerLine = slm.beginFillToStart(anchorPosition, anchorSd, subHelper, recycler, state);
+        } else {
+            markerLine = slm
+                    .finishFillToStart(anchorPosition, anchorSd, subHelper, recycler, state);
+        }
+
+        for (int i = nextSd; markerLine > leadingEdge && i >= 0; i--) {
+            SectionData sd = sectionData.subsections.get(i);
+            sd.init(subHelper, recycler);
+            subHelper.init(sd, markerLine, leadingEdge, stickyEdge);
+            markerLine = slm.beginFillToStart(sd.lastPosition, sd, subHelper, recycler, state);
+        }
+        subHelper.recycle();
+
+        return markerLine;
     }
 
     @Override
