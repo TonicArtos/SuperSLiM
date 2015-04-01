@@ -340,7 +340,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             LayoutParams params = (LayoutParams) end.getLayoutParams();
             SectionLayoutManager slm = getSlm(params);
             final int endEdge = slm.getLowestEdge(
-                    params.getTestedFirstPosition(), getChildCount() - 1, leadingEdge);
+                    params.getTestedFirstPosition(), getChildCount() - 1, getDecoratedBottom(end));
             if (endEdge < height - getPaddingBottom() &&
                     getPosition(end) == (state.getItemCount() - 1)) {
                 return 0;
