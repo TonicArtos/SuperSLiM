@@ -29,7 +29,7 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 Add the following to your build.gradle file.
 ```groovy
 dependencies {
-    compile 'com.tonicartos:superslim:0.4.8'
+    compile 'com.tonicartos:superslim:0.4.9'
 }
 ```
 
