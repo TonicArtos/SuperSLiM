@@ -1,1 +1,1 @@
-include ':library', '/examples:countries', '/examples:subsections'
+include ':library', ':/examples:countries', ':/examples:subsections'
