@@ -7,6 +7,9 @@ SuperSLiM is a configurable layout manager for a RecyclerView. It provides a ver
 
 SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/wiki) with guides and documentation to help you out.
 
+## Compatibility
+Minimum sdk is presently set to 9. However, the library is only supported for, and actively tested against, versions 15 and later.
+
 ## Feature Overview
 **Section Headers**  
 - Sticky headers
