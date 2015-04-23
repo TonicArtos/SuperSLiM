@@ -267,6 +267,19 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         fixOverscroll(bottomLine, layoutState);
     }
 
+
+    @Override
+    public void onItemsChanged(RecyclerView recyclerView) {
+        View view = getAnchorChild();
+        if (view == null) {
+            mRequestPosition = NO_POSITION_REQUEST;
+            mRequestPositionOffset = 0;
+        } else {
+            mRequestPosition = getPosition(view);
+            mRequestPositionOffset = getDecoratedTop(view);
+        }
+    }
+
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -1277,14 +1290,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return false;
         }
 
-        View lastVisibleView = findLastCompletelyVisibleItem();
-        if (lastVisibleView == null) {
-            lastVisibleView = getChildAt(getChildCount() - 1);
-        }
-
-        boolean reachedBottom = getPosition(lastVisibleView) == itemCount - 1;
-        if (!reachedBottom ||
-                getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
+        View lastVisibleView = findLastVisibleItem();
+        if (getPosition(lastVisibleView) == itemCount - 1
+                && getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
             return false;
         }
 
