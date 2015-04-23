@@ -39,6 +39,8 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
+        final int itemCount = state.recyclerState.getItemCount();
+
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -49,7 +51,7 @@ public class GridSLM extends SectionLayoutManager {
                 position += mNumColumns) {
             // Look to see if the header overlaps with the displayed area of the mSection.
             int rowHeight = 0;
-            for (int col = 0; col < mNumColumns; col++) {
+            for (int col = 0; col < mNumColumns && position + col < itemCount; col++) {
                 LayoutState.View child = state.getView(position + col);
                 measureChild(child, sd);
                 rowHeight =
