@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -265,6 +266,19 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         fixOverscroll(bottomLine, layoutState);
     }
 
+
+    @Override
+    public void onItemsChanged(RecyclerView recyclerView) {
+        View view = getAnchorChild();
+        if (view == null) {
+            mRequestPosition = NO_POSITION_REQUEST;
+            mRequestPositionOffset = 0;
+        } else {
+            mRequestPosition = getPosition(view);
+            mRequestPositionOffset = getDecoratedTop(view);
+        }
+    }
+
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -272,7 +286,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
-        LayoutParams params = new LayoutParams(lp);
+        LayoutParams params = LayoutParams.from(lp);
         params.width = LayoutParams.MATCH_PARENT;
         params.height = LayoutParams.MATCH_PARENT;
 
@@ -1273,14 +1287,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return false;
         }
 
-        View lastVisibleView = findLastCompletelyVisibleItem();
-        if (lastVisibleView == null) {
-            lastVisibleView = getChildAt(getChildCount() - 1);
-        }
-
-        boolean reachedBottom = getPosition(lastVisibleView) == itemCount - 1;
-        if (!reachedBottom ||
-                getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
+        View lastVisibleView = findLastVisibleItem();
+        if (getPosition(lastVisibleView) == itemCount - 1
+                && getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
             return false;
         }
 
@@ -1544,7 +1553,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     /**
-     * Trim all content wholly beyond the direction edge. If the direction is START, then update the
+     * Trim all content wholly beyond the direction edge. If the direction is START, then update
+     * the
      * header of the section intersecting the top edge.
      *
      * @param direction Direction of edge to trim against.
@@ -1781,14 +1791,47 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
+        /**
+         * <em>This constructor will be removed in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
+        /**
+         * <em>This constructor will be removed in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead as this constructor will not copy the margin params from the
+         * source layout.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
+        }
+
+        /**
+         * Creates a new instance of {@link LayoutParams}.
+         *
+         * @param other Source layout params.
+         * @return New layout params.
+         */
+        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
+            if (other instanceof ViewGroup.MarginLayoutParams) {
+                return new LayoutParams((ViewGroup.MarginLayoutParams) other);
+            } else {
+                return new LayoutParams(other);
+            }
         }
 
         public boolean areHeaderFlagsSet(int flags) {

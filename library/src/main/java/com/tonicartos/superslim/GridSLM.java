@@ -2,6 +2,7 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -39,6 +40,8 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
+        final int itemCount = state.recyclerState.getItemCount();
+
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -49,7 +52,7 @@ public class GridSLM extends SectionLayoutManager {
                 position += mNumColumns) {
             // Look to see if the header overlaps with the displayed area of the mSection.
             int rowHeight = 0;
-            for (int col = 0; col < mNumColumns; col++) {
+            for (int col = 0; col < mNumColumns && position + col < itemCount; col++) {
                 LayoutState.View child = state.getView(position + col);
                 measureChild(child, sd);
                 rowHeight =
@@ -260,7 +263,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
-        return new LayoutParams(params);
+        return LayoutParams.from(params);
     }
 
     @Override
@@ -475,14 +478,47 @@ public class GridSLM extends SectionLayoutManager {
             a.recycle();
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead as this constructor will not copy the margin params from the
+         * source layout.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
+        }
+
+        /**
+         * Creates a new instance of {@link LayoutParams}.
+         *
+         * @param other Source layout params.
+         * @return New grid layout params.
+         */
+        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
+            if (other instanceof ViewGroup.MarginLayoutParams) {
+                return new LayoutParams((ViewGroup.MarginLayoutParams) other);
+            } else {
+                return new LayoutParams(other);
+            }
         }
 
         public int getColumnWidth() {
