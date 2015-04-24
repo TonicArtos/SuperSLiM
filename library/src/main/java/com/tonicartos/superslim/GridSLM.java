@@ -2,6 +2,7 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -262,7 +263,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
-        return new LayoutParams(params);
+        return LayoutParams.from(params);
     }
 
     @Override
@@ -477,14 +478,38 @@ public class GridSLM extends SectionLayoutManager {
             a.recycle();
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <br/><br/>
+         * Use {@link #from} instead.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <br/><br/>
+         * Use {@link #from} instead as this constructor will not copy the margin params from the
+         * source layout.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
+        }
+
+        /**
+         * Creates a new instance of {@link LayoutParams}.
+         */
+        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
+            if (other instanceof ViewGroup.MarginLayoutParams) {
+                return new LayoutParams((ViewGroup.MarginLayoutParams) other);
+            } else {
+                return new LayoutParams(other);
+            }
         }
 
         public int getColumnWidth() {
