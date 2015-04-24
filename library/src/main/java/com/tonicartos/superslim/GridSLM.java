@@ -477,14 +477,33 @@ public class GridSLM extends SectionLayoutManager {
             a.recycle();
         }
 
+        @Deprecated
+        /**
+         * Use {@link #from} instead
+         */
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
+        @Deprecated
+        /**
+         * Use {@link #from} instead
+         * This constructor will not copy the margin params from the source layout
+         */
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
+        }
+
+        /**
+         * Creates a new instance of {@link LayoutParams}
+         */
+        static public GridSLM.LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other instanceof ViewGroup.MarginLayoutParams)
+                return new GridSLM.LayoutParams((ViewGroup.MarginLayoutParams) other);
+            else
+                return new GridSLM.LayoutParams(other);
         }
 
         public int getColumnWidth() {
