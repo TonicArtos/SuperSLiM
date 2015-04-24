@@ -86,8 +86,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
 
         holder.bindItem(item.text);
 
-        final GridSLM.LayoutParams lp = new GridSLM.LayoutParams(
-                itemView.getLayoutParams());
+        final GridSLM.LayoutParams lp = GridSLM.LayoutParams.from(itemView.getLayoutParams());
         // Overrides xml attrs, could use different layouts too.
         if (item.isHeader) {
             lp.headerDisplay = mHeaderDisplay;
