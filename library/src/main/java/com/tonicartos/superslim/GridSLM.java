@@ -262,7 +262,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
-        return new LayoutParams(params);
+        return LayoutParams.from(params);
     }
 
     @Override
@@ -477,20 +477,24 @@ public class GridSLM extends SectionLayoutManager {
             a.recycle();
         }
 
-        @Deprecated
         /**
-         * Use {@link #from} instead
+         * <em>This constructor will be removed in version 0.5.</em>
+         * <br/><br/>
+         * Use {@link #from} instead.
          */
+        @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
-        @Deprecated
         /**
-         * Use {@link #from} instead
-         * This constructor will not copy the margin params from the source layout
+         * <em>This constructor will be removed in version 0.5.</em>
+         * <br/><br/>
+         * Use {@link #from} instead as this constructor will not copy the margin params from the
+         * source layout.
          */
+        @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
@@ -499,11 +503,12 @@ public class GridSLM extends SectionLayoutManager {
         /**
          * Creates a new instance of {@link LayoutParams}
          */
-        static public GridSLM.LayoutParams from(ViewGroup.LayoutParams other) {
-            if (other instanceof ViewGroup.MarginLayoutParams)
-                return new GridSLM.LayoutParams((ViewGroup.MarginLayoutParams) other);
-            else
-                return new GridSLM.LayoutParams(other);
+        public static LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other instanceof ViewGroup.MarginLayoutParams) {
+                return new LayoutParams((ViewGroup.MarginLayoutParams) other);
+            } else {
+                return new LayoutParams(other);
+            }
         }
 
         public int getColumnWidth() {
