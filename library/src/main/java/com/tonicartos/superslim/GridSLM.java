@@ -480,8 +480,11 @@ public class GridSLM extends SectionLayoutManager {
 
         /**
          * <em>This constructor will be protected in version 0.5.</em>
-         * <br/><br/>
+         * <p>
          * Use {@link #from} instead.
+         * </p>
+         *
+         * @param other Source layout params.
          */
         @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
@@ -491,9 +494,12 @@ public class GridSLM extends SectionLayoutManager {
 
         /**
          * <em>This constructor will be protected in version 0.5.</em>
-         * <br/><br/>
+         * <p>
          * Use {@link #from} instead as this constructor will not copy the margin params from the
          * source layout.
+         * </p>
+         *
+         * @param other Source layout params.
          */
         @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
@@ -503,6 +509,9 @@ public class GridSLM extends SectionLayoutManager {
 
         /**
          * Creates a new instance of {@link LayoutParams}.
+         *
+         * @param other Source layout params.
+         * @return New grid layout params.
          */
         public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
             if (other instanceof ViewGroup.MarginLayoutParams) {

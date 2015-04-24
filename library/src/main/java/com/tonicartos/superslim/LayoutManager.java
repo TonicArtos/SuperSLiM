@@ -1556,7 +1556,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     /**
-     * Trim all content wholly beyond the direction edge. If the direction is START, then update the
+     * Trim all content wholly beyond the direction edge. If the direction is START, then update
+     * the
      * header of the section intersecting the top edge.
      *
      * @param direction Direction of edge to trim against.
@@ -1795,8 +1796,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         /**
          * <em>This constructor will be removed in version 0.5.</em>
-         * <br/><br/>
+         * <p>
          * Use {@link #from} instead.
+         * </p>
+         *
+         * @param other Source layout params.
          */
         @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
@@ -1806,9 +1810,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         /**
          * <em>This constructor will be removed in version 0.5.</em>
-         * <br/><br/>
+         * <p>
          * Use {@link #from} instead as this constructor will not copy the margin params from the
          * source layout.
+         * </p>
+         *
+         * @param other Source layout params.
          */
         @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
@@ -1818,6 +1825,9 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         /**
          * Creates a new instance of {@link LayoutParams}.
+         *
+         * @param other Source layout params.
+         * @return New layout params.
          */
         public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
             if (other instanceof ViewGroup.MarginLayoutParams) {
