@@ -9,9 +9,12 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+
+import java.util.Stack;
 
 /**
  * Lays out views in a grid. The number of columns can be set directly, or a minimum size can be
@@ -263,17 +266,17 @@ public class GridSLM extends SectionLayoutManager {
         final int stickyEdge = helper.getStickyEdge();
         final int rowTop = markerLine;
         final int unavailable = (mNumColumns - 1) * mColumnWidth;
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
         for (int i = 0; i < mNumColumns && i < sectionData.subsections.size(); i++) {
             final int columnPosition = i * mColumnWidth;
-            final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
             final SectionData subSd = sectionData.subsections.get(sectionIndex + i);
             subSd.init(subHelper, recycler);
             subHelper.init(subSd, columnPosition, unavailable, rowTop, leadingEdge, stickyEdge);
             final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
             markerLine = Math.max(markerLine,
                     slm.beginFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
-            subHelper.recycle();
         }
+        subHelper.recycle();
         return markerLine;
     }
 
@@ -295,54 +298,67 @@ public class GridSLM extends SectionLayoutManager {
      */
     private int finishSubsectionRowToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final SparseArray<Stack<View>> detachedViews = new SparseArray<>();
         final int leadingEdge = helper.getLeadingEdge();
         final int stickyEdge = helper.getStickyEdge();
         int markerLine = 0;
 
-        // For each row cell each subsection needs to be finished.
-        // Find existing anchor for each cell subsection.
-        // For each anchor, finish fill (or begin fill if cell has no anchor).
-
-        // Find anchor section.
-        SectionData anchorSd = null;
-        int nextSd = 0;
+        // Find out the last filled column position and the matched subsection.
+        int lastPosition = helper.getChildCount() - 1;
+        View child = helper.getChildAt(lastPosition);
+        helper.getPosition(child);
+        int anchorSubsection = 0;
         for (int i = 0; i < sectionData.subsections.size(); i++) {
-            final SectionData sd = sectionData.subsections.get(i);
-            if (sd.containsItem(anchorPosition)) {
-                anchorSd = sd;
-                nextSd = i + 1;
-                break;
+            if (sectionData.subsections.get(i).containsItem(child)) {
+                anchorSubsection = i;
+            }
+        }
+        int anchorColumn = anchorSubsection % mNumColumns;
+
+        // Detach views until the first column is reached.
+        for (int i = 0; i < anchorColumn; i++) {
+            SectionData columnSubsection = sectionData.subsections.get(anchorSubsection - i);
+            detachedViews.put(anchorColumn - i, new Stack<View>());
+            while (columnSubsection.containsItem(child)) {
+                detachedViews.get(anchorColumn - i).push(child);
+                helper.detachView(child);
+                lastPosition -= 1;
+                child = helper.getChildAt(lastPosition);
             }
         }
 
-        if (anchorSd == null) {
-            return markerLine;
-        }
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        final int unavailable = (mNumColumns - 1) * mColumnWidth;
 
-        final View anchorSectionFirst;
-        if (anchorPosition == anchorSd.firstPosition) {
-            anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
-            recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
-        } else {
-            int headerIndex = Utils
-                    .findHeaderIndexFromLastIndex(helper.getChildCount() - 1, anchorSd, helper);
-            if (headerIndex == Utils.INVALID_INDEX) {
-                anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
-                recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
-            } else {
-                anchorSectionFirst = helper.getChildAt(headerIndex);
+        // Finish fill each column.
+        for (int i = 0; i < mNumColumns; i++) {
+            // Reattach detached views for columns after first one.
+            if (i > 0) {
+                Stack<View> views = detachedViews.get(i);
+                if (views == null || views.size() == 0) {
+                    // No more to be down in finishing filling the row.
+                    break;
+                }
+
+                while (views.size() > 0) {
+                    helper.attachView(views.pop());
+                }
             }
+
+            final View last = helper.getChildAt(helper.getChildCount() -1);
+            final int columnPosition = i * mColumnWidth;
+            final SectionData subSd =
+                    sectionData.subsections.get((i - anchorColumn) + anchorSubsection);
+
+            subSd.init(subHelper, recycler);
+            subHelper.init(subSd, columnPosition, unavailable, helper.getBottom(last), leadingEdge,
+                    stickyEdge);
+
+            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
+            markerLine = Math.max(markerLine,
+                    slm.finishFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
         }
 
-        LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
-        anchorSd.init(subHelper, anchorSectionFirst);
-        subHelper.init(anchorSd, markerLine, leadingEdge, stickyEdge);
-        SectionLayoutManager slm = helper.getSlm(anchorSd, subHelper);
-        if (anchorPosition == anchorSd.firstPosition) {
-            markerLine = slm.beginFillToEnd(anchorPosition, anchorSd, subHelper, recycler, state);
-        } else {
-            markerLine = slm.finishFillToEnd(anchorPosition, anchorSd, subHelper, recycler, state);
-        }
         subHelper.recycle();
 
         return markerLine;

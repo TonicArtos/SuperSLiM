@@ -213,6 +213,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     @Override
     public void init(SectionData sd, int horizontalOffset, int unavailableWidth, int markerLine,
             int leadingEdge, int stickyEdge) {
+        reset();
         mWidth = mParent.getWidth() - sd.startMarginWidth - sd.endMarginWidth - unavailableWidth;
         mUnavailableWidth = unavailableWidth;
 
