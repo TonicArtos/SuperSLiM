@@ -320,9 +320,11 @@ public abstract class SectionLayoutManager {
     }
 
     final public void preTrimAtStartEdge(int fvi, SectionData sd, LayoutTrimHelper helper) {
-        onPreTrimAtStartEdge(fvi, sd, helper);
-
         int subsectionStickyEdge = updateHeaderForStartEdgeTrim(fvi, sd, helper);
+
+        LayoutTrimHelper trimHelper = helper.getSubsectionLayoutTrimHelper();
+        trimHelper.init(sd, helper.getTrimEdge(), subsectionStickyEdge);
+        onPreTrimAtStartEdge(fvi, sd, trimHelper);
 
         if (sd.subsections == null) {
             return;
@@ -332,12 +334,11 @@ public abstract class SectionLayoutManager {
                         helper);
 
         for (SectionData subSd : selectedSubsections.keySet()) {
-            LayoutTrimHelper subsectionHelper = helper.getSubsectionLayoutTrimHelper();
-            subsectionHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
-            helper.getSlm(subSd, subsectionHelper).
-                    preTrimAtStartEdge(selectedSubsections.get(subSd), subSd, subsectionHelper);
-            subsectionHelper.recycle();
+            trimHelper.init(subSd, helper.getTrimEdge(), subsectionStickyEdge);
+            helper.getSlm(subSd, trimHelper).
+                    preTrimAtStartEdge(selectedSubsections.get(subSd), subSd, trimHelper);
         }
+        trimHelper.recycle();
     }
 
     protected void addView(View child, LayoutHelper helper, Recycler recycler) {
