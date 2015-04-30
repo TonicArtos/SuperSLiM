@@ -103,22 +103,28 @@ public abstract class SectionLayoutManager {
      */
     final public int finishFillToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        final int countBeforeFill = helper.getChildCount();
-        int markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+        // Shuffle header to end of section (child index). This is the easiest way to ensure
+        // the header is drawn after any other section content.
+        View detachedHeader = null;
         if (sectionData.hasHeader) {
-            // Shuffle header to end of section (child index). This is the easiest way to ensure
-            // the header is drawn after any other section content.
-            final int headerIndex = countBeforeFill - 1; // Header should always be at the end.
+            // Header should always be at the end.
+            final int headerIndex = helper.getChildCount() - 1;
             if (headerIndex != Utils.INVALID_INDEX) {
                 final View header = helper.getChildAt(headerIndex);
                 if (helper.getPosition(header) == sectionData.firstPosition) {
                     helper.detachView(header);
-                    helper.attachView(header);
-
-                    markerLine = Math.max(markerLine, helper.getBottom(header));
+                    detachedHeader = header;
                 }
             }
         }
+
+        int markerLine = onFillToEnd(anchorPosition, sectionData, helper, recycler, state);
+
+        if (detachedHeader != null) {
+            helper.attachView(detachedHeader);
+            markerLine = Math.max(markerLine, helper.getBottom(detachedHeader));
+        }
+
         return helper.translateFillResult(markerLine);
     }
 
