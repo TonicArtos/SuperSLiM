@@ -436,10 +436,47 @@ public class GridSLM extends SectionLayoutManager {
             LayoutTrimHelper helper) {
         super.onPreTrimAtStartEdge(firstVisibleIndex, sectionData, helper);
 
+        if (sectionData.subsections == null || sectionData.subsections.size() == 0) {
+            return;
+        }
+
+        final int anchorPosition = helper.getPosition(helper.getChildAt(0));
+        int anchorSection = -1;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            if (sectionData.subsections.get(i).containsItem(anchorPosition)) {
+                anchorSection = i;
+                break;
+            }
+        }
+
+        if (anchorSection == -1) {
+            return;
+        }
+
+        // Must sticky subsection content to keep visual consistency with the opposite scroll
+        // motion.
+
         final int stickyEdge = helper.getStickyEdge();
 
-        // Sticky (offset) subsection content in the trimmed row until the row bottom is reached.
-        // Check each cell in the row.
+        final SubsectionColumnData[] colData = getRowColumnData(sectionData, helper, anchorSection);
+
+        // Calculate row bottom.
+        int rowBottom = 0;
+        for (SubsectionColumnData col : colData) {
+            View child = helper.getChildAt(col.startIndex + col.childCount - 1);
+            col.bottom = helper.getBottom(child);
+            rowBottom = Math.max(rowBottom, col.bottom);
+        }
+
+        // Try to offset column views to sticky edge, but don't shift below row bottom.
+        for (SubsectionColumnData col : colData) {
+            int delta2RowBottom = rowBottom - col.bottom;
+            int delta2StickyEdge = stickyEdge - helper.getTop(helper.getChildAt(col.startIndex));
+            int delta = Math.min(delta2RowBottom, delta2StickyEdge);
+            for (int i = 0; i < col.childCount; i++) {
+                helper.getChildAt(i + col.startIndex).offsetTopAndBottom(delta);
+            }
+        }
     }
 
     private int adjustColumnForLayoutDirection(int col, int layoutDirection) {
@@ -550,7 +587,7 @@ public class GridSLM extends SectionLayoutManager {
 
             // Update column index caching.
             for (int j = 0; j < i; j++) {
-                colData[column + 1 + j].offsetStartIndex(sectionCount);
+                colData[column + 1 + j].startIndex += sectionCount;
             }
             colData[column] = new SubsectionColumnData(0, sectionCount);
         }
@@ -758,7 +795,7 @@ public class GridSLM extends SectionLayoutManager {
 
             // Update column index caching.
             for (int j = 0; j < i; j++) {
-                colData[column + 1 + j].offsetStartIndex(sectionCount);
+                colData[column + 1 + j].startIndex += sectionCount;
             }
             colData[(column)] = new SubsectionColumnData(0, sectionCount);
         }
@@ -767,6 +804,39 @@ public class GridSLM extends SectionLayoutManager {
         stickySubsections(markerLine, helper, colData, stickyEdge);
 
         return markerLine;
+    }
+
+    private SubsectionColumnData[] getRowColumnData(SectionData sectionData,
+            LayoutTrimHelper helper,
+            int anchorSection) {
+        SubsectionColumnData[] colData = new SubsectionColumnData[mNumColumns];
+        for (int i = 0; i < colData.length; i++) {
+            colData[i] = new SubsectionColumnData(0, 0);
+        }
+
+        final int childCount = helper.getChildCount();
+        for (int i = 0, column = 0; i < childCount && column < mNumColumns; i++) {
+            final View child = helper.getChildAt(i);
+            if (!sectionData.containsItem(child) ||
+                    (helper.getPosition(child) == sectionData.firstPosition
+                            && sectionData.hasHeader)) {
+                // End of section.
+                break;
+            }
+
+            if (sectionData.subsections.get(anchorSection + column).containsItem(child)) {
+                colData[column].childCount += 1;
+            } else {
+                // End of subsection/column.
+                column += 1;
+                if (column < mNumColumns) {
+                    colData[column].startIndex = i;
+                    i -= 1;
+                }
+            }
+        }
+
+        return colData;
     }
 
     /**
@@ -824,12 +894,12 @@ public class GridSLM extends SectionLayoutManager {
                 break;
             }
 
-            final int childCount = colData[i].getChildCount();
+            final int childCount = colData[i].childCount;
             if (childCount == 0) {
                 break;
             }
 
-            final int colStart = colData[i].getStartIndex();
+            final int colStart = colData[i].startIndex;
             final int subsectionTop = helper.getTop(helper.getChildAt(colStart));
             // The subsection will only be below the top Edge if it has finished early.
             if (subsectionTop > topEdge) {
@@ -947,25 +1017,15 @@ public class GridSLM extends SectionLayoutManager {
 
     class SubsectionColumnData {
 
-        private final int mChildCount;
+        int childCount;
 
-        private int mStartIndex;
+        int startIndex;
+
+        int bottom;
 
         public SubsectionColumnData(int childCount, int startIndex) {
-            mChildCount = childCount;
-            mStartIndex = startIndex;
-        }
-
-        public int getChildCount() {
-            return mChildCount;
-        }
-
-        public int getStartIndex() {
-            return mStartIndex;
-        }
-
-        public void offsetStartIndex(int offset) {
-            mStartIndex += offset;
+            this.childCount = childCount;
+            this.startIndex = startIndex;
         }
     }
 }
