@@ -150,60 +150,6 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
-    public void onInit(Bundle savedConfig, SectionData sectionData, LayoutQueryHelper helper) {
-        if (savedConfig != null) {
-            mNumColumns = savedConfig.getInt(NUM_COLUMNS);
-            mColumnWidth = savedConfig.getInt(COLUMN_WIDTH);
-        } else {
-            int mMinimumWidth = 0;
-            boolean mColumnsSpecified = false;
-
-            if (sectionData.getSectionParams() instanceof LayoutParams) {
-                LayoutParams params = (LayoutParams) sectionData.getSectionParams();
-                int columnWidth = params.getColumnWidth();
-                int numColumns = params.getNumColumns();
-                if (columnWidth < 0 && numColumns < 0) {
-                    numColumns = DEFAULT_NUM_COLUMNS;
-                }
-
-                if (numColumns == AUTO_FIT) {
-                    mMinimumWidth = columnWidth;
-                    mColumnsSpecified = false;
-                } else {
-                    mNumColumns = numColumns;
-                    mMinimumWidth = 0;
-                    mColumnsSpecified = true;
-                }
-            }
-
-            int availableWidth = helper.getWidth();
-            if (!mColumnsSpecified) {
-                if (mMinimumWidth <= 0) {
-                    mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
-                            mContext.getResources().getDisplayMetrics());
-                }
-                mNumColumns = availableWidth / Math.abs(mMinimumWidth);
-            }
-            if (mNumColumns < 1) {
-                mNumColumns = 1;
-            }
-            mColumnWidth = availableWidth / mNumColumns;
-            if (mColumnWidth == 0) {
-                Log.e("GridSection",
-                        "Too many columns (" + mNumColumns + ") for available width "
-                                + availableWidth
-                                + ".");
-            }
-
-            // Store new configuration for this section.
-            Bundle config = new Bundle();
-            config.putInt(NUM_COLUMNS, mNumColumns);
-            config.putInt(COLUMN_WIDTH, mColumnWidth);
-            saveConfiguration(sectionData, config);
-        }
-    }
-
-    @Override
     protected int onFillSubsectionsToEnd(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
         final int leadingEdge = helper.getLeadingEdge();
@@ -224,162 +170,28 @@ public class GridSLM extends SectionLayoutManager {
         return markerLine;
     }
 
-    private int fillSubsectionRowsToEnd(int markerLine, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        final int leadingEdge = helper.getLeadingEdge();
-
-        int anchorPosition = helper.getPosition(helper.getChildAt(helper.getChildCount() - 1));
-        int anchorSd = 0;
-        for (int i = 0; i < sectionData.subsections.size(); i++) {
-            final SectionData sd = sectionData.subsections.get(i);
-            if (sd.containsItem(anchorPosition)) {
-                anchorSd = i;
-                break;
-            }
-        }
-
-        // Fill rows.
-        for (int i = anchorSd; markerLine < leadingEdge && i < sectionData.subsections.size();
-                i += mNumColumns) {
-            markerLine =
-                    fillSubsectionRowToEnd(markerLine, i, sectionData, helper, recycler, state);
-        }
-
-        return markerLine;
-    }
-
-    private int fillSubsectionRowsToStart(int markerLine, SectionData sectionData, LayoutHelper
-            helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
-    }
-
-    private int fillSubsectionRowToStart(int markerLine, int sectionIndex, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        // Begin cell fills. Offset complete cells in the same manner as finish subsection row to
-        // start.
-        return 0;
-    }
-
-    private int fillSubsectionRowToEnd(int markerLine, int sectionIndex, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        final int leadingEdge = helper.getLeadingEdge();
-        final int stickyEdge = helper.getStickyEdge();
-        final int rowTop = markerLine;
-        final int unavailable = (mNumColumns - 1) * mColumnWidth;
-        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
-        for (int i = 0; i < mNumColumns && i < sectionData.subsections.size(); i++) {
-            final int columnPosition = i * mColumnWidth;
-            final SectionData subSd = sectionData.subsections.get(sectionIndex + i);
-            subSd.init(subHelper, recycler);
-            subHelper.init(subSd, columnPosition, unavailable, rowTop, leadingEdge, stickyEdge);
-            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
-            markerLine = Math.max(markerLine,
-                    slm.beginFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
-        }
-        subHelper.recycle();
-        return markerLine;
-    }
-
-    @Override
-    protected void onPreTrimAtStartEdge(int firstVisibleIndex, SectionData sectionData,
-            LayoutTrimHelper helper) {
-        super.onPreTrimAtStartEdge(firstVisibleIndex, sectionData, helper);
-
-        final int stickyEdge = helper.getStickyEdge();
-
-        // Sticky (offset) subsection content in the trimmed row until the row bottom is reached.
-        // Check each cell in the row.
-    }
-
-    /**
-     * Finish filling the current subsection row to the end.
-     *
-     * @return Line up to which content was filled.
-     */
-    private int finishSubsectionRowToEnd(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        final SparseArray<Stack<View>> detachedViews = new SparseArray<>();
-        final int leadingEdge = helper.getLeadingEdge();
-        final int stickyEdge = helper.getStickyEdge();
-        int markerLine = 0;
-
-        // Find out the last filled column position and the matched subsection.
-        int lastPosition = helper.getChildCount() - 1;
-        View child = helper.getChildAt(lastPosition);
-        helper.getPosition(child);
-        int anchorSubsection = 0;
-        for (int i = 0; i < sectionData.subsections.size(); i++) {
-            if (sectionData.subsections.get(i).containsItem(child)) {
-                anchorSubsection = i;
-            }
-        }
-        int anchorColumn = anchorSubsection % mNumColumns;
-
-        // Detach views until the first column is reached.
-        for (int i = 0; i < anchorColumn; i++) {
-            SectionData columnSubsection = sectionData.subsections.get(anchorSubsection - i);
-            detachedViews.put(anchorColumn - i, new Stack<View>());
-            while (columnSubsection.containsItem(child)) {
-                detachedViews.get(anchorColumn - i).push(child);
-                helper.detachView(child);
-                lastPosition -= 1;
-                child = helper.getChildAt(lastPosition);
-            }
-        }
-
-        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
-        final int unavailable = (mNumColumns - 1) * mColumnWidth;
-
-        // Finish fill each column.
-        for (int i = 0; i < mNumColumns; i++) {
-            // Reattach detached views for columns after first one.
-            if (i > 0) {
-                Stack<View> views = detachedViews.get(i);
-                if (views == null || views.size() == 0) {
-                    // No more to be down in finishing filling the row.
-                    break;
-                }
-
-                while (views.size() > 0) {
-                    helper.attachView(views.pop());
-                }
-            }
-
-            final View last = helper.getChildAt(helper.getChildCount() -1);
-            final int columnPosition = i * mColumnWidth;
-            final SectionData subSd =
-                    sectionData.subsections.get((i - anchorColumn) + anchorSubsection);
-
-            subSd.init(subHelper, recycler);
-            subHelper.init(subSd, columnPosition, unavailable, helper.getBottom(last), leadingEdge,
-                    stickyEdge);
-
-            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
-            markerLine = Math.max(markerLine,
-                    slm.finishFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
-        }
-
-        subHelper.recycle();
-
-        return markerLine;
-    }
-
-    private int finishSubsectionRowToStart(int anchorPosition, SectionData sectionData,
-            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        // For each row cell each subsection needs to be finished.
-        // Find existing anchor for each cell subsection.
-        // For each anchor, finish fill (or begin fill if cell has no anchor).
-
-        // After all fills have been done, completely filled cells with a markerLine > leadingEdge
-        // && markerLine > rowTop need to be offset to Math.max(leadingEdge, rowTop).
-
-        return 0;
-    }
-
     @Override
     protected int onFillSubsectionsToStart(int anchorPosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
-        return 0;
+        int markerLine = 0;
+        final int leadingEdge = helper.getLeadingEdge();
+        if (markerLine <= leadingEdge) {
+            return markerLine;
+        }
+
+        markerLine = finishSubsectionRowToStart(anchorPosition, sectionData, helper, recycler,
+                state);
+        if (markerLine <= leadingEdge) {
+            return markerLine;
+        }
+
+        if (anchorPosition == sectionData.firstPosition && sectionData.hasHeader) {
+            return markerLine;
+        }
+
+        markerLine = fillSubsectionRowsToStart(markerLine, sectionData, helper, recycler, state);
+
+        return markerLine;
     }
 
     @Override
@@ -565,6 +377,71 @@ public class GridSLM extends SectionLayoutManager {
         return markerLine;
     }
 
+    @Override
+    public void onInit(Bundle savedConfig, SectionData sectionData, LayoutQueryHelper helper) {
+        if (savedConfig != null) {
+            mNumColumns = savedConfig.getInt(NUM_COLUMNS);
+            mColumnWidth = savedConfig.getInt(COLUMN_WIDTH);
+        } else {
+            int mMinimumWidth = 0;
+            boolean mColumnsSpecified = false;
+
+            if (sectionData.getSectionParams() instanceof LayoutParams) {
+                LayoutParams params = (LayoutParams) sectionData.getSectionParams();
+                int columnWidth = params.getColumnWidth();
+                int numColumns = params.getNumColumns();
+                if (columnWidth < 0 && numColumns < 0) {
+                    numColumns = DEFAULT_NUM_COLUMNS;
+                }
+
+                if (numColumns == AUTO_FIT) {
+                    mMinimumWidth = columnWidth;
+                    mColumnsSpecified = false;
+                } else {
+                    mNumColumns = numColumns;
+                    mMinimumWidth = 0;
+                    mColumnsSpecified = true;
+                }
+            }
+
+            int availableWidth = helper.getWidth();
+            if (!mColumnsSpecified) {
+                if (mMinimumWidth <= 0) {
+                    mMinimumWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 48,
+                            mContext.getResources().getDisplayMetrics());
+                }
+                mNumColumns = availableWidth / Math.abs(mMinimumWidth);
+            }
+            if (mNumColumns < 1) {
+                mNumColumns = 1;
+            }
+            mColumnWidth = availableWidth / mNumColumns;
+            if (mColumnWidth == 0) {
+                Log.e("GridSection",
+                        "Too many columns (" + mNumColumns + ") for available width "
+                                + availableWidth
+                                + ".");
+            }
+
+            // Store new configuration for this section.
+            Bundle config = new Bundle();
+            config.putInt(NUM_COLUMNS, mNumColumns);
+            config.putInt(COLUMN_WIDTH, mColumnWidth);
+            saveConfiguration(sectionData, config);
+        }
+    }
+
+    @Override
+    protected void onPreTrimAtStartEdge(int firstVisibleIndex, SectionData sectionData,
+            LayoutTrimHelper helper) {
+        super.onPreTrimAtStartEdge(firstVisibleIndex, sectionData, helper);
+
+        final int stickyEdge = helper.getStickyEdge();
+
+        // Sticky (offset) subsection content in the trimmed row until the row bottom is reached.
+        // Check each cell in the row.
+    }
+
     private int adjustColumnForLayoutDirection(int col, int layoutDirection) {
         if (layoutDirection != ViewCompat.LAYOUT_DIRECTION_LTR) {
             col = mNumColumns - 1 - col;
@@ -627,6 +504,271 @@ public class GridSLM extends SectionLayoutManager {
         return rowHeight;
     }
 
+    private int fillSubsectionRowToEnd(int markerLine, int sectionIndex, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        final int rowTop = markerLine;
+        final int unavailable = (mNumColumns - 1) * mColumnWidth;
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        for (int i = 0; i < mNumColumns && i < sectionData.subsections.size(); i++) {
+            final int columnPosition = i * mColumnWidth;
+            final SectionData subSd = sectionData.subsections.get(sectionIndex + i);
+            subSd.init(subHelper, recycler);
+            subHelper.init(subSd, columnPosition, unavailable, rowTop, leadingEdge, stickyEdge);
+            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
+            markerLine = Math.max(markerLine,
+                    slm.beginFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
+        }
+        subHelper.recycle();
+        return markerLine;
+    }
+
+    private int fillSubsectionRowToStart(int markerLine, int anchorSectionIndex,
+            SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final SubsectionColumnData[] colData = new SubsectionColumnData[mNumColumns];
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        final int rowBottom = markerLine;
+        final int unavailable = (mNumColumns - 1) * mColumnWidth;
+
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        for (int i = 0; i < mNumColumns && i < sectionData.subsections.size(); i++) {
+            final int sectionIndex = anchorSectionIndex - i;
+            final int column = sectionIndex % mNumColumns;
+            final int columnPosition = column * mColumnWidth;
+
+            final SectionData subSd = sectionData.subsections.get(sectionIndex);
+            subSd.init(subHelper, recycler);
+            subHelper.init(subSd, columnPosition, unavailable, rowBottom, leadingEdge, stickyEdge);
+            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
+            final int countBefore = helper.getChildCount();
+            markerLine = Math.max(markerLine,
+                    slm.beginFillToStart(subSd.firstPosition, subSd, subHelper, recycler, state));
+            final int sectionCount = helper.getChildCount() - countBefore;
+
+            // Update column index caching.
+            for (int j = 0; j < i; j++) {
+                colData[column + 1 + j].offsetStartIndex(sectionCount);
+            }
+            colData[column] = new SubsectionColumnData(0, sectionCount);
+        }
+        subHelper.recycle();
+
+        stickySubsections(markerLine, helper, colData, stickyEdge);
+
+        return markerLine;
+    }
+
+    private int fillSubsectionRowsToEnd(int markerLine, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final int leadingEdge = helper.getLeadingEdge();
+
+        int anchorPosition = helper.getPosition(helper.getChildAt(helper.getChildCount() - 1));
+        int anchorSection = 0;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            final SectionData sd = sectionData.subsections.get(i);
+            if (sd.containsItem(anchorPosition)) {
+                anchorSection = i + 1;
+                break;
+            }
+        }
+
+        // Fill rows.
+        for (int i = anchorSection; markerLine < leadingEdge && i < sectionData.subsections.size();
+                i += mNumColumns) {
+            markerLine =
+                    fillSubsectionRowToEnd(markerLine, i, sectionData, helper, recycler, state);
+        }
+
+        return markerLine;
+    }
+
+    private int fillSubsectionRowsToStart(int markerLine, SectionData sectionData, LayoutHelper
+            helper, Recycler recycler, RecyclerView.State state) {
+        final int leadingEdge = helper.getLeadingEdge();
+
+        int anchorPosition = helper.getPosition(helper.getChildAt(0));
+        int anchorSection = 0;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            final SectionData sd = sectionData.subsections.get(i);
+            if (sd.containsItem(anchorPosition)) {
+                anchorSection = i - 1;
+                break;
+            }
+        }
+
+        // Fill rows.
+        for (int i = anchorSection; markerLine < leadingEdge && i < sectionData.subsections.size();
+                i -= mNumColumns) {
+            markerLine =
+                    fillSubsectionRowToStart(markerLine, i, sectionData, helper, recycler, state);
+        }
+
+        return markerLine;
+    }
+
+    /**
+     * Finish filling the current subsection row to the end.
+     *
+     * @return Line up to which content was filled.
+     */
+    private int finishSubsectionRowToEnd(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        final SparseArray<Stack<View>> detachedViews = new SparseArray<>();
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        int markerLine = 0;
+
+        // Find out the last filled column position and the matched subsection.
+        int lastPosition = helper.getChildCount() - 1;
+        View child = helper.getChildAt(lastPosition);
+        int anchorSubsection = 0;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            if (sectionData.subsections.get(i).containsItem(child)) {
+                anchorSubsection = i;
+            }
+        }
+        final int anchorColumn = anchorSubsection % mNumColumns;
+
+        // Detach views until the first column is reached.
+        for (int i = 0; i < anchorColumn; i++) {
+            SectionData columnSubsection = sectionData.subsections.get(anchorSubsection - i);
+            detachedViews.put(anchorColumn - i, new Stack<View>());
+            while (columnSubsection.containsItem(child)) {
+                detachedViews.get(anchorColumn - i).push(child);
+                helper.detachView(child);
+                lastPosition -= 1;
+                child = helper.getChildAt(lastPosition);
+            }
+        }
+
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        final int unavailable = (mNumColumns - 1) * mColumnWidth;
+
+        // Finish fill each column.
+        for (int i = 0; i < mNumColumns; i++) {
+            // Reattach detached views for columns after first one.
+            if (i > 0) {
+                Stack<View> views = detachedViews.get(i);
+                if (views == null || views.size() == 0) {
+                    // No more to be down in finishing filling the row.
+                    break;
+                }
+
+                while (views.size() > 0) {
+                    helper.attachView(views.pop());
+                }
+            }
+
+            final View last = helper.getChildAt(helper.getChildCount() - 1);
+            final int currentSubsection = i - anchorColumn + anchorSubsection;
+            final int columnPosition = i * mColumnWidth;
+            final SectionData subSd = sectionData.subsections.get(currentSubsection);
+
+            subSd.init(subHelper, recycler);
+            subHelper.init(subSd, columnPosition, unavailable, helper.getBottom(last), leadingEdge,
+                    stickyEdge);
+
+            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
+            markerLine = Math.max(markerLine,
+                    slm.finishFillToEnd(subSd.firstPosition, subSd, subHelper, recycler, state));
+        }
+
+        subHelper.recycle();
+
+        return markerLine;
+    }
+
+    private int finishSubsectionRowToStart(int anchorPosition, SectionData sectionData,
+            LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
+        //TODO: RTL support.
+        final SubsectionColumnData[] colData = new SubsectionColumnData[mNumColumns];
+        final SparseArray<Stack<View>> detachedViews = new SparseArray<>();
+        final int leadingEdge = helper.getLeadingEdge();
+        final int stickyEdge = helper.getStickyEdge();
+        int markerLine = 0;
+
+        // Find out the first filled column position and the matched subsection.
+        View child = helper.getChildAt(0);
+        int anchorSubsection = 0;
+        for (int i = 0; i < sectionData.subsections.size(); i++) {
+            if (sectionData.subsections.get(i).containsItem(child)) {
+                anchorSubsection = i;
+            }
+        }
+
+        // Detach and cache views to last displayed column in row, or last section. Calculate last
+        // column to anchor the fill from.
+        int anchorColumn = 0;
+        for (int i = 0;
+                i < mNumColumns && anchorSubsection + i < sectionData.subsections.size();
+                i++) {
+            anchorColumn = i;
+            if (i == mNumColumns - 1
+                    || anchorSubsection + i == sectionData.subsections.size() - 1) {
+                break;
+            }
+
+            final SectionData columnSubsection = sectionData.subsections.get(anchorSubsection + i);
+            detachedViews.put(i, new Stack<View>());
+            while (columnSubsection.containsItem(child)) {
+                detachedViews.get(i).push(child);
+                helper.detachView(child);
+                child = helper.getChildAt(0);
+            }
+        }
+
+        // For each column from the end. Reattach any detached views for the column and then finish
+        // filling the subsection.
+        final LayoutHelper subHelper = helper.getSubsectionLayoutHelper();
+        final int unavailable = (mNumColumns - 1) * mColumnWidth;
+
+        // Finish fill each column.
+        for (int i = 0; i < mNumColumns && anchorColumn - i >= 0; i++) {
+            // Reattach detached views for columns after first one.
+            if (i > 0) {
+                Stack<View> views = detachedViews.get(i);
+                if (views == null || views.size() == 0) {
+                    // No more to be down in finishing filling the row.
+                    break;
+                }
+
+                while (views.size() > 0) {
+                    helper.attachView(views.pop(), 0);
+                }
+            }
+
+            final View first = helper.getChildAt(0);
+            final int column = anchorColumn - i;
+            final int currentSubsection = column + anchorSubsection;
+            final int columnPosition = (column) * mColumnWidth;
+            final SectionData subSd = sectionData.subsections.get(currentSubsection);
+
+            subSd.init(subHelper, recycler);
+            subHelper.init(subSd, columnPosition, unavailable, helper.getTop(first), leadingEdge,
+                    stickyEdge);
+
+            final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
+            final int countBefore = helper.getChildCount();
+            markerLine = Math.max(markerLine,
+                    slm.finishFillToStart(subSd.firstPosition, subSd, subHelper, recycler, state));
+            final int sectionCount = helper.getChildCount() - countBefore;
+
+            // Update column index caching.
+            for (int j = 0; j < i; j++) {
+                colData[column + 1 + j].offsetStartIndex(sectionCount);
+            }
+            colData[(column)] = new SubsectionColumnData(0, sectionCount);
+        }
+        subHelper.recycle();
+
+        stickySubsections(markerLine, helper, colData, stickyEdge);
+
+        return markerLine;
+    }
+
     /**
      * Layout out a view for the given column in a row. Views that have a height param of
      * MATCH_PARENT are fixed to the height of the row.
@@ -663,6 +805,40 @@ public class GridSLM extends SectionLayoutManager {
     private void measureChild(View child, LayoutHelper helper) {
         final int widthOtherColumns = (mNumColumns - 1) * mColumnWidth;
         helper.measureChild(child, widthOtherColumns, 0);
+    }
+
+    /**
+     * Sticky subsections within row if the subsection is complete and the top edge of the
+     * subsection is below the row's displayed top edge.
+     *
+     * @param rowTop     Top edge of row.
+     * @param helper     Layout helper.
+     * @param colData    Column counts and indices.
+     * @param stickyEdge Section sticky edge.
+     */
+    private void stickySubsections(int rowTop, LayoutHelper helper, SubsectionColumnData[] colData,
+            int stickyEdge) {
+        final int topEdge = rowTop < stickyEdge ? stickyEdge : rowTop;
+        for (int i = 0; i < mNumColumns; i++) {
+            if (colData[i] == null) {
+                break;
+            }
+
+            final int childCount = colData[i].getChildCount();
+            if (childCount == 0) {
+                break;
+            }
+
+            final int colStart = colData[i].getStartIndex();
+            final int subsectionTop = helper.getTop(helper.getChildAt(colStart));
+            // The subsection will only be below the top Edge if it has finished early.
+            if (subsectionTop > topEdge) {
+                final int offset = topEdge - subsectionTop;
+                for (int j = colStart; j < childCount; j++) {
+                    helper.getChildAt(j).offsetTopAndBottom(offset);
+                }
+            }
+        }
     }
 
     public static class LayoutParams extends LayoutManager.LayoutParams {
@@ -766,6 +942,30 @@ public class GridSLM extends SectionLayoutManager {
         public SlmConfig setNumColumns(int numColumns) {
             this.numColumns = numColumns;
             return this;
+        }
+    }
+
+    class SubsectionColumnData {
+
+        private final int mChildCount;
+
+        private int mStartIndex;
+
+        public SubsectionColumnData(int childCount, int startIndex) {
+            mChildCount = childCount;
+            mStartIndex = startIndex;
+        }
+
+        public int getChildCount() {
+            return mChildCount;
+        }
+
+        public int getStartIndex() {
+            return mStartIndex;
+        }
+
+        public void offsetStartIndex(int offset) {
+            mStartIndex += offset;
         }
     }
 }

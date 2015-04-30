@@ -48,7 +48,8 @@ public abstract class SectionLayoutManager {
             if (helper.getPosition(helper.getChildAt(helper.getChildCount() - 1)) ==
                     sectionData.lastPosition && helper.getBottom(header) > markerLine &&
                     helper.getTop(header) > 0) {
-                int delta = Math.max(markerLine - helper.getBottom(header), 0 - helper.getTop(header));
+                int delta = Math
+                        .max(markerLine - helper.getBottom(header), 0 - helper.getTop(header));
                 header.offsetTopAndBottom(delta);
             }
 
@@ -422,12 +423,12 @@ public abstract class SectionLayoutManager {
     protected void onReset() {
     }
 
-    void clearConfigurationForSection(SectionData sectionData) {
-        mSavedConfiguration.remove(sectionData);
-    }
-
     protected void saveConfiguration(SectionData sectionData, Bundle configuration) {
         mSavedConfiguration.put(sectionData, configuration);
+    }
+
+    void clearConfigurationForSection(SectionData sectionData) {
+        mSavedConfiguration.remove(sectionData);
     }
 
     SectionLayoutManager init(SectionData sectionData, LayoutQueryHelper helper) {
@@ -440,7 +441,7 @@ public abstract class SectionLayoutManager {
      * added after the section content has been placed. However, a subsection's sticky header's
      * position is dependent on the supersection's sticky header position and height. So that means
      * we have to make a second pass to make sure all the sticky headers are properly positioned.
-     *
+     * <p/>
      * In other words, this method exists only to fix nested sticky headers and is implemented
      * solely by the SlmWrapper, but needs to be called by the LayoutManager, which is why it is
      * package private.
@@ -522,7 +523,7 @@ public abstract class SectionLayoutManager {
 
     /**
      * Get a map of sections and their first visible positions that intersect the start edge.
-     *
+     * <p/>
      * <p>The basic implementation looks through all attached child views for this section. You
      * should consider an implementation that constrains the search to a minimal range.</p>
      *
