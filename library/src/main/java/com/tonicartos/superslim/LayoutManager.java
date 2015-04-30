@@ -1207,23 +1207,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Perform tasks prior to trim.
-        final SectionData sd = getSectionData(getPosition(anchor));
+        final SectionData anchorSection = getSectionData(getPosition(anchor));
         final LayoutHelperImpl helper = LayoutHelperImpl.getLayoutHelperFromPool(mHelperDelegate);
-        helper.init(sd, 0, 0);
-        getSlm(sd, helper).preTrimAtStartEdge(anchorIndex, sd, helper);
+        helper.init(anchorSection, 0, 0);
+        getSlm(anchorSection, helper).preTrimAtStartEdge(anchorIndex, anchorSection, helper);
         helper.recycle();
 
-        // Now trim views before the first visible item.
+        // Trim all views before the anchor section.
         for (int i = 0; i < anchorIndex; i++) {
-//            for (int j = 0; j < getChildCount(); j++) {
-//                Log.d("children" , "index " + j + " position " + getPosition(getChildAt(j)));
-//            }
-//
-//            Log.d("trim", "index " + i + " position " + getPosition(getChildAt(0)));
-            removeAndRecycleViewAt(0, recycler.inner);
+            if (!anchorSection.containsItem(getChildAt(0))) {
+                removeAndRecycleViewAt(0, recycler.inner);
+            } else {
+                break;
+            }
         }
 
-        // Then trim any non-visible views remaining in the same section.
+        // Then trim all out of vision views inside the anchor section.
+        int childCount = getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View look = getChildAt(i);
+            if (anchorSection.containsItem(look) && getDecoratedBottom(look) <= 0) {
+                removeAndRecycleView(look, recycler.inner);
+                childCount -= 1;
+                i -= 1;
+            } else if (!anchorSection.containsItem(look)) {
+                break;
+            }
+        }
     }
 
     /**
