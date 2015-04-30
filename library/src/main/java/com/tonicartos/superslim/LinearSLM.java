@@ -67,13 +67,13 @@ public class LinearSLM extends SectionLayoutManager {
             anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
             recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
         } else {
-            int headerIndex = Utils
+            int subsectionHeaderIndex = Utils
                     .findHeaderIndexFromLastIndex(helper.getChildCount() - 1, anchorSd, helper);
-            if (headerIndex == Utils.INVALID_INDEX) {
+            if (subsectionHeaderIndex == Utils.INVALID_INDEX) {
                 anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
                 recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
             } else {
-                anchorSectionFirst = helper.getChildAt(headerIndex);
+                anchorSectionFirst = helper.getChildAt(subsectionHeaderIndex);
             }
         }
 
@@ -129,12 +129,12 @@ public class LinearSLM extends SectionLayoutManager {
             anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
             recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
         } else {
-            int headerIndex = Utils.findHeaderIndexFromFirstIndex(0, anchorSd, helper);
-            if (headerIndex == Utils.INVALID_INDEX) {
+            int subsectionHeaderIndex = Utils.findHeaderIndexFromFirstIndex(0, anchorSd, helper);
+            if (subsectionHeaderIndex == Utils.INVALID_INDEX) {
                 anchorSectionFirst = recycler.getView(anchorSd.firstPosition);
                 recycler.cacheView(anchorSd.firstPosition, anchorSectionFirst);
             } else {
-                anchorSectionFirst = helper.getChildAt(headerIndex);
+                anchorSectionFirst = helper.getChildAt(subsectionHeaderIndex);
             }
         }
 
