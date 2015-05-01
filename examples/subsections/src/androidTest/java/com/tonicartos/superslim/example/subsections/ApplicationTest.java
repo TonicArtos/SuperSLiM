@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.subsections;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

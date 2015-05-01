@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.subsections;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;

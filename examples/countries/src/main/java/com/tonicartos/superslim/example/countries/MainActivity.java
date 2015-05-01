@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.countries;
 
 import com.tonicartos.superslim.LayoutManager;
 

@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.subsections;
 
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;

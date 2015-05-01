@@ -1,9 +1,10 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.countries;
 
 import com.tonicartos.superslim.GridSLM;
 import com.tonicartos.superslim.LayoutManager;
 import com.tonicartos.superslim.LinearSLM;
 import com.tonicartos.superslim.SectionAdapter;
+import com.tonicartos.superslimexamples.CountryViewHolder;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;

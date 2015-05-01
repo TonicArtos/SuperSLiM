@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.subsections;
 
 import com.tonicartos.superslim.SectionAdapter;
 

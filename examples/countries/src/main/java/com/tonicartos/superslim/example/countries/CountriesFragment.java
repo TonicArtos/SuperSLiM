@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.countries;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;

@@ -1,4 +1,4 @@
-package com.tonicartos.superslimexample;
+package com.tonicartos.superslim.example.countries;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
