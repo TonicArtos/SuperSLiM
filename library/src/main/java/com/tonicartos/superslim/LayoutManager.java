@@ -1016,14 +1016,14 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     private SectionLayoutManager getSlm(SectionData sd, LayoutQueryHelper helper) {
         SectionLayoutManager slm;
         if (sd.sectionManagerKind == SECTION_MANAGER_CUSTOM) {
-            slm = mSlms.get(sd.sectionManager);
+            slm = mSlms.get(sd.sectionManager).newInstance();
             if (slm == null) {
                 throw new UnknownSectionLayoutException(sd.sectionManager);
             }
         } else if (sd.sectionManagerKind == SECTION_MANAGER_LINEAR) {
-            slm = mLinearSlm;
+            slm = mLinearSlm.newInstance();
         } else if (sd.sectionManagerKind == SECTION_MANAGER_GRID) {
-            slm = mGridSlm;
+            slm = mGridSlm.newInstance();
         } else if (sd.sectionManagerKind == SECTION_MANAGER_STAGGERED_GRID) {
             throw new NotYetImplementedSlmException(sd.sectionManagerKind);
         } else {

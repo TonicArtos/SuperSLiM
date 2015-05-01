@@ -108,18 +108,14 @@ public class SectionData {
         }
 
         mSectionParams = (LayoutManager.LayoutParams) first.getLayoutParams();
-
-        if (slmConfig == null) {
-            sectionManagerKind = mSectionParams.sectionManagerKind;
-            sectionManager = mSectionParams.sectionManager;
-            startMarginWidth = mSectionParams.marginStart;
-            endMarginWidth = mSectionParams.marginEnd;
-        } else {
-            sectionManagerKind = slmConfig.sectionManagerKind;
-            sectionManager = slmConfig.sectionManager;
-            startMarginWidth = slmConfig.marginStart;
-            endMarginWidth = slmConfig.marginEnd;
+        if (slmConfig != null) {
+            mSectionParams = slmConfig.processLayoutParams(mSectionParams);
         }
+
+        sectionManagerKind = mSectionParams.sectionManagerKind;
+        sectionManager = mSectionParams.sectionManager;
+        startMarginWidth = mSectionParams.marginStart;
+        endMarginWidth = mSectionParams.marginEnd;
 
         hasHeader = mSectionParams.isHeader();
         if (hasHeader) {

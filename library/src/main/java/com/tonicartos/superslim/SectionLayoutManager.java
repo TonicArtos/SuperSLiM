@@ -301,6 +301,8 @@ public abstract class SectionLayoutManager {
         return itemsSkipped;
     }
 
+    public abstract SectionLayoutManager newInstance();
+
     final public void preTrimAtEndEdge(int lvi, SectionData sd, LayoutTrimHelper helper) {
         onPreTrimAtEndEdge(lvi, sd, helper);
 
@@ -647,6 +649,24 @@ public abstract class SectionLayoutManager {
             this.marginStart = marginStart;
             this.marginEnd = marginEnd;
             this.sectionManagerKind = sectionManager;
+        }
+
+        public LayoutManager.LayoutParams processLayoutParams(
+                LayoutManager.LayoutParams sectionParams) {
+            LayoutManager.LayoutParams lp;
+            if (sectionParams == null) {
+                lp = new LayoutManager.LayoutParams(LayoutManager.LayoutParams.WRAP_CONTENT,
+                        LayoutManager.LayoutParams.WRAP_CONTENT);
+            } else {
+                lp = LayoutManager.LayoutParams.from(sectionParams);
+            }
+
+            lp.sectionManagerKind = sectionManagerKind;
+            lp.sectionManager = sectionManager;
+            lp.marginEnd = marginEnd;
+            lp.marginStart = marginStart;
+
+            return lp;
         }
     }
 

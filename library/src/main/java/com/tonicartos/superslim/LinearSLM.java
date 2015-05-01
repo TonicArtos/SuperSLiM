@@ -8,6 +8,11 @@ public class LinearSLM extends SectionLayoutManager {
     public static final int ID = LayoutManager.SECTION_MANAGER_LINEAR;
 
     @Override
+    public SectionLayoutManager newInstance() {
+        return new LinearSLM();
+    }
+
+    @Override
     public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sectionData,
             LayoutHelper helper, Recycler recycler) {
         /*

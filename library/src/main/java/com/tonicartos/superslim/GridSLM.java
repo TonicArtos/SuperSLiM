@@ -118,6 +118,11 @@ public class GridSLM extends SectionLayoutManager {
     }
 
     @Override
+    public SectionLayoutManager newInstance() {
+        return new GridSLM(mContext);
+    }
+
+    @Override
     public int onComputeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutHelper helper,
             Recycler recycler) {
         /*
@@ -158,10 +163,14 @@ public class GridSLM extends SectionLayoutManager {
             return markerLine;
         }
 
-        // Finish current row.
-        markerLine = finishSubsectionRowToEnd(anchorPosition, sectionData, helper, recycler, state);
-        if (markerLine >= leadingEdge) {
-            return markerLine;
+        int childCount = helper.getChildCount();
+        if (childCount > 0 && sectionData.containsItem(helper.getChildAt(childCount - 1))) {
+            // Finish current row.
+            markerLine =
+                    finishSubsectionRowToEnd(anchorPosition, sectionData, helper, recycler, state);
+            if (markerLine >= leadingEdge) {
+                return markerLine;
+            }
         }
 
         // Fill remaining rows/area.
@@ -551,6 +560,7 @@ public class GridSLM extends SectionLayoutManager {
         for (int i = 0; i < mNumColumns && i < sectionData.subsections.size(); i++) {
             final int columnPosition = i * mColumnWidth;
             final SectionData subSd = sectionData.subsections.get(sectionIndex + i);
+            subHelper.setUnavailableWidth(unavailable);
             subSd.init(subHelper, recycler);
             subHelper.init(subSd, columnPosition, unavailable, rowTop, leadingEdge, stickyEdge);
             final SectionLayoutManager slm = helper.getSlm(subSd, subHelper);
@@ -602,13 +612,15 @@ public class GridSLM extends SectionLayoutManager {
             LayoutHelper helper, Recycler recycler, RecyclerView.State state) {
         final int leadingEdge = helper.getLeadingEdge();
 
-        int anchorPosition = helper.getPosition(helper.getChildAt(helper.getChildCount() - 1));
         int anchorSection = 0;
-        for (int i = 0; i < sectionData.subsections.size(); i++) {
-            final SectionData sd = sectionData.subsections.get(i);
-            if (sd.containsItem(anchorPosition)) {
-                anchorSection = i + 1;
-                break;
+        if (helper.getChildCount() > 0) {
+            int anchorPosition = helper.getPosition(helper.getChildAt(helper.getChildCount() - 1));
+            for (int i = 0; i < sectionData.subsections.size(); i++) {
+                final SectionData sd = sectionData.subsections.get(i);
+                if (sd.containsItem(anchorPosition)) {
+                    anchorSection = i + 1;
+                    break;
+                }
             }
         }
 
@@ -626,13 +638,15 @@ public class GridSLM extends SectionLayoutManager {
             helper, Recycler recycler, RecyclerView.State state) {
         final int leadingEdge = helper.getLeadingEdge();
 
-        int anchorPosition = helper.getPosition(helper.getChildAt(0));
         int anchorSection = 0;
-        for (int i = 0; i < sectionData.subsections.size(); i++) {
-            final SectionData sd = sectionData.subsections.get(i);
-            if (sd.containsItem(anchorPosition)) {
-                anchorSection = i - 1;
-                break;
+        if (helper.getChildCount() > 0) {
+            int anchorPosition = helper.getPosition(helper.getChildAt(0));
+            for (int i = 0; i < sectionData.subsections.size(); i++) {
+                final SectionData sd = sectionData.subsections.get(i);
+                if (sd.containsItem(anchorPosition)) {
+                    anchorSection = i - 1;
+                    break;
+                }
             }
         }
 
@@ -657,6 +671,9 @@ public class GridSLM extends SectionLayoutManager {
         final int leadingEdge = helper.getLeadingEdge();
         final int stickyEdge = helper.getStickyEdge();
         int markerLine = 0;
+        if (helper.getChildCount() == 0) {
+            return markerLine;
+        }
 
         // Find out the last filled column position and the matched subsection.
         int lastPosition = helper.getChildCount() - 1;
@@ -726,6 +743,9 @@ public class GridSLM extends SectionLayoutManager {
         final int leadingEdge = helper.getLeadingEdge();
         final int stickyEdge = helper.getStickyEdge();
         int markerLine = 0;
+        if (helper.getChildCount() == 0) {
+            return markerLine;
+        }
 
         // Find out the first filled column position and the matched subsection.
         View child = helper.getChildAt(0);
@@ -917,6 +937,10 @@ public class GridSLM extends SectionLayoutManager {
 
         private int mColumnWidth;
 
+        public LayoutParams(int w, int h) {
+            super(w,h);
+        }
+
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
 
@@ -991,7 +1015,7 @@ public class GridSLM extends SectionLayoutManager {
 
     public static class SlmConfig extends SectionLayoutManager.SlmConfig {
 
-        int numColumns;
+        int numColumns = AUTO_FIT;
 
         int columnWidth;
 
@@ -1002,6 +1026,17 @@ public class GridSLM extends SectionLayoutManager {
         public SlmConfig(int marginStart, int marginEnd,
                 @LayoutManager.SectionManager int sectionManager) {
             super(marginStart, marginEnd, sectionManager);
+        }
+
+        @Override
+        public LayoutManager.LayoutParams processLayoutParams(
+                LayoutManager.LayoutParams sectionParams) {
+            LayoutParams lp = GridSLM.LayoutParams.from(super.processLayoutParams(sectionParams));
+
+            lp.setNumColumns(numColumns);
+            lp.setColumnWidth(columnWidth);
+
+            return lp;
         }
 
         public SlmConfig setColumnWidth(int columnWidth) {

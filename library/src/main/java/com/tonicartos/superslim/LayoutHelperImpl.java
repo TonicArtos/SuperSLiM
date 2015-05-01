@@ -239,7 +239,8 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     @Override
     public void measureChild(View child, int widthUsed, int heightUsed) {
-        widthUsed += mSectionData.startMarginWidth + mSectionData.endMarginWidth;
+        widthUsed +=
+                mSectionData.startMarginWidth + mSectionData.endMarginWidth + mUnavailableWidth;
         mParent.measureChild(child, widthUsed, heightUsed);
     }
 
@@ -253,6 +254,11 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     public void recycle() {
         reset();
         returnToPool(this);
+    }
+
+    @Override
+    public void setUnavailableWidth(int unavailable) {
+        mUnavailableWidth = unavailable;
     }
 
     @Override
@@ -352,7 +358,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
 
     void measureHeader(View header) {
         LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) header.getLayoutParams();
-        int widthUsed = 0; // Depends on header display param.
+        int widthUsed = mUnavailableWidth; // Depends on header display param.
         if (!params.isHeaderInline() && !params.isHeaderOverlay()) {
             if (params.isHeaderStartAligned() &&
                     params.marginStart != LayoutManager.LayoutParams.MARGIN_AUTO) {
@@ -368,6 +374,7 @@ class LayoutHelperImpl extends LayoutHelper implements LayoutHelper.Parent, Layo
     @Override
     void updateVerticalOffset(int additionalOffset) {
         mVerticalOffset += additionalOffset;
+        mLeadingEdge -= additionalOffset;
     }
 
     private void layoutHeader(View header, int l, int t, int r, int b) {
