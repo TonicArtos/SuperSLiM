@@ -16,7 +16,7 @@ public class Adapter extends RecyclerView.Adapter<TextViewHolder>
     private final Utils.Section mData;
 
     public Adapter(Context context) {
-        mData = Utils.createData(context);
+        mData = Utils.createGrid(context);
     }
 
     @Override

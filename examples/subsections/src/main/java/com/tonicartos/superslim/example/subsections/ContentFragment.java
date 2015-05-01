@@ -47,7 +47,7 @@ public class ContentFragment extends Fragment {
                 .decorateSlm(GridSLM.ID)
                 .build();
 
-        mRecyclerView.addItemDecoration(decor);
+//        mRecyclerView.addItemDecoration(decor);
 
         mAdapter = new Adapter(getActivity());
         LayoutManager layoutManager = new LayoutManager.Builder(getActivity())

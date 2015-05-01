@@ -7,6 +7,7 @@ import com.tonicartos.superslim.SectionLayoutManager;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -75,6 +76,107 @@ public class Utils {
             itemCount += section.getCount();
             root.addSubsection(section);
         }
+
+        return root;
+    }
+
+    public static Section createGrid(Context context) {
+        Section root = new Section();
+        final int marginStart =
+                context.getResources().getDimensionPixelSize(R.dimen.default_section_marginStart);
+        int itemCount = 0;
+
+        Section.Builder plainGrid = new Section.Builder()
+                .setKind(GridSLM.ID)
+                .setColumnWidth(context.getResources()
+                        .getDimensionPixelSize(R.dimen.grid_column_width))
+                .setHeader(new Item(PURPLE, INLINE_HEADER));
+        Section s = plainGrid.build();
+        addItems(s, 10, itemCount);
+        s.setFirstPosition(0);
+        itemCount = s.getCount();
+        root.addSubsection(s);
+
+        {
+            Section.Builder nestedListsInGrid = new Section.Builder()
+                    .setKind(GridSLM.ID)
+                    .setNumColumns(2)
+                    .setHeader(new Item(INDIGO, INLINE_HEADER));
+            Section n = nestedListsInGrid.build();
+            int start = itemCount;
+            itemCount += n.getCount();
+
+            Section nested = plainGrid.build();
+            addItems(nested, 0, itemCount);
+            nested.setFirstPosition(itemCount);
+            itemCount += nested.getCount();
+            n.addSubsection(nested);
+
+            nested = plainGrid.build();
+            addItems(nested, 1, itemCount);
+            nested.setFirstPosition(itemCount);
+            itemCount += nested.getCount();
+            n.addSubsection(nested);
+
+            nested = plainGrid.build();
+            addItems(nested, 2, itemCount);
+            nested.setFirstPosition(itemCount);
+            itemCount += nested.getCount();
+            n.addSubsection(nested);
+
+            nested = plainGrid.build();
+            addItems(nested, 3, itemCount);
+            nested.setFirstPosition(itemCount);
+            itemCount += nested.getCount();
+            n.addSubsection(nested);
+
+            n.setFirstPosition(start);
+            root.addSubsection(n);
+        }
+
+        s = plainGrid.build();
+        addItems(s, 0, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 1, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 2, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 3, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 4, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 5, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        s = plainGrid.build();
+        addItems(s, 6, itemCount);
+        s.setFirstPosition(itemCount);
+        itemCount += s.getCount();
+        root.addSubsection(s);
+
+        Log.d("create grid", root.toString());
 
         return root;
     }
@@ -181,6 +283,8 @@ public class Utils {
 
         private int mColumnWidth;
 
+        private int mNumColumns;
+
         public void addItem(Item item) {
             mItems.add(item);
             mCount += 1;
@@ -201,7 +305,6 @@ public class Utils {
                     return mHeader;
                 }
             }
-
 
             final int itemIndex = position - mStart - (mHeader == null ? 0 : 1);
             if (itemIndex < 0) {
@@ -230,6 +333,7 @@ public class Utils {
                 case GridSLM.ID:
                     GridSLM.SlmConfig c = new GridSLM.SlmConfig(mMarginStart, mMarginEnd, mKind);
                     c.setColumnWidth(mColumnWidth);
+                    c.setNumColumns(mNumColumns);
                     return c;
                 default:
                 case LinearSLM.ID:
@@ -268,6 +372,20 @@ public class Utils {
             mMarginStart = margin;
         }
 
+        public void setNumColumns(int numColumns) {
+            mNumColumns = numColumns;
+        }
+
+        @Override
+        public String toString() {
+            String out = "kind: " + mKind + " start: " + mStart + " end: " + mEnd + " count: " + mCount + " subsections: "
+                    + mSubsections.size();
+            for (Section sub : mSubsections) {
+                out += "\n" + sub.toString();
+            }
+            return out.replaceAll("\\n", "\n    ");
+        }
+
         public static class Builder {
 
             private int mKind;
@@ -280,10 +398,13 @@ public class Utils {
 
             private int mColumnWidth;
 
+            private int mNumColumns = -1;
+
             public Section build() {
                 Section s = new Section();
                 s.setHeader(mHeader);
                 s.setColumnWidth(mColumnWidth);
+                s.setNumColumns(mNumColumns);
                 s.setMarginStart(mMarginStart);
                 s.setMarginEnd(mMarginEnd);
                 s.setKind(mKind);
@@ -312,6 +433,11 @@ public class Utils {
 
             public Builder setMarginStart(int margin) {
                 mMarginStart = margin;
+                return this;
+            }
+
+            public Builder setNumColumns(int numColumns) {
+                mNumColumns = numColumns;
                 return this;
             }
         }
