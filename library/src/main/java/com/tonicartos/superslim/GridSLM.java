@@ -468,6 +468,10 @@ public class GridSLM extends SectionLayoutManager {
 
         private int mColumnWidth;
 
+        public LayoutParams(int w, int h) {
+            super(w, h);
+        }
+
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
 
@@ -513,8 +517,11 @@ public class GridSLM extends SectionLayoutManager {
          * @param other Source layout params.
          * @return New grid layout params.
          */
-        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
-            if (other instanceof ViewGroup.MarginLayoutParams) {
+        public static LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other == null) {
+                Log.w("SuperSLiM", "Null value passed in call to GridSLM.LayoutParams.from().");
+                return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            } else if (other instanceof ViewGroup.MarginLayoutParams) {
                 return new LayoutParams((ViewGroup.MarginLayoutParams) other);
             } else {
                 return new LayoutParams(other);
