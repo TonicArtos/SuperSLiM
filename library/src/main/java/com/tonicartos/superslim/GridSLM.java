@@ -941,7 +941,7 @@ public class GridSLM extends SectionLayoutManager {
         private int mColumnWidth;
 
         public LayoutParams(int w, int h) {
-            super(w,h);
+            super(w, h);
         }
 
         public LayoutParams(Context c, AttributeSet attrs) {
@@ -980,8 +980,10 @@ public class GridSLM extends SectionLayoutManager {
         /**
          * Creates a new instance of {@link LayoutParams}.
          */
-        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
-            if (other instanceof ViewGroup.MarginLayoutParams) {
+        public static LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other == null) {
+                return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            } else if (other instanceof ViewGroup.MarginLayoutParams) {
                 return new LayoutParams((ViewGroup.MarginLayoutParams) other);
             } else {
                 return new LayoutParams(other);
