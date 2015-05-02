@@ -22,7 +22,7 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.intellij:annotations:12.0'
-    compile 'com.android.support:recyclerview-v7:+'
+    compile 'com.android.support:recyclerview-v7:22.1.1'
 }
 
 apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn-push.gradle'
