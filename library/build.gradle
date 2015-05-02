@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'bintray-release'
 
 android {
     compileSdkVersion 22
@@ -28,4 +29,17 @@ apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn
 
 afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+}
+
+publish {
+    groupId = 'com.tonicartos'
+    artifactId = 'superslim'
+    uploadName = 'com.tonicartos:superslim' // I don't know why, but I had to do this.
+    publishVersion = VERSION_NAME
+    description = 'A layout manager for the RecyclerView with interchangeable linear, grid, and staggered displays of views, all with configurable section headers including the sticky variety as specified in the material design docs.'
+    website = 'https://github.com/TonicArtos/SuperSLiM'
+    bintrayUser = BINTRAY_USER
+    bintrayKey = BINTRAY_KEY
+    autoPublish = false
+    dryRun = false
 }
