@@ -33,6 +33,8 @@ public class GridSLM extends SectionLayoutManager {
 
     private static final String COLUMN_WIDTH = "column_width";
 
+    private static final java.lang.String CONFIG_TYPE = "grid_config";
+
     private final Context mContext;
 
     private int mNumColumns = 0;
@@ -388,7 +390,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public void onInit(Bundle savedConfig, SectionData sectionData, LayoutQueryHelper helper) {
-        if (savedConfig != null) {
+        if (savedConfig != null && savedConfig.getInt(CONFIG_TYPE) == GridSLM.ID) {
             mNumColumns = savedConfig.getInt(NUM_COLUMNS);
             mColumnWidth = savedConfig.getInt(COLUMN_WIDTH);
         } else {
@@ -434,6 +436,7 @@ public class GridSLM extends SectionLayoutManager {
 
             // Store new configuration for this section.
             Bundle config = new Bundle();
+            config.putInt(CONFIG_TYPE, GridSLM.ID);
             config.putInt(NUM_COLUMNS, mNumColumns);
             config.putInt(COLUMN_WIDTH, mColumnWidth);
             saveConfiguration(sectionData, config);

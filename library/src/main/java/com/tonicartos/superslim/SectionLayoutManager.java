@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 public abstract class SectionLayoutManager {
 
-    private HashMap<SectionData, Bundle> mSavedConfiguration = new HashMap<>();
+    private static final HashMap<SectionData, Bundle> sSavedConfiguration = new HashMap<>();
 
     /**
      * Start filling a new section towards the end. Might end out filling out the entire section.
@@ -433,15 +433,15 @@ public abstract class SectionLayoutManager {
     }
 
     protected void saveConfiguration(SectionData sectionData, Bundle configuration) {
-        mSavedConfiguration.put(sectionData, configuration);
+        sSavedConfiguration.put(sectionData, configuration);
     }
 
     void clearConfigurationForSection(SectionData sectionData) {
-        mSavedConfiguration.remove(sectionData);
+        sSavedConfiguration.remove(sectionData);
     }
 
     SectionLayoutManager init(SectionData sectionData, LayoutQueryHelper helper) {
-        onInit(mSavedConfiguration.get(sectionData), sectionData, helper);
+        onInit(sSavedConfiguration.get(sectionData), sectionData, helper);
         return this;
     }
 
@@ -476,7 +476,7 @@ public abstract class SectionLayoutManager {
     }
 
     void reset() {
-        mSavedConfiguration.clear();
+        sSavedConfiguration.clear();
         onReset();
     }
 
