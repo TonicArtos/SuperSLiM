@@ -1625,6 +1625,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 break;
             }
         }
+
+        // Fix erroneous marker line position with empty section.
+        if (sli == -1 && sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
+            markerLine = sectionBottom;
+        }
+
         int offset = 0;
         if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
             View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, true);
