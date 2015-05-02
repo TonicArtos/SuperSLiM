@@ -1622,6 +1622,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 break;
             }
         }
+
+        // Fix erroneous marker line position with empty section.
+        if (sli == -1 && sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {
+            markerLine = sectionBottom;
+        }
+
         int offset = 0;
         if (!sd.headerParams.isHeaderInline() || sd.headerParams.isHeaderOverlay()) {
             View firstVisibleView = slm.getFirstVisibleView(sd.firstPosition, true);
@@ -1826,8 +1832,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
          * @param other Source layout params.
          * @return New layout params.
          */
-        public static LayoutParams from(@NonNull ViewGroup.LayoutParams other) {
-            if (other instanceof ViewGroup.MarginLayoutParams) {
+        public static LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other == null) {
+                Log.w("SuperSLiM",
+                        "Null value passed in call to LayoutManager.LayoutParams.from().");
+                return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            } else if (other instanceof ViewGroup.MarginLayoutParams) {
                 return new LayoutParams((ViewGroup.MarginLayoutParams) other);
             } else {
                 return new LayoutParams(other);
