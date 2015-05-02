@@ -90,7 +90,7 @@ public class Utils {
                 .setKind(GridSLM.ID)
                 .setColumnWidth(context.getResources()
                         .getDimensionPixelSize(R.dimen.grid_column_width))
-                .setHeader(new Item(PURPLE, INLINE_HEADER));
+                .setHeader(new Item(getColor(itemCount*3), INLINE_HEADER));
         Section s = plainGrid.build();
         addItems(s, 10, itemCount);
         s.setFirstPosition(0);
@@ -101,30 +101,30 @@ public class Utils {
             Section.Builder nestedListsInGrid = new Section.Builder()
                     .setKind(GridSLM.ID)
                     .setNumColumns(2)
-                    .setHeader(new Item(INDIGO, INLINE_HEADER));
+                    .setHeader(new Item(getColor(itemCount*3), INLINE_HEADER));
             Section n = nestedListsInGrid.build();
             int start = itemCount;
             itemCount += n.getCount();
 
-            Section nested = plainGrid.build();
+            Section nested = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
             addItems(nested, 0, itemCount);
             nested.setFirstPosition(itemCount);
             itemCount += nested.getCount();
             n.addSubsection(nested);
 
-            nested = plainGrid.build();
+            nested = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
             addItems(nested, 1, itemCount);
             nested.setFirstPosition(itemCount);
             itemCount += nested.getCount();
             n.addSubsection(nested);
 
-            nested = plainGrid.build();
+            nested = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
             addItems(nested, 2, itemCount);
             nested.setFirstPosition(itemCount);
             itemCount += nested.getCount();
             n.addSubsection(nested);
 
-            nested = plainGrid.build();
+            nested = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
             addItems(nested, 3, itemCount);
             nested.setFirstPosition(itemCount);
             itemCount += nested.getCount();
@@ -134,43 +134,43 @@ public class Utils {
             root.addSubsection(n);
         }
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 0, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 1, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 2, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 3, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 4, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 5, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
         root.addSubsection(s);
 
-        s = plainGrid.build();
+        s = plainGrid.setHeader(new Item(getColor(itemCount*3), INLINE_HEADER)).build();
         addItems(s, 6, itemCount);
         s.setFirstPosition(itemCount);
         itemCount += s.getCount();
