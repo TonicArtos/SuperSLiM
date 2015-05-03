@@ -8,6 +8,7 @@
     android:layout_height="wrap_content"
     android:gravity="start"
     android:padding="16dip"
+    android:layoutDirection="locale"
     android:textDirection="locale"
     android:textSize="24sp"
     app:slm_headerDisplay="inline|sticky"
