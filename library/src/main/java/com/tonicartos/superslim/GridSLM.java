@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -84,39 +83,34 @@ public class GridSLM extends SectionLayoutManager {
         return super.getHighestEdge(firstIndex, defaultEdge, sectionData, helper);
     }
 
-    //FIXME: find lowest edge for subsections.
     @Override
     public int getLowestEdge(int lastIndex, int altEdge, SectionData sectionData,
             LayoutQueryHelper helper) {
-        final boolean isLtr = helper.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
         int bottomMostEdge = altEdge;
-        int startPosition = isLtr ? helper.getWidth() : 0;
-        boolean foundItems = false;
-        // Look from end to find children that are the lowest.
-        for (int i = lastIndex; i >= 0; i--) {
-            View look = helper.getChildAt(i);
-            LayoutManager.LayoutParams params = (LayoutManager.LayoutParams) look.getLayoutParams();
-            if (!sectionData.containsItem(params.getViewPosition())) {
-                break;
-            }
 
-            if (params.isHeader()) {
-                continue;
-            }
-
-            if (isLtr && look.getLeft() < startPosition) {
-                startPosition = look.getLeft();
-            } else if (!isLtr && look.getRight() > startPosition) {
-                startPosition = look.getRight();
-            } else {
-                break;
-            }
-
-            foundItems = true;
-            bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
+        final int childCount = helper.getChildCount();
+        if (childCount == 0) {
+            return altEdge;
         }
 
-        return foundItems ? bottomMostEdge : altEdge;
+        int startIndex;
+        if (sectionData.hasHeader && helper.getPosition(helper.getChildAt(childCount - 1))
+                == sectionData.firstPosition) {
+            startIndex = 1;
+        } else {
+            startIndex = 0;
+        }
+
+        // Look from end to find children that are the lowest.
+        if (sectionData.subsections != null && sectionData.subsections.size() > 0) {
+            bottomMostEdge = getSubsectionRowBottom(startIndex, lastIndex, bottomMostEdge,
+                    sectionData, helper);
+        } else {
+            bottomMostEdge = getRowBottom(startIndex, lastIndex, bottomMostEdge, sectionData,
+                    helper);
+        }
+
+        return bottomMostEdge;
     }
 
     @Override
@@ -829,6 +823,35 @@ public class GridSLM extends SectionLayoutManager {
         return markerLine;
     }
 
+    private int getRowBottom(int startIndex, int lastIndex, int bottomMostEdge,
+            SectionData sectionData,
+            LayoutQueryHelper helper) {
+        final boolean isLtr = helper.getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_LTR;
+        int startPosition = isLtr ? helper.getWidth() : 0;
+
+        for (int i = startIndex; i < lastIndex + 1; i++) {
+            View look = helper.getChildAt(lastIndex - i);
+            LayoutManager.LayoutParams params =
+                    (LayoutManager.LayoutParams) look.getLayoutParams();
+            if (!sectionData.containsItem(params.getViewLayoutPosition())) {
+                break;
+            }
+
+            // Don't know how many actual columns there are so use the edge position to know
+            // when we skip to another row.
+            if (isLtr && look.getLeft() < startPosition) {
+                startPosition = look.getLeft();
+            } else if (!isLtr && look.getRight() > startPosition) {
+                startPosition = look.getRight();
+            } else {
+                break;
+            }
+
+            bottomMostEdge = Math.max(bottomMostEdge, helper.getBottom(look));
+        }
+        return bottomMostEdge;
+    }
+
     private SubsectionColumnData[] getRowColumnData(SectionData sectionData,
             LayoutTrimHelper helper,
             int anchorSection) {
@@ -860,6 +883,48 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         return colData;
+    }
+
+    private int getSubsectionRowBottom(int startIndex, int lastIndex, int bottomMostEdge,
+            SectionData sectionData,
+            LayoutQueryHelper helper) {
+        final int checkLimit = mNumColumns; // Must check at most this many subsections.
+        final int numSubsections = sectionData.subsections.size();
+        final int childCount = helper.getChildCount();
+
+        for (int checkAttempt = 0, i = startIndex; checkAttempt < checkLimit && i < childCount;
+                checkAttempt++) {
+            // Find last view for next subsection column.
+            final int lookIndex = lastIndex - i;
+            View look = helper.getChildAt(lookIndex);
+            SectionData selectedSubsection = null;
+            for (int j = 0; j < numSubsections; j++) {
+                SectionData subSd = sectionData.subsections.get(numSubsections - 1 - j);
+                if (subSd.containsItem(look)) {
+                    selectedSubsection = subSd;
+                    break;
+                }
+            }
+
+            if (selectedSubsection == null) {
+                break;
+            }
+
+            SectionLayoutManager subSlm = helper.getSlm(selectedSubsection, helper);
+            bottomMostEdge = Math.max(bottomMostEdge,
+                    subSlm.getLowestEdge(lookIndex, helper.getBottom(look), selectedSubsection,
+                            helper));
+
+            // Skip all other attached views in selected subsection.
+            for (; i < childCount; i++) {
+                final View skip = helper.getChildAt(lastIndex - i);
+                if (!selectedSubsection.containsItem(skip)) {
+                    i -= 1;
+                    break;
+                }
+            }
+        }
+        return bottomMostEdge;
     }
 
     /**
