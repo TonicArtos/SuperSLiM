@@ -1,6 +1,6 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)[![Download](https://img.shields.io/badge/jcenter-download-ff69b4.svg?style=flat-square) ](https://bintray.com/tonicartos/maven/com.tonicartos%3Asuperslim/_latestVersion)
+[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)[![Download](https://img.shields.io/badge/jcenter-0.4.12-ff69b4.svg?style=flat-square) ](https://bintray.com/tonicartos/maven/com.tonicartos%3Asuperslim/_latestVersion)
 
 
 SuperSLiM is a configurable layout manager for a RecyclerView. It provides a vertical scrolling list of sections. Each section is a grouping of one or more views, arranged by a section layout manager (SLM). Sections may have a header, and each header can have its own unique layout. The SLM can be one of the provided (listed below), or of your own creation.
@@ -32,7 +32,7 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 Add the following to your build.gradle file.
 ```groovy
 dependencies {
-    compile 'com.tonicartos:superslim:0.4.11'
+    compile 'com.tonicartos:superslim:0.4.12'
 }
 ```
 
