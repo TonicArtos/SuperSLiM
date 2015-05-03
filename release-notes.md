@@ -1,4 +1,11 @@
 ## early_release_4
+*v0.4.12*
+
+Two small fixes in this update. The grid slm should now honour the RTL layout direction. Also, when the recycler view is rotated or recreated, it should now restore to the correct adapter position.
+
+- Fix RTL layout in grid SLM (#16).
+- Fix position restoration (#85).
+
 *v0.4.11*
 - Fix display error on scrolling over an empty section with a header (#83).
 - Work around for items without layout params (#74).
