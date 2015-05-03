@@ -37,11 +37,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private static final int NO_POSITION_REQUEST = -1;
 
-    private int mRequestPosition = NO_POSITION_REQUEST;
-
     private final SectionLayoutManager mLinearSlm;
 
     private final SectionLayoutManager mGridSlm;
+
+    private int mRequestPosition = NO_POSITION_REQUEST;
 
     private Rect mRect = new Rect();
 
@@ -266,19 +266,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         int bottomLine = layoutChildren(requestedPosition, borderLine, layoutState);
 
         fixOverscroll(bottomLine, layoutState);
-    }
-
-
-    @Override
-    public void onItemsChanged(RecyclerView recyclerView) {
-        View view = getAnchorChild();
-        if (view == null) {
-            mRequestPosition = NO_POSITION_REQUEST;
-            mRequestPositionOffset = 0;
-        } else {
-            mRequestPosition = getPosition(view);
-            mRequestPositionOffset = getDecoratedTop(view);
-        }
     }
 
     @Override
@@ -524,6 +511,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     @Override
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
         removeAllViews();
+    }
+
+    @Override
+    public void onItemsChanged(RecyclerView recyclerView) {
+        View view = getAnchorChild();
+        if (view == null) {
+            mRequestPosition = NO_POSITION_REQUEST;
+            mRequestPositionOffset = 0;
+        } else {
+            mRequestPosition = getPosition(view);
+            mRequestPositionOffset = getDecoratedTop(view);
+        }
     }
 
     @Override
@@ -1291,20 +1290,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return false;
         }
 
-        View lastVisibleView = findLastVisibleItem();
-        if (getPosition(lastVisibleView) == itemCount - 1
-                && getDecoratedBottom(lastVisibleView) >= getHeight() - getPaddingBottom()) {
-            return false;
+        final View lastVisibleView = findLastVisibleItem();
+        final boolean scrolledPastEnd = getPosition(lastVisibleView) == itemCount - 1
+                && getDecoratedBottom(lastVisibleView) <= getHeight() - getPaddingBottom();
+
+        final View firstVisibleView = findFirstVisibleItem();
+        if (scrolledPastEnd && getPosition(firstVisibleView) != 0) {
+            return true;
         }
 
-        View firstVisibleView = findFirstCompletelyVisibleItem();
-        if (firstVisibleView == null) {
-            firstVisibleView = getChildAt(0);
-        }
-
-        boolean reachedTop = getPosition(firstVisibleView) == 0
-                && getDecoratedTop(firstVisibleView) == getPaddingTop();
-        return !reachedTop;
+        final boolean scrolledPastStart = getPosition(firstVisibleView) == 0
+                && getDecoratedTop(firstVisibleView) >= getPaddingTop();
+        return scrolledPastStart;
     }
 
     /**
@@ -1742,6 +1739,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         String sectionManager;
 
+        int sectionManagerKind = SECTION_MANAGER_LINEAR;
+
         private int mFirstPosition;
 
         public LayoutParams(int width, int height) {
@@ -1797,8 +1796,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
             a.recycle();
         }
-
-        int sectionManagerKind = SECTION_MANAGER_LINEAR;
 
         /**
          * <em>This constructor will be removed in version 0.5.</em>
