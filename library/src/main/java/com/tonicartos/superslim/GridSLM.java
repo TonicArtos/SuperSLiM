@@ -379,12 +379,20 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         for (int i = 0; i < mNumColumns; i++) {
-            int col = directionIsStart ? mNumColumns - i - 1 : i;
-            if (views[col] == null) {
+            int selectedView = directionIsStart ? mNumColumns - i - 1 : i;
+
+            int col;
+            if (state.isLTR) {
+                col = directionIsStart ? mNumColumns - i - 1 : i;
+            } else {
+                col = directionIsStart ? i : mNumColumns - i - 1;
+            }
+
+            if (views[selectedView] == null) {
                 continue;
             }
-            layoutChild(views[col], markerLine, col, rowHeight, sd, state);
-            addView(views[col], col + anchorPosition, direction, state);
+            layoutChild(views[selectedView], markerLine, col, rowHeight, sd, state);
+            addView(views[selectedView], selectedView + anchorPosition, direction, state);
         }
 
         return rowHeight;
