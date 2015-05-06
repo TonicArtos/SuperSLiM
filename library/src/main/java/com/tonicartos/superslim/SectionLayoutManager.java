@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 
@@ -142,11 +143,13 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition() && topInside && bottomInside) {
-                if (!lp.isHeader || !skipHeader) {
-                    return view;
-                } else {
-                    candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (topInside && bottomInside) {
+                    if (!lp.isHeader || !skipHeader) {
+                        return view;
+                    } else {
+                        candidate = view;
+                    }
                 }
             } else {
                 // Skipped past section.

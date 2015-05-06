@@ -693,7 +693,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         View last = getAnchorAtEnd();
         int anchorPosition = getPosition(last) + 1;
 
-        if (anchorPosition >= state.recyclerState.getItemCount()) {
+        if (anchorPosition >= state.getRecyclerState().getItemCount()) {
             return markerLine;
         }
 
@@ -708,7 +708,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             state.cacheView(anchorPosition, header.view);
         }
 
-        if (anchorPosition < state.recyclerState.getItemCount()) {
+        if (anchorPosition < state.getRecyclerState().getItemCount()) {
             SectionLayoutManager slm = getSlm(sd);
             markerLine = slm.fillToEnd(leadingEdge, markerLine, anchorPosition, sd, state);
         }
@@ -1094,7 +1094,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @param direction  Direction fill will be taken towards.
      * @return Borderline.
      */
-    private int getBorderLine(View anchorView, Direction direction) {
+    int getBorderLine(View anchorView, Direction direction) {
         int borderline;
         if (anchorView == null) {
             if (direction == Direction.START) {
@@ -1284,24 +1284,33 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     }
 
     private boolean isOverscrolled(LayoutState state) {
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getRecyclerState().getItemCount();
 
         if (getChildCount() == 0) {
             return false;
         }
 
-        final View lastVisibleView = findLastVisibleItem();
-        final boolean scrolledPastEnd = getPosition(lastVisibleView) == itemCount - 1
-                && getDecoratedBottom(lastVisibleView) <= getHeight() - getPaddingBottom();
-
         final View firstVisibleView = findFirstVisibleItem();
-        if (scrolledPastEnd && getPosition(firstVisibleView) != 0) {
+        final boolean firstVisibleIsFirstItem = getPosition(firstVisibleView) == 0;
+        final boolean firstVisibleAfterStart = getDecoratedTop(firstVisibleView) > getPaddingTop();
+        final boolean firstVisibleAtStart = getDecoratedTop(firstVisibleView) == getPaddingTop();
+
+        if (firstVisibleIsFirstItem && firstVisibleAfterStart) {
+            return true;
+        } else if (firstVisibleIsFirstItem && firstVisibleAtStart) {
+            return false;
+        }
+
+        final View lastVisibleView = findLastVisibleItem();
+        final boolean lastVisibleIsLastItem = getPosition(lastVisibleView) == itemCount - 1;
+        final boolean lastVisibleBeforeEnd =
+                getDecoratedBottom(lastVisibleView) < getHeight() - getPaddingBottom();
+
+        if (lastVisibleIsLastItem && lastVisibleBeforeEnd) {
             return true;
         }
 
-        final boolean scrolledPastStart = getPosition(firstVisibleView) == 0
-                && getDecoratedTop(firstVisibleView) >= getPaddingTop();
-        return scrolledPastStart;
+        return false;
     }
 
     /**
