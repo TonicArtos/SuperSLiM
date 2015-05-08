@@ -122,7 +122,7 @@ public class LinearSLM extends SectionLayoutManager {
         }
 
         for (int i = anchorPosition; i >= 0; i--) {
-            if (markerLine - minHeightOffset < leadingEdge) {
+            if (markerLine - minHeightOffset <= leadingEdge) {
                 break;
             }
 

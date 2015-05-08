@@ -853,7 +853,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         markerLine = updateHeaderForStart(first, leadingEdge, markerLine, sd, state);
 
-        if (markerLine >= leadingEdge) {
+        if (markerLine > leadingEdge) {
             markerLine = fillNextSectionToStart(leadingEdge, markerLine, state);
         }
 
