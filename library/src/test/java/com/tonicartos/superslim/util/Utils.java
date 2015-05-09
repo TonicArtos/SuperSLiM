@@ -27,10 +27,6 @@ public class Utils {
 
     public static final int RV_WIDTH = 720;
 
-    public static void checkHeaderLayout(RecyclerView mRecyclerView, int itemHeight) {
-        Log.v("checkHeaderLayout", "TODO");
-    }
-
     public static void checkSimpleLayout(RecyclerView mRecyclerView, int itemHeight) {
         final int paddingTop = mRecyclerView.getPaddingTop();
         final int rvHeight = mRecyclerView.getHeight();
