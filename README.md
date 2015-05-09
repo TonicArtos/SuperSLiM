@@ -1,6 +1,6 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![Build Status](https://img.shields.io/travis/TonicArtos/SuperSLiM/early_release_4.svg?style=flat-square)](https://travis-ci.org/TonicArtos/SuperSLiM)
+[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![Build Status](https://img.shields.io/travis/TonicArtos/SuperSLiM/early_release_4.svg?style=flat-square)](https://travis-ci.org/TonicArtos/SuperSLiM)[![codecov.io](https://img.shields.io/codecov/c/github/TonicArtos/SuperSLiM.svg?style=flat-square)](http://codecov.io/github/TonicArtos/SuperSLiM?branch=early_release_4)
 
 [![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)[![Download](https://img.shields.io/badge/jcenter-0.4.13-ff69b4.svg?style=flat-square) ](https://bintray.com/tonicartos/maven/com.tonicartos%3Asuperslim/_latestVersion)
 
