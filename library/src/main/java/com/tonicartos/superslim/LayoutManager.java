@@ -1555,7 +1555,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                 updateHeaderForTrimFromStart(header);
             }
 
-            if (getDecoratedBottom(header) < 0) {
+            if (getDecoratedBottom(header) <= 0) {
                 removeAndRecycleView(header, state.recycler);
             }
         }
@@ -1672,7 +1672,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         final int height = getDecoratedMeasuredHeight(header);
         if ((sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay())
-                || (sectionBottom - sectionTop) > height) {
+                || (sectionBottom - sectionTop) >= height) {
             final int left = getDecoratedLeft(header);
             final int right = getDecoratedRight(header);
 
