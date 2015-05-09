@@ -398,11 +398,13 @@ public class GridSLM extends SectionLayoutManager {
         return rowHeight;
     }
 
+    @Deprecated
     public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
     }
 
+    @Deprecated
     public void setNumColumns(int numColumns) {
         mNumColumns = numColumns;
         mMinimumWidth = 0;
