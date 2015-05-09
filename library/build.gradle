@@ -40,6 +40,14 @@ afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
 }
 
+def getBintrayUsername() {
+    return hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
+}
+
+def getBintrayKey() {
+    return hasProperty('BINTRAY_KEY') ? BINTRAY_KEY : ""
+}
+
 publish {
     groupId = 'com.tonicartos'
     artifactId = 'superslim'
@@ -47,8 +55,8 @@ publish {
     publishVersion = VERSION_NAME
     description = 'A layout manager for the RecyclerView with interchangeable linear, grid, and staggered displays of views, all with configurable section headers including the sticky variety as specified in the material design docs.'
     website = 'https://github.com/TonicArtos/SuperSLiM'
-    bintrayUser = BINTRAY_USER
-    bintrayKey = BINTRAY_KEY
+    bintrayUser = getBintrayUsername()
+    bintrayKey = getBintrayKey()
     autoPublish = false
     dryRun = false
 }
