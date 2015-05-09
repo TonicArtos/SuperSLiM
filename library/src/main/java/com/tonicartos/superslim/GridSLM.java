@@ -40,7 +40,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getRecyclerState().getItemCount();
 
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
@@ -78,7 +78,7 @@ public class GridSLM extends SectionLayoutManager {
             return markerLine;
         }
 
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getRecyclerState().getItemCount();
         if (anchorPosition >= itemCount) {
             return markerLine;
         }
@@ -354,7 +354,7 @@ public class GridSLM extends SectionLayoutManager {
         LayoutState.View[] views = new LayoutState.View[mNumColumns];
         for (int i = 0; i < mNumColumns; i++) {
             final int position = anchorPosition + i;
-            if (position >= state.recyclerState.getItemCount()) {
+            if (position >= state.getRecyclerState().getItemCount()) {
                 break;
             }
 
@@ -398,11 +398,13 @@ public class GridSLM extends SectionLayoutManager {
         return rowHeight;
     }
 
+    @Deprecated
     public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
     }
 
+    @Deprecated
     public void setNumColumns(int numColumns) {
         mNumColumns = numColumns;
         mMinimumWidth = 0;

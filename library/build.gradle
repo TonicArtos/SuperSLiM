@@ -2,11 +2,11 @@ apply plugin: 'com.android.library'
 apply plugin: 'bintray-release'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 21
     buildToolsVersion "22.0.1"
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 22
+        targetSdkVersion 21
         versionCode 1
         versionName '0.4'
     }
@@ -20,15 +20,32 @@ android {
     }
 }
 
+repositories {
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:recyclerview-v7:22.1.1'
+
+    testCompile "junit:junit:4.12"
+    testCompile "org.mockito:mockito-core:2.0.7-beta"
+    testCompile "com.squareup.assertj:assertj-android:1.0.1-SNAPSHOT"
+    testCompile "org.robolectric:robolectric:3.0-rc2"
 }
 
 apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn-push.gradle'
 
 afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+}
+
+def getBintrayUsername() {
+    return hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
+}
+
+def getBintrayKey() {
+    return hasProperty('BINTRAY_KEY') ? BINTRAY_KEY : ""
 }
 
 publish {
@@ -38,8 +55,8 @@ publish {
     publishVersion = VERSION_NAME
     description = 'A layout manager for the RecyclerView with interchangeable linear, grid, and staggered displays of views, all with configurable section headers including the sticky variety as specified in the material design docs.'
     website = 'https://github.com/TonicArtos/SuperSLiM'
-    bintrayUser = BINTRAY_USER
-    bintrayKey = BINTRAY_KEY
+    bintrayUser = getBintrayUsername()
+    bintrayKey = getBintrayKey()
     autoPublish = false
     dryRun = false
 }
