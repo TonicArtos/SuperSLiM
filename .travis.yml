@@ -5,4 +5,7 @@ android:
                 - android-21
                 - extra-google-m2repository
                 - extra-android-m2repository
-script: ./gradlew :library:testRelease
+script: ./gradlew jacocoTestReport
+
+after_success:
+        - bash <(curl -s https://codecov.io/bash)
