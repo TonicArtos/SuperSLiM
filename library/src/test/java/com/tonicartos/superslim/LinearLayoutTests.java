@@ -435,159 +435,20 @@ public class LinearLayoutTests {
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, null)
-                .build(mActivity);
-        layoutPadding = new int[]{0, 0, 0, 0};
-
-        // Test scroll from start position;
-        int stepSize = 1;
-        int maxSteps = 10000;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-
-        // Jump to end and test scroll consistency in opposite direction.
-        mRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
-        stepSize = -1;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-    }
-
-    @Test
-    public void test_scrollWithInlineHeaders() {
-        final int numItems = 10;
-        RecyclerView.Adapter adapter;
-        int[] layoutPadding;
-        adapter = new TestAdapterBuilder()
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.INLINE))
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE))
-                .build(mActivity);
-        layoutPadding = new int[]{0, 0, 0, 0};
-
-        // Test scroll from start position;
-        int stepSize = 1;
-        int maxSteps = 10000;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-
-        // Jump to end and test scroll consistency in opposite direction.
-        mRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
-        stepSize = -1;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-    }
-
-    @Test
-    public void test_scrollWithInlineNonStickyHeaders() {
-        final int numItems = 10;
-        RecyclerView.Adapter adapter;
-        int[] layoutPadding;
-        adapter = new TestAdapterBuilder()
+                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.NONSTICKY))
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.NONSTICKY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.NONSTICKY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.NONSTICKY))
-                .build(mActivity);
-        layoutPadding = new int[]{0, 0, 0, 0};
-
-        // Test scroll from start position;
-        int stepSize = 1;
-        int maxSteps = 10000;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-
-        // Jump to end and test scroll consistency in opposite direction.
-        mRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
-        stepSize = -1;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-    }
-
-    @Test
-    public void test_scrollWithInlineOverlayHeaders() {
-        final int numItems = 10;
-        RecyclerView.Adapter adapter;
-        int[] layoutPadding;
-        adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
-                .build(mActivity);
-        layoutPadding = new int[]{0, 0, 0, 0};
-
-        // Test scroll from start position;
-        int stepSize = 1;
-        int maxSteps = 10000;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-
-        // Jump to end and test scroll consistency in opposite direction.
-        mRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
-        stepSize = -1;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-    }
-
-    @Test
-    public void test_scrollWithMarginHeaders() {
-        final int numItems = 10;
-        RecyclerView.Adapter adapter;
-        int[] layoutPadding;
-        adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_START))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START))
-                .build(mActivity);
-        layoutPadding = new int[]{0, 0, 0, 0};
-
-        // Test scroll from start position;
-        int stepSize = 1;
-        int maxSteps = 10000;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-
-        // Jump to end and test scroll consistency in opposite direction.
-        mRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
-        stepSize = -1;
-        Utils.doScrollConsistencyTest(
-                stepSize, maxSteps, layoutPadding, adapter, mLayoutManager, mRecyclerView);
-    }
-
-    @Test
-    public void test_scrollWithMarginOverlayHeaders() {
-        final int numItems = 10;
-        RecyclerView.Adapter adapter;
-        int[] layoutPadding;
-        adapter = new TestAdapterBuilder()
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_START | TestAdapterBuilder.Header.OVERLAY))
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START | TestAdapterBuilder.Header.OVERLAY))
+                        TestAdapterBuilder.Header.MARGIN_END))
                 .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
-                        TestAdapterBuilder.Header.MARGIN_START | TestAdapterBuilder.Header.OVERLAY))
+                        TestAdapterBuilder.Header.MARGIN_END | TestAdapterBuilder.Header.OVERLAY))
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
 
