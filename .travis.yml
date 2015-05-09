@@ -5,4 +5,4 @@ android:
                 - android-21
                 - extra-google-m2repository
                 - extra-android-m2repository
-script: ./gradlew :library:testRelease --stacktrace --info
+script: ./gradlew :library:testRelease
