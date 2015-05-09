@@ -54,8 +54,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first completely visible item.
      */
     public int findFirstCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager
-                .getPosition(getFirstCompletelyVisibleView(sectionFirstPosition, false));
+        View item = getFirstCompletelyVisibleView(sectionFirstPosition, false);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -65,7 +68,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findFirstVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getFirstVisibleView(sectionFirstPosition, false));
+        View item = getFirstVisibleView(sectionFirstPosition, false);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -75,7 +82,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findLastCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getLastCompletelyVisibleView(sectionFirstPosition));
+        View item = getLastCompletelyVisibleView(sectionFirstPosition);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -85,7 +96,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findLastVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getLastVisibleView(sectionFirstPosition));
+        View item = getLastVisibleView(sectionFirstPosition);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
