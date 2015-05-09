@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
@@ -19,6 +20,8 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
 
 /**
@@ -1747,7 +1750,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public boolean isHeader;
 
-        public int headerDisplay;
+        public @HeaderDisplayOptions int headerDisplay;
 
         public int headerMarginEnd;
 
@@ -1864,7 +1867,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             }
         }
 
-        public boolean areHeaderFlagsSet(int flags) {
+        public boolean areHeaderFlagsSet(@HeaderDisplayOptions int flags) {
             return (headerDisplay & flags) == flags;
         }
 
@@ -2001,6 +2004,18 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                         .getInt(R.styleable.superslim_LayoutManager_slm_section_sectionManager,
                                 SECTION_MANAGER_LINEAR);
             }
+        }
+
+        @IntDef(flag = true, value = {
+                HEADER_INLINE,
+                HEADER_ALIGN_START,
+                HEADER_ALIGN_END,
+                HEADER_STICKY,
+                HEADER_OVERLAY
+        })
+        @Retention(RetentionPolicy.SOURCE)
+        public @interface HeaderDisplayOptions {
+
         }
 
         private class MissingFirstPositionException extends RuntimeException {
