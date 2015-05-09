@@ -1,11 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 21
     buildToolsVersion "22.0.1"
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 22
+        targetSdkVersion 21
         versionCode 1
         versionName '0.4'
     }
@@ -19,13 +19,23 @@ android {
     }
 }
 
+repositories {
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:recyclerview-v7:22.1.1'
+
+    testCompile "junit:junit:4.12"
+    testCompile "org.mockito:mockito-core:2.0.7-beta"
+    testCompile "com.squareup.assertj:assertj-android:1.0.1-SNAPSHOT"
+    testCompile "org.robolectric:robolectric:3.0-rc2"
 }
 
 apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn-push.gradle'
 
 afterEvaluate {
-    androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+    androidJavadocs.classpath +=
+            project.android.libraryVariants.toList().first().javaCompile.classpath
 }

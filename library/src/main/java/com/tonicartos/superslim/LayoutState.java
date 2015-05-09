@@ -11,7 +11,7 @@ public class LayoutState {
 
     public final RecyclerView.Recycler recycler;
 
-    public final RecyclerView.State recyclerState;
+    private final RecyclerView.State recyclerState;
 
     public final SparseArray<android.view.View> viewCache;
 
@@ -35,6 +35,10 @@ public class LayoutState {
 
     public android.view.View getCachedView(int position) {
         return viewCache.get(position);
+    }
+
+    public RecyclerView.State getRecyclerState() {
+        return recyclerState;
     }
 
     public View getView(int position) {
