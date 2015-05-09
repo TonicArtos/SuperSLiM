@@ -1,5 +1,6 @@
 package com.tonicartos.superslim;
 
+import android.text.TextUtils;
 import android.view.View;
 
 public class SectionData {
@@ -83,5 +84,10 @@ public class SectionData {
 
     public int getTotalMarginWidth() {
         return marginEnd + marginStart;
+    }
+
+    public boolean sameSectionManager(LayoutManager.LayoutParams params) {
+        return params.sectionManagerKind == sectionManagerKind ||
+                TextUtils.equals(params.sectionManager, sectionManager);
     }
 }

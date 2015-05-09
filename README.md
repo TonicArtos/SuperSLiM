@@ -1,11 +1,16 @@
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
-[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)
+[![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![Build Status](https://img.shields.io/travis/TonicArtos/SuperSLiM/early_release_4.svg?style=flat-square)](https://travis-ci.org/TonicArtos/SuperSLiM)[![codecov.io](https://img.shields.io/codecov/c/github/TonicArtos/SuperSLiM.svg?style=flat-square)](http://codecov.io/github/TonicArtos/SuperSLiM?branch=early_release_4)
+
+[![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)[![Download](https://img.shields.io/badge/jcenter-0.4.13-ff69b4.svg?style=flat-square) ](https://bintray.com/tonicartos/maven/com.tonicartos%3Asuperslim/_latestVersion)
 
 
 SuperSLiM is a configurable layout manager for a RecyclerView. It provides a vertical scrolling list of sections. Each section is a grouping of one or more views, arranged by a section layout manager (SLM). Sections may have a header, and each header can have its own unique layout. The SLM can be one of the provided (listed below), or of your own creation.
 
 SuperSLiM also has a maintained [wiki](https://github.com/TonicArtos/SuperSLiM/wiki) with guides and documentation to help you out.
+
+## Compatibility
+Minimum sdk is presently set to 9. However, the library is only supported for, and actively tested against, versions 15 and later.
 
 ## Feature Overview
 **Section Headers**  
@@ -29,13 +34,12 @@ See the [Roadmap](https://github.com/TonicArtos/SuperSLiM/wiki/Roadmap) for more
 Add the following to your build.gradle file.
 ```groovy
 dependencies {
-    compile 'com.tonicartos:superslim:+'
+    compile 'com.tonicartos:superslim:0.4.13'
 }
 ```
-*+ is a wildcard, the latest version is displayed in the maven badge at the top of this page.*
 
 ## How do I use it?
-Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20Started) wiki page for easy to follow instructions.
+Read the [Getting Started](https://github.com/TonicArtos/SuperSLiM/wiki/Getting%20started%20with%20version%200.4) wiki page for easy to follow instructions.
 
 SuperSLiM is documented in the [wiki](https://github.com/TonicArtos/SuperSLiM/wiki/) so you can easily get stuck in.
 

@@ -122,7 +122,7 @@ public abstract class SectionLayoutManager {
         return params;
     }
 
-    public RecyclerView.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
+    public LayoutManager.LayoutParams generateLayoutParams(Context c, AttributeSet attrs) {
         return new LayoutManager.LayoutParams(c, attrs);
     }
 

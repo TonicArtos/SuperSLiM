@@ -52,8 +52,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private int mRequestPositionOffset = 0;
 
-    private boolean mDisableStickyHeaderDisplay = false;
-
     private HashMap<String, SectionLayoutManager> mSlms;
 
     private boolean mSmoothScrollEnabled = true;
@@ -412,7 +410,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Temporarily disable sticky headers.
-        mDisableStickyHeaderDisplay = true;
         requestLayout();
 
         recyclerView.getHandler().post(new Runnable() {
@@ -429,7 +426,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
                     protected void onStop() {
                         super.onStop();
                         // Turn sticky headers back on.
-                        mDisableStickyHeaderDisplay = false;
                         requestLayout();
                     }
 
@@ -1161,7 +1157,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i < getChildCount(); i++) {
             child = getChildAt(i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.sectionManager != sd.sectionManager) {
+            if (!sd.sameSectionManager(lp)) {
                 break;
             }
 
@@ -1209,7 +1205,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         for (int i = 1; i <= getChildCount(); i++) {
             child = getChildAt(getChildCount() - i);
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp.sectionManager != sd.sectionManager) {
+            if (!sd.sameSectionManager(lp)) {
                 break;
             }
 
@@ -1432,7 +1428,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             r.top = r.bottom - sd.headerHeight;
         }
 
-        if (sd.headerParams.isHeaderSticky() && r.top < leadingEdge) {
+        if (sd.headerParams.isHeaderSticky() && r.top < leadingEdge &&
+                sd.firstPosition != state.getRecyclerState().getTargetScrollPosition()) {
             r.top = leadingEdge;
             r.bottom = r.top + sd.headerHeight;
             if (sd.headerParams.isHeaderInline() && !sd.headerParams.isHeaderOverlay()) {

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 21
     buildToolsVersion "22.0.1"
     buildTypes {
         release {
@@ -17,7 +17,7 @@ android {
         versionCode 1
         versionName '0.1'
         minSdkVersion 9
-        targetSdkVersion 22
+        targetSdkVersion 21
     }
 }
 

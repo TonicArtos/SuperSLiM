@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'bintray-release'
+apply plugin: 'jacoco'
 
 android {
     compileSdkVersion 21
@@ -14,6 +16,9 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+	debug {
+	    testCoverageEnabled true
+	}
     }
     productFlavors {
     }
@@ -33,9 +38,56 @@ dependencies {
     testCompile "org.robolectric:robolectric:3.0-rc2"
 }
 
+task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
+    def coverageSourceDirs = ['src/main/java']
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports"
+
+    classDirectories = fileTree(
+            dir: 'build/intermediates/classes/debug',
+            excludes: ['**/R.class',
+                       '**/R$*.class',
+                       '**/BuildConfig.*',
+                       '**/Manifest*.*',
+                       '**/BitmapRequestBuilder.class',
+                       '**/DrawableRequestBuilder.class',
+                       '**/GifRequestBuilder.class',]
+    )
+
+    additionalSourceDirs = files(coverageSourceDirs)
+    sourceDirectories = files(coverageSourceDirs)
+    executionData = files('build/jacoco/testDebug.exec')
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
 apply from: 'https://raw.github.com/TonicArtos/gradle-mvn-push/master/gradle-mvn-push.gradle'
 
 afterEvaluate {
-    androidJavadocs.classpath +=
-            project.android.libraryVariants.toList().first().javaCompile.classpath
+    androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+
+}
+
+def getBintrayUsername() {
+    return hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
+}
+
+def getBintrayKey() {
+    return hasProperty('BINTRAY_KEY') ? BINTRAY_KEY : ""
+}
+
+publish {
+    groupId = 'com.tonicartos'
+    artifactId = 'superslim'
+    uploadName = 'com.tonicartos:superslim' // I don't know why, but I had to do this.
+    publishVersion = VERSION_NAME
+    description = 'A layout manager for the RecyclerView with interchangeable linear, grid, and staggered displays of views, all with configurable section headers including the sticky variety as specified in the material design docs.'
+    website = 'https://github.com/TonicArtos/SuperSLiM'
+    bintrayUser = getBintrayUsername()
+    bintrayKey = getBintrayKey()
+    autoPublish = false
+    dryRun = false
 }
