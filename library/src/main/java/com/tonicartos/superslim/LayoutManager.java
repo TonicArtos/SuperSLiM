@@ -1738,6 +1738,13 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         public static final int HEADER_OVERLAY = 0x08;
 
+        /**
+         * This constant has been marked as deprecated to indicate its pending replacement in the
+         * next major version. In the future, sticky behaviour will be standard, and there will be
+         * an option disable it with a new NONSTICKY constant, however, use of it will force the
+         * INLINE display method.
+         */
+        @Deprecated
         public static final int HEADER_STICKY = 0x10;
 
         private static final boolean DEFAULT_IS_HEADER = false;
