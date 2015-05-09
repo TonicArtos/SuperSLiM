@@ -27,6 +27,8 @@ import java.util.HashMap;
  */
 public class LayoutManager extends RecyclerView.LayoutManager {
 
+    public static final int INVALID_POSITON = -1;
+
     static final int SECTION_MANAGER_CUSTOM = -1;
 
     static final int SECTION_MANAGER_LINEAR = 0x01;
@@ -138,7 +140,12 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first completely visible item.
      */
     public int findFirstCompletelyVisibleItemPosition() {
-        return getPosition(findFirstCompletelyVisibleItem());
+        View item = findFirstCompletelyVisibleItem();
+        if (item == null) {
+            return INVALID_POSITON;
+        }
+
+        return getPosition(item);
     }
 
     /**
@@ -178,7 +185,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
      * @return Position of first visible item.
      */
     public int findFirstVisibleItemPosition() {
-        return getPosition(findFirstVisibleItem());
+        View item = findFirstVisibleItem();
+        if (item == null) {
+            return INVALID_POSITON;
+        }
+        return getPosition(item);
     }
 
     /**
@@ -603,6 +614,30 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         mRequestPosition = ((SavedState) state).anchorPosition;
         mRequestPositionOffset = ((SavedState) state).anchorOffset;
         requestLayout();
+    }
+
+    /**
+     * Work out the borderline from the given anchor view and the intended direction to fill the
+     * view hierarchy.
+     *
+     * @param anchorView Anchor view to determine borderline from.
+     * @param direction  Direction fill will be taken towards.
+     * @return Borderline.
+     */
+    int getBorderLine(View anchorView, Direction direction) {
+        int borderline;
+        if (anchorView == null) {
+            if (direction == Direction.START) {
+                borderline = getPaddingBottom();
+            } else {
+                borderline = getPaddingTop();
+            }
+        } else if (direction == Direction.START) {
+            borderline = getDecoratedBottom(anchorView);
+        } else {
+            borderline = getDecoratedTop(anchorView);
+        }
+        return borderline;
     }
 
     void measureHeader(View header) {
@@ -1084,30 +1119,6 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
         return child;
 
-    }
-
-    /**
-     * Work out the borderline from the given anchor view and the intended direction to fill the
-     * view hierarchy.
-     *
-     * @param anchorView Anchor view to determine borderline from.
-     * @param direction  Direction fill will be taken towards.
-     * @return Borderline.
-     */
-    int getBorderLine(View anchorView, Direction direction) {
-        int borderline;
-        if (anchorView == null) {
-            if (direction == Direction.START) {
-                borderline = getPaddingBottom();
-            } else {
-                borderline = getPaddingTop();
-            }
-        } else if (direction == Direction.START) {
-            borderline = getDecoratedBottom(anchorView);
-        } else {
-            borderline = getDecoratedTop(anchorView);
-        }
-        return borderline;
     }
 
     private int getDirectionToPosition(int targetPosition) {
