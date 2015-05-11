@@ -14,6 +14,7 @@ import org.robolectric.shadows.ShadowLog;
 
 import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -45,8 +46,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -61,8 +61,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(1, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -82,9 +81,13 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
         mRecyclerView.scrollBy(0, 50);
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        mRecyclerView.scrollBy(0, 50);
+        assertEquals(1, mLayoutManager.findFirstCompletelyVisibleItemPosition());
+
+        mRecyclerView.scrollBy(0, 1);
+        assertEquals(2, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -95,8 +98,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -106,8 +108,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -122,8 +123,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -143,8 +143,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 150);
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(1, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -155,8 +154,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -166,8 +164,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(11,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(11, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -182,8 +179,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(12, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -203,8 +199,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(12, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -215,8 +210,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(11,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(11, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -226,8 +220,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(12, mLayoutManager.findLastVisibleItemPosition());
     }
 
     @Test
@@ -242,8 +235,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(13,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(13, mLayoutManager.findLastVisibleItemPosition());
     }
 
     @Test
@@ -263,8 +255,7 @@ public class LinearLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 150);
 
-        assertEquals(14,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(14, mLayoutManager.findLastVisibleItemPosition());
     }
 
     @Test
@@ -275,8 +266,7 @@ public class LinearLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(12, mLayoutManager.findLastVisibleItemPosition());
     }
 
     @Test
@@ -427,7 +417,7 @@ public class LinearLayoutTests {
                 mRecyclerView);
     }
 
-//    @Test
+    @Test
     public void test_scroll() {
         final int numItems = 10;
         RecyclerView.Adapter adapter;

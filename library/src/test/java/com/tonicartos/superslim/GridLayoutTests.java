@@ -14,7 +14,6 @@ import org.robolectric.shadows.ShadowLog;
 
 import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -46,11 +45,10 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findFirstCompletelyVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
@@ -58,15 +56,24 @@ public class GridLayoutTests {
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
-        mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        mRecyclerView.scrollBy(0, 50);
+        assertEquals(3, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findFirstCompletelyVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100,
@@ -83,9 +90,14 @@ public class GridLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
         mRecyclerView.scrollBy(0, 50);
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
+        mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(1, mLayoutManager.findFirstCompletelyVisibleItemPosition());
+        mRecyclerView.scrollBy(0, 1);
+
+        assertEquals(4, mLayoutManager.findFirstCompletelyVisibleItemPosition());
+
     }
 
     @Test
@@ -96,8 +108,7 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstCompletelyVisibleItemPosition());
     }
 
     @Test
@@ -107,8 +118,7 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -123,11 +133,10 @@ public class GridLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findFirstVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100,
@@ -144,8 +153,7 @@ public class GridLayoutTests {
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 150);
 
-        assertEquals(1,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(1, mLayoutManager.findFirstVisibleItemPosition());
     }
 
     @Test
@@ -156,24 +164,25 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(0,
-                mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
+        assertEquals(0, mLayoutManager.findFirstVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastCompletelyVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(20, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(11,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(19, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastCompletelyVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
@@ -182,12 +191,10 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
-
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(32, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastCompletelyVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100,
@@ -200,38 +207,41 @@ public class GridLayoutTests {
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(20, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastCompletelyVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addGridSection(20, Utils.RV_WIDTH, 100,
+                .addGridSection(40, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(11,
-                mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
+        assertEquals(33, mLayoutManager.findLastCompletelyVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addGridSection(20, Utils.RV_WIDTH, 100, null)
+                .addGridSection(40, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(12,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(38, mLayoutManager.findLastVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
@@ -239,15 +249,17 @@ public class GridLayoutTests {
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
 
-        assertEquals(13,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(34, mLayoutManager.findLastVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(5, Utils.RV_WIDTH, 100,
@@ -260,15 +272,20 @@ public class GridLayoutTests {
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
+                .addGridSection(5, Utils.RV_WIDTH, 100,
+                        TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
+        assertEquals(20, mLayoutManager.findLastVisibleItemPosition());
         mRecyclerView.scrollBy(0, 150);
-
-        assertEquals(42,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(24, mLayoutManager.findLastVisibleItemPosition());
     }
 
-//    @Test
+    @Test
     public void test_findLastVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
                 .addGridSection(50, Utils.RV_WIDTH, 100,
@@ -276,8 +293,7 @@ public class GridLayoutTests {
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(36,
-                mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
+        assertEquals(36, mLayoutManager.findLastVisibleItemPosition());
     }
 
     @Test
@@ -291,7 +307,6 @@ public class GridLayoutTests {
 
         for (int i = 0; i < 16; i++) {
             Utils.setupLayoutPaddingPermutation(i, padding, mRecyclerView, adapter, mLayoutManager);
-            Log.v("test_layout", Utils.FrameState.from(mRecyclerView, mLayoutManager).toString());
             Utils.checkSimpleGridLayout(mRecyclerView, itemHeight, 3);
         }
     }

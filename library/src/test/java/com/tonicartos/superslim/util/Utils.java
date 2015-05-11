@@ -29,7 +29,9 @@ public class Utils {
 
     public static void checkSimpleGridLayout(RecyclerView recyclerView, int itemHeight,
             int numColumns) {
-        final int gridWidth = 720 - recyclerView.getPaddingLeft() - recyclerView.getPaddingRight();
+        final int width = recyclerView.getWidth();
+        final int gridWidth = width - recyclerView.getPaddingLeft() - recyclerView
+                .getPaddingRight();
         final int columnWidth = gridWidth / numColumns;
 
         for (int i = 0; i < 20; i += numColumns) {
@@ -39,9 +41,14 @@ public class Utils {
 
                 assertThat(child).hasHeight(itemHeight);
                 assertThat(child).hasLeft(j * columnWidth + recyclerView.getPaddingLeft());
-                assertThat(child).hasRight(j * columnWidth + columnWidth + recyclerView.getPaddingLeft());
-                assertThat(child).hasTop(top);
-                assertThat(child).hasBottom(top + itemHeight);
+                if (j == numColumns - 1) {
+                    assertThat(child).hasRight(width - recyclerView.getPaddingRight());
+                } else {
+                    assertThat(child).hasRight(
+                            j * columnWidth + columnWidth + recyclerView.getPaddingLeft());
+                }
+                assertThat(child).hasTop(top + recyclerView.getPaddingTop());
+                assertThat(child).hasBottom(top + itemHeight + recyclerView.getPaddingTop());
             }
         }
     }
