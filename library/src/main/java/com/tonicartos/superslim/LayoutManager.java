@@ -1782,6 +1782,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             isHeader = a.getBoolean(
                     R.styleable.superslim_LayoutManager_slm_isHeader,
                     false);
+            //noinspection ResourceType
             headerDisplay = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_headerDisplay,
                     DEFAULT_HEADER_DISPLAY);
