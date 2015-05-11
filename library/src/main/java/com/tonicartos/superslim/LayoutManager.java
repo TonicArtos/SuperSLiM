@@ -10,6 +10,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -17,7 +18,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
+import android.view.FrameStats;
 import android.view.View;
+import android.view.ViewDebug;
 import android.view.ViewGroup;
 
 import java.lang.annotation.Retention;
@@ -107,29 +110,24 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         }
 
         // Maybe the header is completely visible.
-        View first = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
-        if (first == null) {
+        View header = findAttachedHeaderOrFirstViewForSection(sd.firstPosition, 0, Direction.START);
+
+        if (header == null || !((LayoutParams) header.getLayoutParams()).isHeader) {
             return firstVisibleView;
         }
 
         final int topEdge = getClipToPadding() ? getPaddingTop() : 0;
         final int bottomEdge = getClipToPadding() ? getHeight() - getPaddingBottom() : getHeight();
 
-        final int firstTop = getDecoratedTop(first);
-        final int firstBottom = getDecoratedBottom(first);
+        final int headerTop = getDecoratedTop(header);
+        final int headerBottom = getDecoratedBottom(header);
 
-        if (firstTop < topEdge || bottomEdge < firstBottom) {
+        if (headerTop < topEdge || bottomEdge < headerBottom) {
             return firstVisibleView;
         }
 
-        if (firstBottom <= getDecoratedTop(firstVisibleView)) {
-            return first;
-        }
-
-        LayoutParams firstParams = (LayoutParams) first.getLayoutParams();
-        if ((!firstParams.isHeaderInline() || firstParams.isHeaderOverlay())
-                && firstTop == getDecoratedTop(firstVisibleView)) {
-            return first;
+        if (headerTop < getDecoratedTop(firstVisibleView)) {
+            return header;
         }
 
         return firstVisibleView;
@@ -1784,6 +1782,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             isHeader = a.getBoolean(
                     R.styleable.superslim_LayoutManager_slm_isHeader,
                     false);
+            //noinspection ResourceType
             headerDisplay = a.getInt(
                     R.styleable.superslim_LayoutManager_slm_headerDisplay,
                     DEFAULT_HEADER_DISPLAY);

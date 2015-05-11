@@ -24,15 +24,16 @@ public class TestAdapterBuilder {
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setSlm(GridSLM.ID);
         params.setNumColumns(3);
-        return this.addSection(itemCount, itemWidth, itemHeight, header, params);
+        return addSection(itemCount, itemWidth, itemHeight, header, params);
     }
 
     public TestAdapterBuilder addLinearSection(int itemCount, int itemWidth, int itemHeight,
             Header header) {
-        LayoutManager.LayoutParams params = new LayoutManager.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+        LayoutManager.LayoutParams params = new LayoutManager.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         params.setSlm(LinearSLM.ID);
-        return this.addSection(itemCount, itemWidth, itemHeight, header, params);
+        return addSection(itemCount, itemWidth, itemHeight, header, params);
     }
 
     public TestAdapterBuilder addSection(int itemCount, int itemWidth, int itemHeight,

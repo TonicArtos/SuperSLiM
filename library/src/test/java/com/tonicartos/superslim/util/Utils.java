@@ -27,7 +27,33 @@ public class Utils {
 
     public static final int RV_WIDTH = 720;
 
-    public static void checkSimpleLayout(RecyclerView mRecyclerView, int itemHeight) {
+    public static void checkSimpleGridLayout(RecyclerView recyclerView, int itemHeight,
+            int numColumns) {
+        final int width = recyclerView.getWidth();
+        final int gridWidth = width - recyclerView.getPaddingLeft() - recyclerView
+                .getPaddingRight();
+        final int columnWidth = gridWidth / numColumns;
+
+        for (int i = 0; i < 20; i += numColumns) {
+            final int top = i / numColumns * itemHeight;
+            for (int j = 0; j < numColumns && i + j < 20; j++) {
+                View child = recyclerView.getChildAt(i + j);
+
+                assertThat(child).hasHeight(itemHeight);
+                assertThat(child).hasLeft(j * columnWidth + recyclerView.getPaddingLeft());
+                if (j == numColumns - 1) {
+                    assertThat(child).hasRight(width - recyclerView.getPaddingRight());
+                } else {
+                    assertThat(child).hasRight(
+                            j * columnWidth + columnWidth + recyclerView.getPaddingLeft());
+                }
+                assertThat(child).hasTop(top + recyclerView.getPaddingTop());
+                assertThat(child).hasBottom(top + itemHeight + recyclerView.getPaddingTop());
+            }
+        }
+    }
+
+    public static void checkSimpleLinearLayout(RecyclerView mRecyclerView, int itemHeight) {
         final int paddingTop = mRecyclerView.getPaddingTop();
         final int rvHeight = mRecyclerView.getHeight();
 
@@ -198,6 +224,15 @@ public class Utils {
             }
 
             return true;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (Record r : mRecords) {
+                sb.append(r.toString()).append("\n");
+            }
+            return sb.toString();
         }
 
         private void logViewsAndRecords(int childCount, LayoutManagerWrapper lm, RecyclerView rv) {
