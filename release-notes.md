@@ -1,4 +1,14 @@
 ## early_release_4
+*v0.4.13*
+
+Added tests and fixes for layout, scrolling, and find methods. Deprecated set methods on GridSLM, these will be removed in 0.5.
+
+- Fixed find first completely visible methods to actually find something (#88).
+- Fixed numerous minor layout bugs that resulted in views being attached just outside the viewable area.
+- Fixed a few layout bugs that resulted in some views overlapping by one pixel or being off by one pixel.
+
+Due to pixel fitting on calculated columns, some grid columns and cells can be a slightly different width from others. In previous versions they were all the same, but could end out overlapping.
+
 *v0.4.12*
 
 Two small fixes in this update. The grid slm should now honour the RTL layout direction. Also, when the recycler view is rotated or recreated, it should now restore to the correct adapter position.
