@@ -58,7 +58,7 @@ public class SimplestTestAdapter extends RecyclerView.Adapter<SimplestTestAdapte
         public void configureView(View v) {
             v.setMinimumHeight(height);
             v.setMinimumWidth(width);
-            LayoutManager.LayoutParams params = LayoutManager.LayoutParams.from(referenceParams);
+            LayoutManager.LayoutParams params = GridSLM.LayoutParams.from(referenceParams);
             params.setFirstPosition(sectionStart);
             v.setLayoutParams(params);
         }

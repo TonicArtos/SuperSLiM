@@ -2,8 +2,6 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -115,7 +113,7 @@ public class GridSLM extends SectionLayoutManager {
 
         // Lay out rows to end.
         for (int i = anchorPosition; i < itemCount; i += mNumColumns) {
-            if (markerLine >= leadingEdge) {
+            if (markerLine > leadingEdge) {
                 break;
             }
 
@@ -224,7 +222,7 @@ public class GridSLM extends SectionLayoutManager {
 
         // Lay out rows to end.
         for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
-            if (markerLine - minHeightOffset < leadingEdge) {
+            if (markerLine - minHeightOffset <= leadingEdge) {
                 break;
             }
 

@@ -14,6 +14,7 @@ import org.robolectric.shadows.ShadowLog;
 
 import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -22,7 +23,7 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(RobolectricGradleTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class LinearLayoutTests {
+public class GridLayoutTests {
 
     private Activity mActivity;
 
@@ -41,7 +42,7 @@ public class LinearLayoutTests {
     @Test
     public void test_findFirstCompletelyVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
@@ -49,14 +50,14 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findFirstCompletelyVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
@@ -65,18 +66,18 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findFirstCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findFirstCompletelyVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -90,7 +91,7 @@ public class LinearLayoutTests {
     @Test
     public void test_findFirstCompletelyVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -102,7 +103,7 @@ public class LinearLayoutTests {
     @Test
     public void test_findFirstVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
@@ -113,11 +114,11 @@ public class LinearLayoutTests {
     @Test
     public void test_findFirstVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
@@ -126,18 +127,18 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findFirstVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -150,7 +151,7 @@ public class LinearLayoutTests {
     @Test
     public void test_findFirstVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -159,10 +160,10 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findFirstVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastCompletelyVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(20, Utils.RV_WIDTH, 100, null)
+                .addGridSection(20, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
@@ -170,14 +171,14 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastCompletelyVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
@@ -186,18 +187,18 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastCompletelyVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -207,10 +208,10 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastCompletelyVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(20, Utils.RV_WIDTH, 100,
+                .addGridSection(20, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
@@ -219,10 +220,10 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastCompletelyVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastVisibleItem() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(20, Utils.RV_WIDTH, 100, null)
+                .addGridSection(20, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
@@ -230,14 +231,14 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastVisibleItemOfScrolledSections() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
+                .addGridSection(5, Utils.RV_WIDTH, 100, null)
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 50);
@@ -246,36 +247,36 @@ public class LinearLayoutTests {
                 mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastVisibleItemOfScrolledSectionsWithHeaders() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(5, Utils.RV_WIDTH, 100,
+                .addGridSection(5, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
         mRecyclerView.scrollBy(0, 150);
 
-        assertEquals(14,
+        assertEquals(42,
                 mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
     }
 
-    @Test
+//    @Test
     public void test_findLastVisibleItemWithHeader() {
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(20, Utils.RV_WIDTH, 100,
+                .addGridSection(50, Utils.RV_WIDTH, 100,
                         TestAdapterBuilder.Header.with(TestAdapterBuilder.Header.INLINE))
                 .build(mActivity);
         Utils.setupLayoutTest(null, adapter, mLayoutManager, mRecyclerView);
 
-        assertEquals(12,
+        assertEquals(36,
                 mLayoutManager.getPosition(mLayoutManager.findLastVisibleItem()));
     }
 
@@ -285,12 +286,13 @@ public class LinearLayoutTests {
         final int itemHeight = 100;
         final int itemWidth = 720;
         RecyclerView.Adapter adapter = new TestAdapterBuilder()
-                .addLinearSection(20, itemWidth, itemHeight, null)
+                .addGridSection(20, itemWidth, itemHeight, null)
                 .build(mActivity);
 
         for (int i = 0; i < 16; i++) {
             Utils.setupLayoutPaddingPermutation(i, padding, mRecyclerView, adapter, mLayoutManager);
-            Utils.checkSimpleLinearLayout(mRecyclerView, itemHeight);
+            Log.v("test_layout", Utils.FrameState.from(mRecyclerView, mLayoutManager).toString());
+            Utils.checkSimpleGridLayout(mRecyclerView, itemHeight, 3);
         }
     }
 
@@ -304,7 +306,7 @@ public class LinearLayoutTests {
 
         // Test once with padding.
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, padding, 0, padding};
         Utils.doOverscrollTest(new int[]{0, dy}, layoutPadding, true, adapter, mLayoutManager,
@@ -323,7 +325,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, dy}, layoutPadding, true, adapter, mLayoutManager,
@@ -337,7 +339,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy * 2, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy * 2, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, dy}, layoutPadding, true, adapter, mLayoutManager,
@@ -351,7 +353,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, 0}, layoutPadding, false, adapter, mLayoutManager,
@@ -364,7 +366,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, 0}, layoutPadding, false, adapter, mLayoutManager,
@@ -378,7 +380,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT - dy, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, 0}, layoutPadding, false, adapter, mLayoutManager,
@@ -392,7 +394,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy * 2, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy * 2, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, -dy}, layoutPadding, false, adapter, mLayoutManager,
@@ -406,7 +408,7 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT + dy, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, -dy}, layoutPadding, false, adapter, mLayoutManager,
@@ -420,33 +422,33 @@ public class LinearLayoutTests {
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, Utils.RV_HEIGHT, null)
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
         Utils.doOverscrollTest(new int[]{0, -dy}, layoutPadding, true, adapter, mLayoutManager,
                 mRecyclerView);
     }
 
-//    @Test
+    @Test
     public void test_scroll() {
         final int numItems = 10;
         RecyclerView.Adapter adapter;
         int[] layoutPadding;
         adapter = new TestAdapterBuilder()
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, null)
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, null)
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.INLINE))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.INLINE | TestAdapterBuilder.Header.NONSTICKY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_START))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_START | TestAdapterBuilder.Header.OVERLAY))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_END))
-                .addLinearSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
+                .addGridSection(numItems, Utils.RV_WIDTH, 100, TestAdapterBuilder.Header.with(
                         TestAdapterBuilder.Header.MARGIN_END | TestAdapterBuilder.Header.OVERLAY))
                 .build(mActivity);
         layoutPadding = new int[]{0, 0, 0, 0};
