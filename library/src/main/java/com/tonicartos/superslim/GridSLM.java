@@ -448,7 +448,13 @@ public class GridSLM extends SectionLayoutManager {
         } else {
             height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         }
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        final int width;
+
+        if (col == mNumColumns - 1) {
+            width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        } else {
+            width = Math.min(mColumnWidth, mLayoutManager.getDecoratedMeasuredWidth(child.view));
+        }
 
         final int bottom = top + height;
         final int left = (state.isLTR ? sd.contentStart : sd.contentEnd) + col * mColumnWidth;
