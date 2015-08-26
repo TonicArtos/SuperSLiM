@@ -52,4 +52,12 @@
         android:orderInCategory="90"
         android:title="@string/menu_random_smooth_scroll"
         app:showAsAction="never" />
+
+
+    <item
+        android:id="@+id/loadingtest"
+        android:orderInCategory="90"
+        android:title="Loading Test"
+        app:showAsAction="never" />
+
 </menu>

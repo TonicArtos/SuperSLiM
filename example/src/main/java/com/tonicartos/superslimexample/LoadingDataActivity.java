@@ -1,16 +1,18 @@
 package com.tonicartos.superslimexample;
 
-import com.tonicartos.superslim.LayoutManager;
-
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.tonicartos.superslim.LayoutManager;
+import com.tonicartos.superslimexample.DataDiffer.LoadFragment;
 
-public class MainActivity extends ActionBarActivity {
-
+/**
+ * Created by hesk on 26/8/15.
+ */
+public class LoadingDataActivity extends AppCompatActivity {
     private static final String TAG_COUNTRIES_FRAGMENT = "tag_countries_fragment";
 
     @Override
@@ -19,7 +21,7 @@ public class MainActivity extends ActionBarActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem item = null;
 
-        CountriesFragment countriesFragment = getCountriesFragment();
+        LoadFragment countriesFragment = getCountriesFragment();
         final int headerMode = countriesFragment.getHeaderMode();
         if (headerMode == LayoutManager.LayoutParams.HEADER_INLINE) {
             item = menu.findItem(R.id.action_header_inline);
@@ -54,21 +56,21 @@ public class MainActivity extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         boolean checked = item.isChecked();
         if (id == R.id.action_overlay) {
-            CountriesFragment f = getCountriesFragment();
+            LoadFragment f = getCountriesFragment();
             f.setHeadersOverlaid(!checked);
             item.setChecked(!checked);
             return true;
         }
 
         if (id == R.id.action_sticky) {
-            CountriesFragment f = getCountriesFragment();
+            LoadFragment f = getCountriesFragment();
             f.setHeadersSticky(!checked);
             item.setChecked(!checked);
             return true;
         }
 
         if (id == R.id.action_fixed_margins) {
-            CountriesFragment f = getCountriesFragment();
+            LoadFragment f = getCountriesFragment();
             f.setMarginsFixed(!checked);
             item.setChecked(!checked);
             return true;
@@ -106,7 +108,6 @@ public class MainActivity extends ActionBarActivity {
             getCountriesFragment().smoothScrollToRandomPosition();
         }
 
-        IntentSwitcher.switchIntent(id, this);
         return super.onOptionsItemSelected(item);
     }
 
@@ -116,7 +117,7 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new CountriesFragment(), TAG_COUNTRIES_FRAGMENT)
+                    .add(R.id.container, new LoadFragment(), TAG_COUNTRIES_FRAGMENT)
                     .commit();
         }
 
@@ -126,13 +127,12 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    private CountriesFragment getCountriesFragment() {
-        return (CountriesFragment) getSupportFragmentManager()
-                .findFragmentByTag(TAG_COUNTRIES_FRAGMENT);
+    private LoadFragment getCountriesFragment() {
+        return (LoadFragment) getSupportFragmentManager().findFragmentByTag(TAG_COUNTRIES_FRAGMENT);
     }
 
     private void updateHeaderMode(int mode) {
-        CountriesFragment fragment = getCountriesFragment();
+        LoadFragment fragment = getCountriesFragment();
         fragment.setHeaderMode(mode);
     }
 }

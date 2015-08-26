@@ -1,8 +1,4 @@
-package com.tonicartos.superslimexample;
-
-import com.tonicartos.superslim.GridSLM;
-import com.tonicartos.superslim.LinearSLM;
-import com.tonicartos.superslimexample.DataDiffer.CountryViewHolder;
+package com.tonicartos.superslimexample.DataDiffer;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -11,23 +7,27 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.tonicartos.superslim.GridSLM;
+import com.tonicartos.superslim.LinearSLM;
+import com.tonicartos.superslimexample.R;
+
 import java.util.ArrayList;
 
 /**
- *
+ * Created by hesk on 26/8/15.
  */
-public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder> {
+public class LoadingAdapter extends RecyclerView.Adapter<CountryViewHolder> {
     private static final int VIEW_TYPE_HEADER = 0x01;
     private static final int VIEW_TYPE_CONTENT = 0x00;
     private static final int LINEAR = 0;
     private final ArrayList<LineItem> mItems;
     private int mHeaderDisplay;
     private boolean mMarginsFixed;
+
     private final Context mContext;
 
-    public CountryNamesAdapter(Context context, int headerMode) {
+    public LoadingAdapter(Context context, int headerMode, String[] data) {
         mContext = context;
-        final String[] countryNames = context.getResources().getStringArray(R.array.country_names);
         mHeaderDisplay = headerMode;
         mItems = new ArrayList<>();
         //Insert headers into list of items.
@@ -35,8 +35,8 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
         int sectionManager = -1;
         int headerCount = 0;
         int sectionFirstPosition = 0;
-        for (int i = 0; i < countryNames.length; i++) {
-            String header = countryNames[i].substring(0, 1);
+        for (int i = 0; i < data.length; i++) {
+            String header = data[i].substring(0, 1);
             if (!TextUtils.equals(lastHeader, header)) {
                 // Insert new header view and update section data.
                 sectionManager = (sectionManager + 1) % 2;
@@ -45,7 +45,7 @@ public class CountryNamesAdapter extends RecyclerView.Adapter<CountryViewHolder>
                 headerCount += 1;
                 mItems.add(new LineItem(header, true, sectionManager, sectionFirstPosition));
             }
-            mItems.add(new LineItem(countryNames[i], false, sectionManager, sectionFirstPosition));
+            mItems.add(new LineItem(data[i], false, sectionManager, sectionFirstPosition));
         }
     }
 
