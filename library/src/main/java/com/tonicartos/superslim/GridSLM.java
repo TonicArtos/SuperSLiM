@@ -2,7 +2,6 @@ package com.tonicartos.superslim;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -39,6 +38,8 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public int computeHeaderOffset(int firstVisiblePosition, SectionData sd, LayoutState state) {
+        final int itemCount = state.getRecyclerState().getItemCount();
+
         /*
          * Work from an assumed overlap and add heights from the start until the overlap is zero or
          * less, or the current position (or max items) is reached.
@@ -49,7 +50,7 @@ public class GridSLM extends SectionLayoutManager {
                 position += mNumColumns) {
             // Look to see if the header overlaps with the displayed area of the mSection.
             int rowHeight = 0;
-            for (int col = 0; col < mNumColumns; col++) {
+            for (int col = 0; col < mNumColumns && position + col < itemCount; col++) {
                 LayoutState.View child = state.getView(position + col);
                 measureChild(child, sd);
                 rowHeight =
@@ -75,7 +76,7 @@ public class GridSLM extends SectionLayoutManager {
             return markerLine;
         }
 
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getRecyclerState().getItemCount();
         if (anchorPosition >= itemCount) {
             return markerLine;
         }
@@ -112,7 +113,7 @@ public class GridSLM extends SectionLayoutManager {
 
         // Lay out rows to end.
         for (int i = anchorPosition; i < itemCount; i += mNumColumns) {
-            if (markerLine >= leadingEdge) {
+            if (markerLine > leadingEdge) {
                 break;
             }
 
@@ -221,7 +222,7 @@ public class GridSLM extends SectionLayoutManager {
 
         // Lay out rows to end.
         for (int i = columnAnchorPosition; i >= 0; i -= mNumColumns) {
-            if (markerLine - minHeightOffset < leadingEdge) {
+            if (markerLine - minHeightOffset <= leadingEdge) {
                 break;
             }
 
@@ -260,7 +261,7 @@ public class GridSLM extends SectionLayoutManager {
 
     @Override
     public LayoutManager.LayoutParams generateLayoutParams(LayoutManager.LayoutParams params) {
-        return new LayoutParams(params);
+        return LayoutParams.from(params);
     }
 
     @Override
@@ -351,7 +352,7 @@ public class GridSLM extends SectionLayoutManager {
         LayoutState.View[] views = new LayoutState.View[mNumColumns];
         for (int i = 0; i < mNumColumns; i++) {
             final int position = anchorPosition + i;
-            if (position >= state.recyclerState.getItemCount()) {
+            if (position >= state.getRecyclerState().getItemCount()) {
                 break;
             }
 
@@ -376,22 +377,32 @@ public class GridSLM extends SectionLayoutManager {
         }
 
         for (int i = 0; i < mNumColumns; i++) {
-            int col = directionIsStart ? mNumColumns - i - 1 : i;
-            if (views[col] == null) {
+            int selectedView = directionIsStart ? mNumColumns - i - 1 : i;
+
+            int col;
+            if (state.isLTR) {
+                col = directionIsStart ? mNumColumns - i - 1 : i;
+            } else {
+                col = directionIsStart ? i : mNumColumns - i - 1;
+            }
+
+            if (views[selectedView] == null) {
                 continue;
             }
-            layoutChild(views[col], markerLine, col, rowHeight, sd, state);
-            addView(views[col], col + anchorPosition, direction, state);
+            layoutChild(views[selectedView], markerLine, col, rowHeight, sd, state);
+            addView(views[selectedView], selectedView + anchorPosition, direction, state);
         }
 
         return rowHeight;
     }
 
+    @Deprecated
     public void setColumnWidth(int minimumWidth) {
         mMinimumWidth = minimumWidth;
         mColumnsSpecified = false;
     }
 
+    @Deprecated
     public void setNumColumns(int numColumns) {
         mNumColumns = numColumns;
         mMinimumWidth = 0;
@@ -437,7 +448,13 @@ public class GridSLM extends SectionLayoutManager {
         } else {
             height = mLayoutManager.getDecoratedMeasuredHeight(child.view);
         }
-        final int width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        final int width;
+
+        if (col == mNumColumns - 1) {
+            width = mLayoutManager.getDecoratedMeasuredWidth(child.view);
+        } else {
+            width = Math.min(mColumnWidth, mLayoutManager.getDecoratedMeasuredWidth(child.view));
+        }
 
         final int bottom = top + height;
         final int left = (state.isLTR ? sd.contentStart : sd.contentEnd) + col * mColumnWidth;
@@ -465,6 +482,10 @@ public class GridSLM extends SectionLayoutManager {
 
         private int mColumnWidth;
 
+        public LayoutParams(int w, int h) {
+            super(w, h);
+        }
+
         public LayoutParams(Context c, AttributeSet attrs) {
             super(c, attrs);
 
@@ -475,14 +496,50 @@ public class GridSLM extends SectionLayoutManager {
             a.recycle();
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.MarginLayoutParams other) {
             super(other);
             init(other);
         }
 
+        /**
+         * <em>This constructor will be protected in version 0.5.</em>
+         * <p>
+         * Use {@link #from} instead as this constructor will not copy the margin params from the
+         * source layout.
+         * </p>
+         *
+         * @param other Source layout params.
+         */
+        @Deprecated
         public LayoutParams(ViewGroup.LayoutParams other) {
             super(other);
             init(other);
+        }
+
+        /**
+         * Creates a new instance of {@link LayoutParams}.
+         *
+         * @param other Source layout params.
+         * @return New grid layout params.
+         */
+        public static LayoutParams from(ViewGroup.LayoutParams other) {
+            if (other == null) {
+                Log.w("SuperSLiM", "Null value passed in call to GridSLM.LayoutParams.from().");
+                return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            } else if (other instanceof ViewGroup.MarginLayoutParams) {
+                return new LayoutParams((ViewGroup.MarginLayoutParams) other);
+            } else {
+                return new LayoutParams(other);
+            }
         }
 
         public int getColumnWidth() {

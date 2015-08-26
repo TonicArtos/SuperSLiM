@@ -3,6 +3,7 @@ package com.tonicartos.superslim;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 
@@ -53,8 +54,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first completely visible item.
      */
     public int findFirstCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager
-                .getPosition(getFirstCompletelyVisibleView(sectionFirstPosition, false));
+        View item = getFirstCompletelyVisibleView(sectionFirstPosition, false);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -64,7 +68,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findFirstVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getFirstVisibleView(sectionFirstPosition, false));
+        View item = getFirstVisibleView(sectionFirstPosition, false);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -74,7 +82,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findLastCompletelyVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getLastCompletelyVisibleView(sectionFirstPosition));
+        View item = getLastCompletelyVisibleView(sectionFirstPosition);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -84,7 +96,11 @@ public abstract class SectionLayoutManager {
      * @return Position of first visible item.
      */
     public int findLastVisibleItemPosition(int sectionFirstPosition) {
-        return mLayoutManager.getPosition(getLastVisibleView(sectionFirstPosition));
+        View item = getLastVisibleView(sectionFirstPosition);
+        if (item == null) {
+            return LayoutManager.INVALID_POSITON;
+        }
+        return mLayoutManager.getPosition(item);
     }
 
     /**
@@ -142,11 +158,13 @@ public abstract class SectionLayoutManager {
             final boolean bottomInside = mLayoutManager.getDecoratedBottom(view) <= bottomEdge;
 
             LayoutManager.LayoutParams lp = (LayoutManager.LayoutParams) view.getLayoutParams();
-            if (sectionFirstPosition == lp.getTestedFirstPosition() && topInside && bottomInside) {
-                if (!lp.isHeader || !skipHeader) {
-                    return view;
-                } else {
-                    candidate = view;
+            if (sectionFirstPosition == lp.getTestedFirstPosition()) {
+                if (topInside && bottomInside) {
+                    if (!lp.isHeader || !skipHeader) {
+                        return view;
+                    } else {
+                        candidate = view;
+                    }
                 }
             } else {
                 // Skipped past section.

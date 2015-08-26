@@ -41,7 +41,7 @@ public class LinearSLM extends SectionLayoutManager {
     @Override
     public int fillToEnd(int leadingEdge, int markerLine, int anchorPosition, SectionData sd,
             LayoutState state) {
-        final int itemCount = state.recyclerState.getItemCount();
+        final int itemCount = state.getRecyclerState().getItemCount();
 
         for (int i = anchorPosition; i < itemCount; i++) {
             if (markerLine >= leadingEdge) {
@@ -69,7 +69,7 @@ public class LinearSLM extends SectionLayoutManager {
         // Check to see if we have to adjust for minimum section height. We don't if there is an
         // attached non-header view in this section.
         boolean applyMinHeight = false;
-        for (int i = 0; i < state.recyclerState.getItemCount(); i++) {
+        for (int i = 0; i < state.getRecyclerState().getItemCount(); i++) {
             View check = mLayoutManager.getChildAt(0);
             if (check == null) {
                 applyMinHeight = false;
@@ -122,7 +122,7 @@ public class LinearSLM extends SectionLayoutManager {
         }
 
         for (int i = anchorPosition; i >= 0; i--) {
-            if (markerLine - minHeightOffset < leadingEdge) {
+            if (markerLine - minHeightOffset <= leadingEdge) {
                 break;
             }
 
