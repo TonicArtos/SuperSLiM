@@ -9,7 +9,7 @@ public interface SectionAdapter<T extends SectionAdapter.Section> {
 
     public abstract class Section<T extends Section> {
 
-        static final int NO_POSITION = -1;
+        public static final int NO_POSITION = -1;
 
         public int end = NO_POSITION;
 
