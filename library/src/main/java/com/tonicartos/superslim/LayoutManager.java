@@ -303,13 +303,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
         removeAllViews();
 
-        if (!(newAdapter instanceof SectionAdapter)) {
-            throw new SectionAdapterNotImplementedRuntimeException();
+        if (newAdapter != null) {
+            if (!(newAdapter instanceof SectionAdapter)) {
+                throw new SectionAdapterNotImplementedRuntimeException();
+            }
+            SectionAdapter sectionAdapter = (SectionAdapter) newAdapter;
+            //noinspection unchecked
+            mSections = SectionData.processSectionGraph(
+                    newAdapter.getItemCount(), sectionAdapter.getSections());
         }
-        SectionAdapter sectionAdapter = (SectionAdapter) newAdapter;
-        //noinspection unchecked
-        mSections = SectionData.processSectionGraph(
-                newAdapter.getItemCount(), sectionAdapter.getSections());
     }
 
     @Override
