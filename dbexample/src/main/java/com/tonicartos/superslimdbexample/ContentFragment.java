@@ -59,7 +59,8 @@ public class ContentFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        getLoaderManager().initLoader(LOADER, null, mLoaderCallbacks);
+        getLoaderManager().restartLoader(LOADER, null, mLoaderCallbacks);
+
         mAdapter = new Adapter();
 
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
