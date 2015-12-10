@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +38,10 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
         }
     };
 
+    public Adapter() {
+        super();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, @NonNull Item item) {
         holder.bind(item);
@@ -55,6 +60,11 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
         }
 
         updateGraph();
+    }
+
+    public void toggle() {
+        getSection(0).toggleChildren();
+        getSection(1).toggleChildren();
     }
 
     private void reset() {
@@ -100,7 +110,6 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
 
         protected final Adapter mAdapter;
 
-        @NonNull
         protected String name;
 
         public ViewHolder(View itemView, Adapter adapter) {
@@ -158,9 +167,15 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
 
         @Override
         public void onClick(View v) {
-            Section section = mAdapter.getSectionWithId(name);
+            final Section section = mAdapter.getSectionWithId(name);
             if (section != null) {
-                section.toggleChildren();
+                Log.d("asdf", "clicked " + mTextView.getText());
+                v.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        section.toggleChildren();
+                    }
+                }, 2000);
                 Snackbar.make(itemView,
                         (section.getCollapsed() ? "Collapsed region " : "Expanded region ") + mTextView
                                 .getText(),

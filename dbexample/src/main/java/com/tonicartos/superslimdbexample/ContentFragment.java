@@ -1,16 +1,20 @@
 package com.tonicartos.superslimdbexample;
 
+import com.tonicartos.superslim.adapter.Section;
+
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -46,6 +50,8 @@ public class ContentFragment extends Fragment {
 
     Adapter mAdapter;
 
+    private Section removedSection = null;
+
     public ContentFragment() {
     }
 
@@ -61,10 +67,14 @@ public class ContentFragment extends Fragment {
 
         getLoaderManager().restartLoader(LOADER, null, mLoaderCallbacks);
 
+        setHasOptionsMenu(true);
+
         mAdapter = new Adapter();
 
+
+        com.tonicartos.superslim.ColumnsState
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
-        rv.setLayoutManager(new LinearLayoutManager(getActivity()));
+        rv.setLayoutManager(new LinearInterceptManager(getActivity()));
         rv.setAdapter(mAdapter);
 
 //        SuperSLiM.Helper sslmHelper = new SuperSLiM.Helper(getActivity())
@@ -75,5 +85,24 @@ public class ContentFragment extends Fragment {
 //        sslmHelper.getRecyclerView();
 //        sslmHelper.getAdapter();
 //        sslmHelper.getLayoutManager();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.add("sadf");
+        Log.d("asdf", "asdfas");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d("asdf", "asdfas");
+//        if (removedSection == null) {
+//            removedSection = mAdapter.removeSection(1);
+//        } else {
+//            mAdapter.insertSection(1, removedSection);
+//            removedSection = null;
+//        }
+        mAdapter.moveSection(0,1);
+        return false;
     }
 }

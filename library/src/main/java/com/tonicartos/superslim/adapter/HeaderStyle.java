@@ -11,6 +11,7 @@ import java.lang.annotation.RetentionPolicy;
         Section.Config.HEADER_EMBEDDED,
         Section.Config.HEADER_START,
         Section.Config.HEADER_END,
-        Section.Config.HEADER_OVERLAY
+        Section.Config.HEADER_FLOAT,
+        Section.Config.HEADER_TAIL
 })
 public @interface HeaderStyle {}

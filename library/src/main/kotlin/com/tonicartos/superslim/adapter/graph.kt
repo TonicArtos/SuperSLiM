@@ -1,5 +1,7 @@
 package com.tonicartos.superslim.adapter
 
+import com.tonicartos.superslim.SectionState
+import com.tonicartos.superslim.slm.LinearSectionConfig
 import java.util.*
 
 sealed class Node {
@@ -20,18 +22,18 @@ sealed class Node {
      * Number of items held by other nodes before this one in the same section.
      */
     internal var peersItemsBeforeThis: Int = 0
-    internal var itemManager: ItemManager? = null
+    open internal var itemManager: ItemManager? = null
     internal abstract fun insertItemsToAdapter()
     internal abstract fun removeItemsFromAdapter()
 
-    internal fun init(positionInParent: Int, itemsBeforeThis: Int, parent: Section, itemManager: ItemManager?) {
+    open internal fun init(positionInParent: Int, itemsBeforeThis: Int, parent: Section, itemManager: ItemManager?) {
         this.itemManager = itemManager
         this.parent = parent
         this.peersItemsBeforeThis = itemsBeforeThis
         this.positionInParent = positionInParent
     }
 
-    internal fun reset() {
+    open internal fun reset() {
         parent = null
         itemManager = null
     }
@@ -56,20 +58,37 @@ class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
     }
 }
 
-open class Section() : Node.SectionNode(), Iterable<Node> {
-    internal constructor(itemManager: ItemManager) : this() {
-        this.itemManager = itemManager
-    }
+open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), Iterable<Node> {
+
+    /**
+     * An id assigned by the layout manager.
+     */
+    internal var id: Int = 0
 
     internal var registration: Registration<*>? = null
     fun deregister() {
         registration?.deregister()
     }
 
-    var configuration: Config = LinearSectionConfig()
+    var configuration: Section.Config = LinearSectionConfig()
 
+    override var itemManager: ItemManager?
+        get() = super.itemManager
+        set(value) {
+            super.itemManager = value
+            children.forEach { child -> child.itemManager = value }
+        }
+
+    /*************************
+     * Header stuff
+     *************************/
 
     private var _header: Item? = null
+        set(value) {
+            _header = value
+            configuration.hasHeader = value != null
+        }
+
     var header: Item?
         get() = _header
         set(value) {
@@ -94,9 +113,13 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
             header.removeItemsFromAdapter()
             totalItemsChanged(-1)
             children.forEach { child -> child.peersItemsBeforeThis -= 1 }
+            _header = null
         }
     }
 
+    /*************************
+     * Expandable section stuff
+     *************************/
 
     var collapsed: Boolean = false
         private set
@@ -123,17 +146,13 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
         collapsed = true
     }
 
+    /*************************
+     * Item management
+     *************************/
 
-    private val _children: ArrayList<Node> = arrayListOf()
-    val children: List<Node>
-        get() = _children
+    override internal fun insertItemsToAdapter() {
+        scw?.notifySectionInserted(this)
 
-    override val childCount: Int get() = children.size
-
-    override fun iterator(): Iterator<Node> = children.iterator()
-
-
-    override fun insertItemsToAdapter() {
         header?.itemManager = itemManager
         header?.insertItemsToAdapter()
 
@@ -145,12 +164,37 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
         }
     }
 
-    override fun removeItemsFromAdapter() {
+    override internal fun removeItemsFromAdapter() {
+        scw?.notifySectionRemoved(this)
         itemManager?.removeRange(positionInAdapter, totalItems)
     }
 
-    fun getAdapterPositionOfChild(position: Int): Int = children[position].positionInAdapter
+    /****************************************************
+     * Children stuff
+     ****************************************************/
 
+    private val _children: ArrayList<Node> = arrayListOf()
+    val children: List<Node>
+        get() = _children
+
+    override val childCount: Int get() = children.size
+
+    private fun initChild(position: Int, child: Node) {
+        val numItemsBeforeChild =
+                if (position > 0) {
+                    val prior = children[position - 1]
+                    prior.peersItemsBeforeThis + prior.totalItems
+                } else {
+                    if (header == null) 0 else 1
+                }
+        child.init(position, numItemsBeforeChild, this, itemManager)
+    }
+
+    /*************************
+     * Child actions
+     *************************/
+
+    fun getAdapterPositionOfChild(position: Int): Int = children[position].positionInAdapter
 
     /**
      * Get child at [position]. Throws runtime exception if child isn't of the expected type.
@@ -269,6 +313,11 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
         toRemove.reset()
     }
 
+    /*************************
+     * Listing and navigating children
+     *************************/
+
+    override fun iterator(): Iterator<Node> = children.iterator()
 
     /**
      * Returns a list containing all items matching the given [predicate].
@@ -303,18 +352,15 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
         return children.filterTo(ArrayList<Node>(), predicate)
     }
 
-
-    private fun initChild(position: Int, child: Node) {
-        val numItemsBeforeChild =
-                if (position > 0) {
-                    val prior = children[position - 1]
-                    prior.peersItemsBeforeThis + prior.totalItems
-                } else {
-                    if (header == null) 0 else 1
-                }
-        child.init(position, numItemsBeforeChild, this, itemManager)
+    override fun init(positionInParent: Int, itemsBeforeThis: Int, parent: Section, itemManager: ItemManager?) {
+        super.init(positionInParent, itemsBeforeThis, parent, itemManager)
+        scw = parent.scw
     }
 
+    override fun reset() {
+        super.reset()
+        scw = null
+    }
 
     private fun totalItemsChanged(change: Int) {
         if (change == 0) return
@@ -332,60 +378,83 @@ open class Section() : Node.SectionNode(), Iterable<Node> {
         totalItemsChanged(change)
     }
 
+    /**
+     * Configuration of a section.
+     */
+    abstract class Config(gutterStart: Int = Config.DEFAULT_GUTTER, gutterEnd: Int = Config.DEFAULT_GUTTER,
+                          @HeaderStyle var headerStyle: Int = Config.DEFAULT_HEADER_STYLE) {
 
-    abstract class Config {
-        constructor(customSlmLabel: String, headerMarginStart: Int = DEFAULT_MARGIN, headerMarginEnd: Int = DEFAULT_MARGIN, @HeaderStyle headerStyle: Int = DEFAULT_HEADER_STYLE) : this(headerMarginStart, headerMarginEnd, headerStyle) {
-            this.customSlmLabel = customSlmLabel
+        var gutterStart: Int = 0
+            set(value) {
+                gutterStart = if (value < 0) GUTTER_AUTO else value
+            }
+        var gutterEnd: Int = 0
+            set(value) {
+                gutterEnd = if (value < 0) GUTTER_AUTO else value
+            }
+
+        internal var hasHeader = false
+
+        init {
+            this.gutterStart = gutterStart
+            this.gutterEnd = gutterEnd
         }
 
-        constructor(headerMarginStart: Int = DEFAULT_MARGIN, headerMarginEnd: Int = DEFAULT_MARGIN, @HeaderStyle headerStyle: Int = DEFAULT_HEADER_STYLE) {
-            this.headerMarginStart = headerMarginStart
-            this.headerMarginEnd = headerMarginEnd
-            this.headerStyle = headerStyle
-        }
+        // Remap names since internally left and right are used since section coordinates are LTR, TTB. The start and
+        // end intention will be applied correctly (from left and right) through the config transformations.
+        internal var gutterLeft: Int
+            get() = gutterStart
+            set(value) {
+                gutterStart = value
+            }
+        internal var gutterRight: Int
+            get() = gutterEnd
+            set(value) {
+                gutterEnd = value
+            }
 
-        @HeaderStyle
-        var headerStyle: Int
-        var headerMarginStart: Int
-        var headerMarginEnd: Int
-        var customSlmLabel: String? = null
-            private set
-        open val slmKind: Int = CUSTOM_SLM
+        internal fun makeSection(oldState: SectionState? = null) = onMakeSection(oldState)
+        abstract protected fun onMakeSection(oldState: SectionState?): SectionState
 
         companion object {
             /**
-             * Header is positioned at the top of the section content. Content starts below the
-             * header. Inline headers are always sticky. Use the embedded style if you want an
-             * inline header that is not sticky.
+             * Header is positioned at the head of the section content. Content starts below the header. Inline headers
+             * are always sticky. Use the embedded style if you want an inline header that is not sticky.
              */
             const val HEADER_INLINE = 1
 
             /**
-             * Header is positioned at the top of the section content. Content starts below the
-             * header, but the header never becomes sticky. Embedded headers may not be overlays
-             * either.
+             * Header is positioned at the head of the section content. Content starts below the header, but the header
+             * never becomes sticky. Embedded headers can not float and ignores that flag if set.
              */
-            const val HEADER_EMBEDDED = 2
+            const val HEADER_EMBEDDED = 1 shl 1
 
             /**
-             * Header is aligned to the start edge of the section. This is the left for LTR
-             * locales. Start aligned headers are always sticky.
+             * Header is placed inside the gutter at the start edge of the section. This is the left for LTR locales.
+             * Gutter headers are always sticky.
              */
-            const val HEADER_START = 4
+            const val HEADER_START = 1 shl 2
 
             /**
-             * Header is aligned to the end edge of the section. This is the right for LTR locales.
-             * End aligned headers are always sticky.
+             * Header is placed inside the gutter at the end edge of the section. This is the right for LTR locales.
+             * Gutter headers are always sticky. Overridden
              */
-            const val HEADER_END = 8
+            const val HEADER_END = 1 shl 3
 
             /**
-             * Overlay headers float above the content and are always sticky.
+             * Float header above the content. Floating headers are always sticky.
              */
-            const val HEADER_OVERLAY = 16
-            const val MARGIN_AUTO = -1
-            internal const val CUSTOM_SLM = 0
-            internal const val DEFAULT_MARGIN = MARGIN_AUTO
+            const val HEADER_FLOAT = 1 shl 4
+
+            /**
+             * Header is placed at the tail of the section. If sticky, it will stick to the bottom edge rather than the
+             * top. Combines with all other options.
+             */
+            const val HEADER_TAIL = 1 shl 5
+
+            const val GUTTER_AUTO = -1
+
+            internal const val DEFAULT_GUTTER = GUTTER_AUTO
             internal const val DEFAULT_HEADER_STYLE = HEADER_INLINE
         }
     }

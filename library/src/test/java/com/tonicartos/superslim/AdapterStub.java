@@ -14,6 +14,10 @@ public class AdapterStub extends SectionGraphAdapter<String, RecyclerView.ViewHo
 
     public Util.ItemData lastBoundItem;
 
+    public AdapterStub() {
+        super();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, @NonNull Item item) {
         lastBoundItem = (Util.ItemData) item.getData();
