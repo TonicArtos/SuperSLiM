@@ -1,12 +1,10 @@
 package com.tonicartos.superslim
 
 import android.support.v7.widget.RecyclerView
-import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.slm.LinearSectionConfig
 import com.tonicartos.superslim.slm.LinearSectionState
-import java.util.*
 
 /**
  *
@@ -107,7 +105,7 @@ class LayoutManager : RecyclerView.LayoutManager() {
      ****************************************************/
 
     private val graph = GraphManager(LinearSectionState(LinearSectionConfig(0, 0, 0)))
-    private val dataChangeHelper = DataChangeHelper()
+    private val itemChangeHelper = ItemChangeHelper()
 
     /*************************
      * Section changes from adapter
@@ -121,9 +119,9 @@ class LayoutManager : RecyclerView.LayoutManager() {
         graph.queueSectionRemoved(section, parent, position)
     }
 
-    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
-        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
-    }
+//    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
+//        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
+//    }
 
     fun notifySectionUpdated(section: Int, config: Section.Config) {
         graph.queueSectionUpdated(section, config)
@@ -134,23 +132,23 @@ class LayoutManager : RecyclerView.LayoutManager() {
      *************************/
 
     fun notifySectionHeaderAdded(section: Int, position: Int) {
-        dataChangeHelper.queueSectionHeaderAdded(section, position)
+        itemChangeHelper.queueSectionHeaderAdded(section, position)
     }
 
     fun notifySectionHeaderRemoved(section: Int, position: Int) {
-        dataChangeHelper.queueSectionHeaderRemoved(section, position)
+        itemChangeHelper.queueSectionHeaderRemoved(section, position)
     }
 
     fun notifySectionItemsAdded(section: Int, positionStart: Int, itemCount: Int) {
-        dataChangeHelper.queueSectionItemsAdded(section, positionStart, itemCount)
+        itemChangeHelper.queueSectionItemsAdded(section, positionStart, itemCount)
     }
 
     fun notifySectionItemsRemoved(section: Int, positionStart: Int, itemCount: Int) {
-        dataChangeHelper.queueSectionItemsRemoved(section, positionStart, itemCount)
+        itemChangeHelper.queueSectionItemsRemoved(section, positionStart, itemCount)
     }
 
     fun notifySectionItemsMoved(fromSection: Int, from: Int, toSection: Int, to: Int) {
-        dataChangeHelper.queueSectionItemsMoved(fromSection, from, toSection, to)
+        itemChangeHelper.queueSectionItemsMoved(fromSection, from, toSection, to)
     }
 
     /*************************
@@ -158,17 +156,17 @@ class LayoutManager : RecyclerView.LayoutManager() {
      *************************/
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        val event = dataChangeHelper.pullAddEventData(positionStart, itemCount)
+        val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
         graph.addItems(event, positionStart, itemCount)
     }
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        val event = dataChangeHelper.pullRemoveEventData(positionStart, itemCount)
+        val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
         graph.removeItems(event, positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
-        var (fromSection, toSection) = dataChangeHelper.pullMoveEventData(from, to)
+        var (fromSection, toSection) = itemChangeHelper.pullMoveEventData(from, to)
         graph.moveItems(fromSection, from, toSection, to)
     }
 }

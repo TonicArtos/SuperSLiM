@@ -11,7 +11,7 @@ class GridSectionConfig(gutterStart: Int = Section.Config.DEFAULT_GUTTER, gutter
     override fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
 }
 
-class GridSectionState(var configuration: GridSectionConfig, oldState: SectionState? = null) : SectionState(oldState, ),
+class GridSectionState(var configuration: GridSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState),
         ColumnsSectionStateMixin by ColumnsState(configuration) {
     override fun doLayout(helper: LayoutHelper) {
         resolveColumns(helper)

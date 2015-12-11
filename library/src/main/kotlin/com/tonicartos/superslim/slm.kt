@@ -34,7 +34,7 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
     }
 
     private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
-        return when (section.headerStyle) {
+        return when (section.baseConfig.headerStyle) {
             Section.Config.HEADER_EMBEDDED -> EmbeddedHlm
             Section.Config.HEADER_START, Section.Config.HEADER_END -> GutterHlm
             else -> InlineHlm

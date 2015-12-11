@@ -11,7 +11,7 @@ class StaggeredGridSectionConfig(gutterStart: Int = Section.Config.DEFAULT_GUTTE
     override fun onMakeSection(oldState: SectionState?): SectionState = StaggeredGridSection(this, oldState)
 }
 
-class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldState: SectionState? = null) : SectionState(oldState, ),
+class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState),
         ColumnsSectionStateMixin by ColumnsState(configuration) {
     override fun doLayout(helper: LayoutHelper) {
         resolveColumns(helper)

@@ -5,12 +5,10 @@ import com.tonicartos.superslim.adapter.Section;
 import com.tonicartos.superslim.adapter.SectionGraphAdapter;
 
 import android.database.Cursor;
-import android.database.DataSetObserver;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,18 +23,6 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
     private final static int VIEW_TYPE_COUNTRY_VIEW = 3;
 
     private Cursor mCursor;
-
-    private DataSetObserver mDataSetObserver = new DataSetObserver() {
-        @Override
-        public void onChanged() {
-            super.onChanged();
-        }
-
-        @Override
-        public void onInvalidated() {
-            super.onInvalidated();
-        }
-    };
 
     public Adapter() {
         super();
@@ -169,13 +155,7 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
         public void onClick(View v) {
             final Section section = mAdapter.getSectionWithId(name);
             if (section != null) {
-                Log.d("asdf", "clicked " + mTextView.getText());
-                v.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        section.toggleChildren();
-                    }
-                }, 2000);
+                section.toggleChildren();
                 Snackbar.make(itemView,
                         (section.getCollapsed() ? "Collapsed region " : "Expanded region ") + mTextView
                                 .getText(),

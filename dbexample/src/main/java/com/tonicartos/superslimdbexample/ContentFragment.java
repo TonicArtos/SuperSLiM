@@ -10,7 +10,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,6 +27,8 @@ public class ContentFragment extends Fragment {
 
     private static final Uri URI = Uri
             .parse("content://com.tonicartos.superslimdbexample.provider/all");
+
+    Adapter mAdapter;
 
     private LoaderManager.LoaderCallbacks<Cursor> mLoaderCallbacks
             = new LoaderManager.LoaderCallbacks<Cursor>() {
@@ -47,8 +48,6 @@ public class ContentFragment extends Fragment {
             mAdapter.swapCursor(null);
         }
     };
-
-    Adapter mAdapter;
 
     private Section removedSection = null;
 
@@ -71,8 +70,6 @@ public class ContentFragment extends Fragment {
 
         mAdapter = new Adapter();
 
-
-        com.tonicartos.superslim.ColumnsState
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
         rv.setLayoutManager(new LinearInterceptManager(getActivity()));
         rv.setAdapter(mAdapter);
@@ -90,19 +87,17 @@ public class ContentFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.add("sadf");
-        Log.d("asdf", "asdfas");
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d("asdf", "asdfas");
 //        if (removedSection == null) {
 //            removedSection = mAdapter.removeSection(1);
 //        } else {
 //            mAdapter.insertSection(1, removedSection);
 //            removedSection = null;
 //        }
-        mAdapter.moveSection(0,1);
+        mAdapter.moveSection(0, 1);
         return false;
     }
 }

@@ -1,18 +1,23 @@
 package com.tonicartos.superslim.adapter
 
 import android.support.v7.widget.RecyclerView
+import com.tonicartos.superslim.BuildConfig
 import com.tonicartos.superslim.LayoutManager
 import com.tonicartos.superslim.slm.LinearSectionConfig
 import java.util.*
 
 interface SectionGraph {
-    fun init(itemManager: ItemManager)
     fun getNumSections(): Int
     fun getSection(position: Int): Section
     fun addSection(section: Section)
     fun insertSection(position: Int, section: Section)
     fun removeSection(position: Int): Section
     fun moveSection(from: Int, to: Int)
+}
+
+interface WatchableSectionGraph: SectionGraph {
+    fun init(itemManager: ItemManager)
+    var sectionChangeWatcher: SectionChangeWatcher?
 }
 
 interface ItemManager {
@@ -49,61 +54,98 @@ interface SectionManager<ID : Comparable<ID>> {
 }
 
 interface SectionChangeWatcher {
-    fun notifySectionInserted(section: Section)
+    fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
-    fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
+    //    fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
+    fun notifySectionUpdated(section: Section)
 
     fun notifySectionHeaderInserted(section: Section)
     fun notifySectionHeaderRemoved(section: Section)
 
-    fun notifySectionItemsAdded(section: Section, positionStart: Int, itemCount: Int)
-    fun notifySectionItemsRemoved(section: Section, positionStart: Int, itemCount: Int)
-    fun notifySectionItemsMoved(fromSection: Section, from: Int, toSection: Section, to: Int)
+    fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int)
+    fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int)
+    fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int)
 }
 
 abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHolder>
-@JvmOverloads constructor(val graph: SectionGraph = SectionGraphImpl(),
-                          private val itemManager: ItemManager = ItemManagerImpl(),
-                          manager: SectionManager<ID> = SectionManagerImpl()) : RecyclerView.Adapter<VH>(),
-        SectionManager<ID> by manager, SectionGraph by graph, SectionChangeWatcher {
+@JvmOverloads constructor(private val graph: WatchableSectionGraph = DefaultSectionGraph(),
+            private val itemManager: ItemManager = DefaultItemManager(),
+            manager: SectionManager<ID> = DefaultSectionManager()) : RecyclerView.Adapter<VH>(),
+        SectionManager<ID> by manager, SectionGraph by graph {
 
     init {
         graph.init(itemManager)
         itemManager.init(this)
     }
 
-    override fun getItemCount() = itemManager.itemCount
-    override fun getItemViewType(position: Int) = itemManager[position].type
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        if (graph.sectionChangeWatcher != null) throw OnlySupportsOneRecyclerViewException()
+        val layoutManager = recyclerView.layoutManager as? LayoutManager ?: return
+        graph.sectionChangeWatcher = LayoutManagerContract(layoutManager)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView?) {
+        graph.sectionChangeWatcher = null
+    }
 
     abstract fun onBindViewHolder(holder: VH, item: Item)
-    override fun onBindViewHolder(holder: VH, position: Int) {
+    final override fun onBindViewHolder(holder: VH, position: Int) {
         onBindViewHolder(holder, itemManager[position])
     }
 
-    internal var layoutManager: LayoutManager? = null
+    final override fun getItemCount() = itemManager.itemCount
+    final override fun getItemViewType(position: Int) = itemManager[position].type
 
-    override fun notifySectionInserted(section: Section) {
-        val parent = section.parent!!
-        layoutManager!!.notifySectionAdded(parent.id, section.positionInAdapter, section.configuration)
-    }
+    /*************************
+     * Contract with Layout Manager
+     *************************/
 
-    override fun notifySectionRemoved(section: Section) {
-        val parent = section.parent!!
-        layoutManager!!.notifySectionRemoved(section.id, parent.id, section.positionInParent)
-    }
+    inner private class LayoutManagerContract(val layoutManager: LayoutManager): SectionChangeWatcher {
+        final override fun notifySectionInserted(section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration) ?: -1
 
-    override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
-        val parent = section.parent!!
-        layoutManager!!.notifySectionMoved(section.id, parent.id, section.positionInParent, toParent.id, toPosition)
+        final override fun notifySectionRemoved(section: Section) {
+            layoutManager.notifySectionRemoved(section.id, section.parent!!.id, section.positionInParent)
+        }
+
+        //    final override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
+        //        layoutManager.notifySectionMoved(section.id, section.parent!!.id, section.positionInParent, toParent.id, toPosition)
+        //    }
+
+        final override fun notifySectionUpdated(section: Section) {
+            layoutManager.notifySectionUpdated(section.id, section.configuration)
+            if (section.totalItems > 0) {
+                notifyItemRangeChanged(section.positionInAdapter, section.totalItems)
+            }
+        }
+
+        final override fun notifySectionHeaderInserted(section: Section) {
+            layoutManager.notifySectionHeaderAdded(section.id, section.positionInAdapter)
+        }
+
+        final override fun notifySectionHeaderRemoved(section: Section) {
+            layoutManager.notifySectionHeaderRemoved(section.id, section.positionInAdapter)
+        }
+
+        final override fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int) {
+            layoutManager.notifySectionItemsAdded(section.id, adapterPositionStart, itemCount)
+        }
+
+        final override fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int) {
+            layoutManager.notifySectionItemsRemoved(section.id, adapterPositionStart, itemCount)
+        }
+
+        final override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int) {
+            layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromAdapterPosition, toSection.parent!!.id, toAdapterPosition)
+        }
     }
 }
 
-internal class ItemManagerImpl : ItemManager {
+class DefaultItemManager : ItemManager {
     override fun init(adapter: SectionGraphAdapter<*, *>) {
         this.adapter = adapter
     }
 
-    var adapter: SectionGraphAdapter<*, *>? = null
+    private var adapter: SectionGraphAdapter<*, *>? = null
 
     private val items = ArrayList<Item>()
 
@@ -157,7 +199,7 @@ internal class Registration<ID : Comparable<ID>>(val id: ID, val manager: Sectio
     }
 }
 
-private class SectionManagerImpl<ID : Comparable<ID>> : SectionManager<ID> {
+class DefaultSectionManager<ID : Comparable<ID>> : SectionManager<ID> {
     private val sectionLookup = HashMap<ID, Section>()
 
     override fun getSectionWithId(id: ID): Section? = sectionLookup[id]
@@ -184,8 +226,8 @@ private class SectionManagerImpl<ID : Comparable<ID>> : SectionManager<ID> {
             // If there are any descendants
             section.getSubsections().forEach { subsection ->
                 @Suppress("UNCHECKED_CAST")
-                var attemptedCast = (subsection.registration as? Registration<ID>)?.let { oldReg ->
-                    registerSection(oldReg.id, subsection)
+                var attemptedCast = (subsection.registration as? Registration<ID>)?.apply {
+                    registerSection(this.id, subsection)
                 }
                 if (attemptedCast == null) {
                     // Can't understand registration, and since it can't be used, ditch it.
@@ -209,10 +251,14 @@ private class SectionManagerImpl<ID : Comparable<ID>> : SectionManager<ID> {
     }
 }
 
-private class SectionGraphImpl() : SectionGraph, SectionChangeWatcher {
-    val root = Section(this)
+class DefaultSectionGraph() : WatchableSectionGraph, SectionChangeWatcher {
+    private val root: Section
 
-    var itemManager: ItemManager?
+    init {
+        root = Section(this)
+    }
+
+    private var itemManager: ItemManager?
         get() = root.itemManager
         set(value) {
             root.itemManager = value
@@ -245,17 +291,47 @@ private class SectionGraphImpl() : SectionGraph, SectionChangeWatcher {
         root.move(from, to)
     }
 
-    var scw: SectionChangeWatcher? = null
+    private var _scw: SectionChangeWatcher? = null
+    override var sectionChangeWatcher: SectionChangeWatcher?
+        get() = _scw
+        set(value) {
+            _scw = value
+            root.id = value?.notifySectionInserted(root) ?: -1
+        }
 
-    override fun notifySectionInserted(section: Section) {
-        scw!!.notifySectionInserted(section)
-    }
+    override fun notifySectionInserted(section: Section) = sectionChangeWatcher?.notifySectionInserted(section) ?: -1
 
     override fun notifySectionRemoved(section: Section) {
-        scw!!.notifySectionRemoved(section)
+        sectionChangeWatcher?.notifySectionRemoved(section)
     }
 
-    override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
-        scw!!.notifySectionMoved(section, toParent, toPosition)
+    override fun notifySectionUpdated(section: Section) {
+        sectionChangeWatcher?.notifySectionUpdated(section)
+    }
+
+    //    override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
+    //        scw?.notifySectionMoved(section, toParent, toPosition)
+    //    }
+
+    override fun notifySectionHeaderInserted(section: Section) {
+        sectionChangeWatcher?.notifySectionHeaderInserted(section)
+    }
+
+    override fun notifySectionHeaderRemoved(section: Section) {
+        sectionChangeWatcher?.notifySectionHeaderRemoved(section)
+    }
+
+    override fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int) {
+        sectionChangeWatcher?.notifySectionItemsInserted(section, adapterPositionStart, itemCount)
+    }
+
+    override fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int) {
+        sectionChangeWatcher?.notifySectionItemsRemoved(section, adapterPositionStart, itemCount)
+    }
+
+    override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int) {
+        sectionChangeWatcher?.notifySectionItemsMoved(fromSection, fromAdapterPosition, toSection, toAdapterPosition)
     }
 }
+
+class OnlySupportsOneRecyclerViewException : Throwable("SuperSLiM currently only supports a single recycler view observer per adapter.")

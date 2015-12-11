@@ -1,9 +1,9 @@
 package com.tonicartos.superslim
 
 import android.support.v7.widget.RecyclerView
-import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.adapter.Section
+import java.util.*
 
 /**
  * Section data
@@ -34,9 +34,9 @@ abstract class SectionState(val baseConfig: Section.Config, oldState: SectionSta
      */
     private var totalItems: Int = 0
     /**
-     * Map of positions in this section to subsections.
+     * Sorted list of subsections.
      */
-    private val subsections: SparseArray<SectionState>
+    private val subsections: ArrayList<SectionState>
 
     /**
      * Position of this section in the adapter.
@@ -53,7 +53,7 @@ abstract class SectionState(val baseConfig: Section.Config, oldState: SectionSta
             subsections = oldState.subsections
             adapterPosition = oldState.adapterPosition
         } else {
-            subsections = SparseArray<SectionState>()
+            subsections = ArrayList<SectionState>()
         }
     }
 
@@ -67,32 +67,18 @@ abstract class SectionState(val baseConfig: Section.Config, oldState: SectionSta
             }
 
     fun getChildAt(helper: LayoutHelper, position: Int): Child {
-        return if (subsections[position] == null) {
-            SectionChild.wrap(subsections[position], helper)
-        } else {
-            var priorSectionIndex = -1
-            for (i in 0..subsections.size()) {
-                if (subsections.keyAt(i) > position) {
-                    break
-                }
-                priorSectionIndex = i
+        var precedingSubsection: SectionState? = null
+        subsections.forEach {
+            if (it.adapterPosition == position) {
+                return SectionChild.wrap(it, helper)
+            } else if (it.adapterPosition > position) {
+                return@forEach
             }
-
-            var itemAdapterPosition =
-                    if (priorSectionIndex >= 0) {
-                        val s = subsections.valueAt(priorSectionIndex)
-                        val priorSectionPosition = subsections.keyAt(priorSectionIndex)
-                        s.adapterPosition + s.totalItems + position - priorSectionPosition - 1
-                    } else {
-                        adapterPosition + position
-                    }
-
-            if (hasHeader) {
-                itemAdapterPosition += 1
-            }
-
-            ItemChild.wrap(helper.getView(itemAdapterPosition), helper)
+            precedingSubsection = it
         }
+
+        var itemAdapterPosition = position - (precedingSubsection?.adapterPosition ?: adapterPosition - if (hasHeader) 1 else 0)
+        return ItemChild.wrap(helper.getView(itemAdapterPosition), helper)
     }
 
     final fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
@@ -116,23 +102,44 @@ abstract class SectionState(val baseConfig: Section.Config, oldState: SectionSta
      *************************/
 
     internal fun addItems(adapterPositionStart: Int, itemCount: Int) {
-        for (i in 0..subsections.size()) {
-            val subsection = subsections.valueAt(i)
-            if (subsection.adapterPosition > adapterPositionStart) {
-                subsection.adapterPosition += itemCount
+        subsections.forEach {
+            if (it.adapterPosition > adapterPositionStart) {
+                it.adapterPosition += itemCount
             }
         }
         totalItems += itemCount
     }
 
     internal fun removeItems(adapterPositionStart: Int, itemCount: Int) {
-        for (i in 0..subsections.size()) {
-            val subsection = subsections.valueAt(i)
-            if (subsection.adapterPosition > adapterPositionStart) {
-                subsection.adapterPosition -= itemCount
+        val toRemove = arrayListOf<Int>()
+
+        subsections.forEachIndexed { i, it ->
+            if (it.adapterPosition > adapterPositionStart) {
+                it.adapterPosition -= itemCount
+                if (it.adapterPosition < adapterPositionStart) {
+                    toRemove.add(i)
+                }
             }
         }
+        toRemove.forEach { i -> subsections.removeAt(i) }
         totalItems -= itemCount
+    }
+
+    fun insertSection(position: Int, newSection: SectionState) {
+        subsections.forEachIndexed { i, it ->
+            if (it.adapterPosition > position) {
+                subsections.add(i, newSection)
+                return@forEachIndexed
+            }
+        }
+
+        if (subsections.isEmpty()) {
+            subsections.add(newSection)
+        }
+    }
+
+    fun removeSection(section: SectionState) {
+        subsections.remove(section)
     }
 }
 

@@ -31,7 +31,7 @@ internal class GraphManager(private val root: SectionState) {
     }
 
     fun initPostLayout() {
-        doSectionMoves()
+//        doSectionMoves()
         doSectionUpdates()
     }
 
@@ -43,7 +43,6 @@ internal class GraphManager(private val root: SectionState) {
      * Scheduling section changes
      *************************/
     private data class ScheduledSectionRemoval(val section: Int, val parent: Int, val position: Int)
-
     private data class ScheduledSectionMove(val section: Int, val fromParent: Int, val fromPosition: Int, val toParent: Int, val toPosition: Int)
     private data class ScheduledSectionUpdate(val section: Int, val config: Section.Config)
 
@@ -53,7 +52,7 @@ internal class GraphManager(private val root: SectionState) {
 
     fun sectionAdded(parent: Int, position: Int, config: Section.Config): Int {
         val newSection = config.makeSection()
-        getSection(parent).insert(position, newSection)
+        getSection(parent).insertSection(position, newSection)
         return indexSection(newSection)
     }
 
@@ -61,9 +60,9 @@ internal class GraphManager(private val root: SectionState) {
         sectionsToRemove.add(ScheduledSectionRemoval(section, parent, position))
     }
 
-    fun queueSectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
-        sectionsToMove.add(ScheduledSectionMove(section, fromParent, fromPosition, toParent, toPosition))
-    }
+//    fun queueSectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
+//        sectionsToMove.add(ScheduledSectionMove(section, fromParent, fromPosition, toParent, toPosition))
+//    }
 
     fun queueSectionUpdated(section: Int, config: Section.Config) {
         sectionsToUpdate.add(ScheduledSectionUpdate(section, config))
@@ -75,19 +74,19 @@ internal class GraphManager(private val root: SectionState) {
 
     private fun doSectionRemovals() {
         for (remove in sectionsToRemove) {
-            getSection(remove.parent).remove(remove.position)
+            getSection(remove.parent).removeSection(getSection(remove.section))
             deIndexSection(remove.section)
         }
         sectionsToRemove.clear()
     }
 
-    private fun doSectionMoves() {
-        for (move in sectionsToMove) {
-            getSection(move.fromParent).remove(move.fromPosition)
-            getSection(move.toParent).add(move.toPosition, getSection(move.section))
-        }
-        sectionsToMove.clear()
-    }
+//    private fun doSectionMoves() {
+//        for (move in sectionsToMove) {
+//            getSection(move.fromParent).removeSection(move.fromPosition)
+//            getSection(move.toParent).insertSection(move.toPosition, getSection(move.section))
+//        }
+//        sectionsToMove.clear()
+//    }
 
     private fun doSectionUpdates() {
         for (update in sectionsToUpdate) {

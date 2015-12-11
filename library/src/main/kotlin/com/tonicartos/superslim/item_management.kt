@@ -32,7 +32,7 @@ data class EventData(var action: Int, var section: Int) {
  * `LayoutManager$onItemsAdded(RecyclerView recyclerView, int positionStart, int itemCount, Bundle bundle)`, and we
  * could get rid of DataChangeHelper.
  */
-internal class DataChangeHelper {
+internal class ItemChangeHelper {
     private val ops = arrayListOf<Op>()
 
     fun queueSectionHeaderAdded(section: Int, positionStart: Int) {
@@ -58,8 +58,9 @@ internal class DataChangeHelper {
     fun pullMoveEventData(from: Int, to: Int): Pair<Int, Int> {
         for ((i, op) in ops.withIndex()) {
             if (op is MoveOp && op.from == from && op.to == to) {
+                val result = reusedPair.copy(op.fromSection, op.toSection)
                 ops.removeAt(i).release()
-                return reusedPair.copy(op.fromSection, op.toSection)
+                return result
             }
         }
         throw NoMatchedOpException() // Should have found a match.
@@ -74,10 +75,11 @@ internal class DataChangeHelper {
                 op.positionStart += itemCount
                 op.itemCount -= op.itemCount - itemCount
 
+                val result = reusedEvent.copy(op.cmd, op.section)
                 if (op.itemCount == 0) {
                     ops.removeAt(i).release()
                 }
-                return reusedEvent.copy(op.cmd, op.section)
+                return result
             }
         }
         throw NoMatchedOpException() // Should have found a match
@@ -176,13 +178,13 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
 
     override fun apply(op: SimpleOp, positionInOps: Int, ops: ArrayList<Op>): Int {
         return when (op.cmd) {
-            ADD -> applyAdd(op, ops, positionInOps)
+            ADD -> applyAdd(op)
             REMOVE -> applyRemove(op, ops, positionInOps)
             else -> 0
         }
     }
 
-    fun applyAdd(add: SimpleOp, ops: ArrayList<Op>, positionInOps: Int): Int {
+    fun applyAdd(add: SimpleOp): Int {
         var offset = 0
         if (to < add.positionStart) {
             offset -= 1

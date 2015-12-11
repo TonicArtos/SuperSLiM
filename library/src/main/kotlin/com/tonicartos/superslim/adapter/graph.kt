@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.adapter
 
+import android.util.Log
 import com.tonicartos.superslim.SectionState
 import com.tonicartos.superslim.slm.LinearSectionConfig
 import java.util.*
@@ -59,18 +60,23 @@ class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
 }
 
 open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), Iterable<Node> {
-
     /**
      * An id assigned by the layout manager.
      */
-    internal var id: Int = 0
+    internal var id: Int = -1
 
     internal var registration: Registration<*>? = null
     fun deregister() {
         registration?.deregister()
     }
 
-    var configuration: Section.Config = LinearSectionConfig()
+    private var _configuration: Section.Config = LinearSectionConfig()
+    var configuration: Section.Config
+        get() = _configuration
+        set(value) {
+            _configuration = value
+            scw?.notifySectionUpdated(this)
+        }
 
     override var itemManager: ItemManager?
         get() = super.itemManager
@@ -80,18 +86,15 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
         }
 
     /*************************
-     * Header stuff
+     * Header management
      *************************/
 
     private var _header: Item? = null
-        set(value) {
-            _header = value
-            configuration.hasHeader = value != null
-        }
 
     var header: Item?
         get() = _header
         set(value) {
+            configuration.hasHeader = value != null
             if (value == null) {
                 removeHeader()
                 return
@@ -102,6 +105,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
                 itemManager?.set(positionInAdapter, value)
             } else {
                 itemManager?.insert(positionInAdapter, value)
+                scw?.notifySectionHeaderInserted(this)
                 children.forEach { it.peersItemsBeforeThis += 1 }
                 totalItemsChanged(1)
             }
@@ -111,10 +115,15 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
     fun removeHeader() {
         header?.let { header ->
             header.removeItemsFromAdapter()
+            scw?.notifySectionHeaderRemoved(this)
             totalItemsChanged(-1)
             children.forEach { child -> child.peersItemsBeforeThis -= 1 }
             _header = null
         }
+    }
+
+    private fun fulfillRemoveHeaderContract() {
+
     }
 
     /*************************
@@ -131,6 +140,9 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
         children.forEachIndexed { i, child ->
             initChild(i, child)
             child.insertItemsToAdapter()
+            if (child is ItemNode) {
+                scw?.notifySectionItemsInserted(this, child.positionInAdapter, 1)
+            }
             numItemsAdded += child.totalItems
         }
         totalItemsChanged(numItemsAdded)
@@ -141,6 +153,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
         val jumpHeader = if (header == null) 0 else 1
         val numItemsToRemove = totalItems - jumpHeader
         itemManager?.removeRange(positionInAdapter + jumpHeader, numItemsToRemove)
+        scw?.notifySectionItemsRemoved(this, positionInAdapter + jumpHeader, numItemsToRemove)
         children.forEach { it.reset() }
         totalItemsChanged(-numItemsToRemove)
         collapsed = true
@@ -151,31 +164,44 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
      *************************/
 
     override internal fun insertItemsToAdapter() {
-        scw?.notifySectionInserted(this)
+        id = scw?.notifySectionInserted(this) ?: -1
 
-        header?.itemManager = itemManager
-        header?.insertItemsToAdapter()
+        header?.let {
+            it.itemManager = itemManager
+            it.insertItemsToAdapter()
+            scw?.notifySectionHeaderInserted(this)
+        }
 
         if (!collapsed) {
             for (child in children) {
                 child.itemManager = itemManager
                 child.insertItemsToAdapter()
+                if (child is ItemNode) {
+                    scw?.notifySectionItemsInserted(this, child.positionInAdapter, 1)
+                }
             }
         }
     }
 
     override internal fun removeItemsFromAdapter() {
         scw?.notifySectionRemoved(this)
+
         itemManager?.removeRange(positionInAdapter, totalItems)
+        if (header == null) {
+            scw?.notifySectionItemsRemoved(this, positionInAdapter, totalItems)
+        } else {
+            scw?.notifySectionHeaderInserted(this)
+            scw?.notifySectionItemsRemoved(this, positionInAdapter + 1, totalItems)
+        }
     }
 
     /****************************************************
      * Children stuff
      ****************************************************/
 
-    private val _children: ArrayList<Node> = arrayListOf()
+    private val mutableChildren: ArrayList<Node> = arrayListOf()
     val children: List<Node>
-        get() = _children
+        get() = mutableChildren
 
     override val childCount: Int get() = children.size
 
@@ -234,7 +260,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
             }
             totalItemsChanged(numItemsAdded)
         }
-        _children.add(dest, child)
+        mutableChildren.add(dest, child)
     }
 
     /**
@@ -243,7 +269,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
     fun move(from: Int, to: Int) {
         if (from == to) return
 
-        val moving = _children.removeAt(from)
+        val moving = mutableChildren.removeAt(from)
         if (!collapsed) {
             moving.removeItemsFromAdapter()
 
@@ -265,14 +291,14 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
             initChild(to, moving)
             moving.insertItemsToAdapter()
         }
-        _children.add(to, moving)
+        mutableChildren.add(to, moving)
     }
 
     /**
      * Remove child at [position].
      */
     fun remove(position: Int) {
-        val removed = _children.removeAt(position)
+        val removed = mutableChildren.removeAt(position)
 
         if (!collapsed) {
             removed.removeItemsFromAdapter()
@@ -309,7 +335,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
             }
         }
 
-        _children[position] = replacement
+        mutableChildren[position] = replacement
         toRemove.reset()
     }
 
@@ -384,13 +410,17 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
     abstract class Config(gutterStart: Int = Config.DEFAULT_GUTTER, gutterEnd: Int = Config.DEFAULT_GUTTER,
                           @HeaderStyle var headerStyle: Int = Config.DEFAULT_HEADER_STYLE) {
 
-        var gutterStart: Int = 0
+        private var _gutterStart: Int = 0
+        var gutterStart: Int
+            get() = _gutterStart
             set(value) {
-                gutterStart = if (value < 0) GUTTER_AUTO else value
+                _gutterStart = if (value < 0) GUTTER_AUTO else value
             }
-        var gutterEnd: Int = 0
+        private var _gutterEnd: Int = 0
+        var gutterEnd: Int
+            get() = _gutterEnd
             set(value) {
-                gutterEnd = if (value < 0) GUTTER_AUTO else value
+                _gutterEnd = if (value < 0) GUTTER_AUTO else value
             }
 
         internal var hasHeader = false
