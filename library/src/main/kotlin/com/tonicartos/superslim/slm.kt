@@ -1,6 +1,6 @@
 package com.tonicartos.superslim
 
-import com.tonicartos.superslim.adapter.Section
+import com.tonicartos.superslim.internal.SectionState
 
 interface SectionLayoutManager<T : SectionState> {
     fun onLayout(helper: LayoutHelper, section: T)
@@ -8,95 +8,49 @@ interface SectionLayoutManager<T : SectionState> {
     fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
 }
 
-internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState) {
-        if (section.hasHeader) {
-            selectHeaderLayout(section).onLayout(helper, section)
-        } else {
-            val left = if (section.baseConfig.gutterLeft == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-            val right = if (section.baseConfig.gutterRight == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-            section.layoutContent(helper, left, 0, helper.layoutWidth - right)
-        }
+interface Child {
+    companion object {
+        const val INVALID = -1
+        const val ANIM_NONE = 0
+        const val ANIM_APPEARING = 1
+        const val ANIM_DISAPPEARING = 2
     }
 
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).fillTopScrolledArea(dy, helper, section)
-        }
-        return 0
-    }
+    fun done()
 
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).fillBottomScrolledArea(dy, helper, section)
-        }
-        return 0
-    }
+    /**
+     * True if the child is being removed in this layout.
+     */
+    val isRemoved: Boolean
 
-    private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
-        return when (section.baseConfig.headerStyle) {
-            Section.Config.HEADER_EMBEDDED -> EmbeddedHlm
-            Section.Config.HEADER_START, Section.Config.HEADER_END -> GutterHlm
-            else -> InlineHlm
-        }
-    }
-}
+    val measuredWidth: Int
+    val measuredHeight: Int
+    fun measure(usedWidth: Int = 0, usedHeight: Int = 0)
 
-private object EmbeddedHlm : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState) {
-        // if the current position is the header
-        var y = 0
-        if (section.headPosition == 0) {
-            val child = section.getChildAt(helper, 0)
-            child.addToRecyclerView()
-            child.measure()
-            child.layout(0, 0, child.measuredWidth, child.measuredHeight)
-            y += child.height
-            child.done()
-        }
+    val left: Int
+    val top: Int
+    val right: Int
+    val bottom: Int
+    fun layout(left: Int = 0, top: Int = 0) = layout(left, top, 0, 0)
+    fun layout(left: Int, top: Int, right: Int, bottom: Int)
 
-        val left = if (section.baseConfig.gutterLeft == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-        val right = if (section.baseConfig.gutterRight == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+    val width: Int
+    val height: Int
 
-        section.layoutContent(helper, left, y, right)
+    /**
+     * The animation state for the child in this layout pass. An appearing child is one that will start offscreen and animate
+     * onscreen. A disappearing child is the opposite. A normal child does neither. Valid values are per the
+     * [AnimationState] annotation.
+     */
+    @AnimationState var animationState: Int
 
-        y += section.height
-        section.height = y
-    }
+    /**
+     * Adds child to the recycler view. Handles disappearing or appearing state per value set in [animationState].
+     */
+    fun addToRecyclerView() = addToRecyclerView(-1)
 
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
-
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
-}
-
-private object InlineHlm : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState) {
-        throw UnsupportedOperationException()
-    }
-
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
-
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
-}
-
-private object GutterHlm : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState) {
-        throw UnsupportedOperationException()
-    }
-
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
-
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: SectionState): Int {
-        throw UnsupportedOperationException()
-    }
+    /**
+     * Adds child to the recycler view.
+     */
+    fun addToRecyclerView(i: Int)
 }

@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.SOURCE)
 @IntDef(value = {
-        LayoutManager.HORIZONTAL,
-        LayoutManager.VERTICAL
+        SuperSlim.HORIZONTAL,
+        SuperSlim.VERTICAL
 })
 public @interface Orientation {}

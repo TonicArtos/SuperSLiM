@@ -1,4 +1,4 @@
-package com.tonicartos.superslim
+package com.tonicartos.superslim.internal
 
 import java.util.*
 
@@ -10,12 +10,12 @@ private const val MOVE = 1 shl 3
 private val reusedPair = Pair(0, 0)
 private val reusedEvent = EventData(0, 0)
 
-data class EventData(var action: Int, var section: Int) {
+internal data class EventData(var action: Int, var section: Int) {
     companion object {
-        const val HEADER = com.tonicartos.superslim.HEADER
-        const val ADD = com.tonicartos.superslim.ADD
-        const val REMOVE = com.tonicartos.superslim.REMOVE
-        const val MOVE = com.tonicartos.superslim.MOVE
+        const val HEADER = com.tonicartos.superslim.internal.HEADER
+        const val ADD = com.tonicartos.superslim.internal.ADD
+        const val REMOVE = com.tonicartos.superslim.internal.REMOVE
+        const val MOVE = com.tonicartos.superslim.internal.MOVE
     }
 }
 

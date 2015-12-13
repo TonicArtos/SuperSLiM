@@ -1,5 +1,6 @@
 package com.tonicartos.superslimdbexample;
 
+import com.tonicartos.superslim.SuperSlim;
 import com.tonicartos.superslim.adapter.Section;
 
 import android.database.Cursor;
@@ -73,6 +74,8 @@ public class ContentFragment extends Fragment {
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
         rv.setLayoutManager(new LinearInterceptManager(getActivity()));
         rv.setAdapter(mAdapter);
+
+        SuperSlim a = new SuperSlim();
 
 //        SuperSLiM.Helper sslmHelper = new SuperSLiM.Helper(getActivity())
 //                .setAdapter(mAdapter)

@@ -1,8 +1,7 @@
 package com.tonicartos.superslim.adapter
 
-import android.util.Log
-import com.tonicartos.superslim.SectionState
-import com.tonicartos.superslim.slm.LinearSectionConfig
+import com.tonicartos.superslim.internal.SectionState
+import com.tonicartos.superslim.internal.layout.LinearSectionConfig
 import java.util.*
 
 sealed class Node {
@@ -409,7 +408,6 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
      */
     abstract class Config(gutterStart: Int = Config.DEFAULT_GUTTER, gutterEnd: Int = Config.DEFAULT_GUTTER,
                           @HeaderStyle var headerStyle: Int = Config.DEFAULT_HEADER_STYLE) {
-
         private var _gutterStart: Int = 0
         var gutterStart: Int
             get() = _gutterStart
@@ -423,7 +421,7 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
                 _gutterEnd = if (value < 0) GUTTER_AUTO else value
             }
 
-        internal var hasHeader = false
+        var hasHeader = false
 
         init {
             this.gutterStart = gutterStart
@@ -445,6 +443,17 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
 
         internal fun makeSection(oldState: SectionState? = null) = onMakeSection(oldState)
         abstract protected fun onMakeSection(oldState: SectionState?): SectionState
+
+        /**
+         * Copy the configuration. Section configs are always copied when they are passed to the layout manager.
+         */
+        fun copy(): Config {
+            val copy = onCopy()
+            copy.hasHeader = hasHeader
+            return copy
+        }
+
+        abstract fun onCopy(): Config
 
         companion object {
             /**

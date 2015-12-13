@@ -1,9 +1,11 @@
 package com.tonicartos.superslim.adapter
 
 import android.support.v7.widget.RecyclerView
+import com.tonicartos.superslim.AdapterContract
 import com.tonicartos.superslim.BuildConfig
-import com.tonicartos.superslim.LayoutManager
-import com.tonicartos.superslim.slm.LinearSectionConfig
+import com.tonicartos.superslim.SuperSlimLayoutManager
+import com.tonicartos.superslim.internal.AdapterContract
+import com.tonicartos.superslim.internal.layout.LinearSectionConfig
 import java.util.*
 
 interface SectionGraph {
@@ -70,7 +72,7 @@ interface SectionChangeWatcher {
 abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHolder>
 @JvmOverloads constructor(private val graph: WatchableSectionGraph = DefaultSectionGraph(),
             private val itemManager: ItemManager = DefaultItemManager(),
-            manager: SectionManager<ID> = DefaultSectionManager()) : RecyclerView.Adapter<VH>(),
+            manager: SectionManager<ID> = DefaultSectionManager()) : RecyclerView.Adapter<VH>(), AdapterContract,
         SectionManager<ID> by manager, SectionGraph by graph {
 
     init {
@@ -80,8 +82,8 @@ abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHo
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         if (graph.sectionChangeWatcher != null) throw OnlySupportsOneRecyclerViewException()
-        val layoutManager = recyclerView.layoutManager as? LayoutManager ?: return
-        graph.sectionChangeWatcher = LayoutManagerContract(layoutManager)
+        val layoutManager = recyclerView.layoutManager as? SuperSlimLayoutManager ?: return
+        graph.sectionChangeWatcher = DataChangeBridge(layoutManager)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView?) {
@@ -96,12 +98,22 @@ abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHo
     final override fun getItemCount() = itemManager.itemCount
     final override fun getItemViewType(position: Int) = itemManager[position].type
 
-    /*************************
-     * Contract with Layout Manager
-     *************************/
+    inner private class AdapterContractc: AdapterContract {
+        override fun getSections(): List<Section.Config> {
+            // Todo:
+        }
 
-    inner private class LayoutManagerContract(val layoutManager: LayoutManager): SectionChangeWatcher {
-        final override fun notifySectionInserted(section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration) ?: -1
+        override fun setSectionIds(map: List<Int>) {
+            // Todo:
+        }
+
+        override fun populateSection(sectionId: Int, sectionData: AdapterContract.SectionData) {
+            // Todo:
+        }
+    }
+
+    inner private class DataChangeBridge(val layoutManager: SuperSlimLayoutManager): SectionChangeWatcher {
+        final override fun notifySectionInserted(section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
 
         final override fun notifySectionRemoved(section: Section) {
             layoutManager.notifySectionRemoved(section.id, section.parent!!.id, section.positionInParent)
@@ -334,4 +346,4 @@ class DefaultSectionGraph() : WatchableSectionGraph, SectionChangeWatcher {
     }
 }
 
-class OnlySupportsOneRecyclerViewException : Throwable("SuperSLiM currently only supports a single recycler view observer per adapter.")
+class OnlySupportsOneRecyclerViewException : Throwable("SuperSLiM currently only supports a single recycler view per adapter.")
