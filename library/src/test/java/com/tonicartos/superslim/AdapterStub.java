@@ -1,7 +1,7 @@
 package com.tonicartos.superslim;
 
 import com.tonicartos.superslim.adapter.Item;
-import com.tonicartos.superslim.adapter.SectionGraphAdapter;
+import com.tonicartos.superslim.adapter.SuperSlimAdapter;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 /**
  *
  */
-public class AdapterStub extends SectionGraphAdapter<String, RecyclerView.ViewHolder> {
+public class AdapterStub extends SuperSlimAdapter<String, RecyclerView.ViewHolder> {
 
     public Util.ItemData lastBoundItem;
 

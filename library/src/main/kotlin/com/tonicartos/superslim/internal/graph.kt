@@ -11,15 +11,23 @@ internal class GraphManager(private val root: SectionState) {
     fun loadGraph(adapter: AdapterContract<*>) {
         reset()
 
-        val sectionConfigs = adapter.getSections()
-        val adapterIds2SlmIds = sectionConfigs.mapValues { indexSection(it.value.makeSection()) }
+        // Init root
+        val rootId = indexSection((adapter.getRoot().makeSection()))
+        adapter.setRootId(rootId)
+        // Init rest
+        val adapterIds2SlmIds = adapter.getSections().mapValues { indexSection(it.value.makeSection()) }
         adapter.setSectionIds(adapterIds2SlmIds)
 
         val sectionData = SectionData()
+        // Populate root
+        adapter.populateRoot(sectionData)
+        sectionData.subsections = sectionData.subsectionsById.map { getSection(it) }
+        sectionIndex[rootId].load(sectionData)
+        // Populate rest
         adapterIds2SlmIds.forEach {
             adapter.populateSection(it.key to sectionData)
             sectionData.subsections = sectionData.subsectionsById.map { getSection(it) }
-            sectionIndex.valueAt(it.value).load(sectionData)
+            sectionIndex[it.value].load(sectionData)
         }
     }
 
@@ -333,7 +341,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     internal fun load(data: SectionData) {
-        numChildren = data.numChildren
+        numChildren = data.childCount
         adapterPosition = data.adapterPosition
         hasHeader = data.hasHeader
         totalItems = data.itemCount

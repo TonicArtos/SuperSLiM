@@ -2,7 +2,7 @@ package com.tonicartos.superslim;
 
 import com.tonicartos.superslim.adapter.Item;
 import com.tonicartos.superslim.adapter.Section;
-import com.tonicartos.superslim.adapter.SectionGraphAdapter;
+import com.tonicartos.superslim.adapter.SuperSlimAdapter;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.is;
  * Tests for a section independent from section graph.
  */
 public class TestOrphanSectionWithItems {
-    SectionGraphAdapter<String, RecyclerView.ViewHolder> adapter;
+    SuperSlimAdapter<String, RecyclerView.ViewHolder> adapter;
     Section section;
     @Before
     public void setup() {

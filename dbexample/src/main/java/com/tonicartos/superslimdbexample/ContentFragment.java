@@ -75,19 +75,6 @@ public class ContentFragment extends Fragment {
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
         rv.setLayoutManager(new SuperSlimLayoutManager(getActivity()));
         rv.setAdapter(mAdapter);
-
-        SuperSlimAdapter a;
-        a.
-
-
-//        SuperSLiM.Helper sslmHelper = new SuperSLiM.Helper(getActivity())
-//                .setAdapter(mAdapter)
-//                .setRecyclerView((RecyclerView) view.findViewById(R.id.recycler_view))
-//                .init();
-//
-//        sslmHelper.getRecyclerView();
-//        sslmHelper.getAdapter();
-//        sslmHelper.getLayoutManager();
     }
 
     @Override

@@ -134,10 +134,12 @@ private class SimpleOp(private var _cmd: Int, var section: Int, var positionStar
 
     override fun insertInto(ops: ArrayList<Op>) {
         var steps = 0
-        while (ops[ops.size - steps].cmd == MOVE) {
-            steps += 1 + ops[ops.size - steps].apply(this, ops.size - steps, ops)
-            if (itemCount == 0) {
-                return
+        if (!ops.isEmpty()) {
+            while (ops[ops.size - steps - 1].cmd == MOVE) {
+                steps += 1 + ops[ops.size - steps].apply(this, ops.size - steps, ops)
+                if (itemCount == 0) {
+                    return
+                }
             }
         }
         ops.add(ops.size - steps, this)

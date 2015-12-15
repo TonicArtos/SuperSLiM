@@ -2,7 +2,7 @@ package com.tonicartos.superslimdbexample;
 
 import com.tonicartos.superslim.adapter.Item;
 import com.tonicartos.superslim.adapter.Section;
-import com.tonicartos.superslim.adapter.SectionGraphAdapter;
+import com.tonicartos.superslim.adapter.SuperSlimAdapter;
 
 import android.database.Cursor;
 import android.support.annotation.NonNull;
@@ -14,7 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
+public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private final static int VIEW_TYPE_REGION_HEADER = 1;
 
@@ -63,7 +63,7 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
         for (int i = 0; i < count; ) {
             final String currentRegionName = mCursor.getString(1);
             final Item currentRegion = new Item(VIEW_TYPE_REGION_HEADER, currentRegionName);
-            final Section regionSection = createSection(currentRegionName, currentRegion, null);
+            final Section regionSection = createSection(currentRegionName, currentRegion);
 
             while (i < count) {
                 final String region = mCursor.getString(1);
@@ -73,7 +73,7 @@ public class Adapter extends SectionGraphAdapter<String, Adapter.ViewHolder> {
 
                 final String currentSubRegionName = mCursor.getString(4);
                 final Item currentSubRegion = new Item(VIEW_TYPE_SUBREGION_HEADER, currentSubRegionName);
-                final Section subregionSection = createSection(currentSubRegionName, currentSubRegion, null);
+                final Section subregionSection = createSection(currentSubRegionName, currentSubRegion);
                 regionSection.add(subregionSection);
                 for (; i < count; i++) {
                     final String subRegion = mCursor.getString(4);

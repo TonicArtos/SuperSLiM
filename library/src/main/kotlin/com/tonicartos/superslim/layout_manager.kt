@@ -27,7 +27,7 @@ class SectionData {
     var adapterPosition: Int = 0
     var itemCount: Int = 0
     var hasHeader = false
-    var numChildren = 0
+    var childCount = 0
     var subsectionsById = emptyList<Int>()
     internal var subsections = emptyList<SectionState>()
 }

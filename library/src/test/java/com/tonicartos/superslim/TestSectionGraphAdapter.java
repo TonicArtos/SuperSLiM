@@ -267,12 +267,12 @@ public class TestSectionGraphAdapter {
         section.insert(insertPos, subsection);
 
         adapter.addSection(section);
-        assertThat(section.getTotalItems(), equalTo(16));
+        assertThat(section.getItemCount(), equalTo(16));
         assertThat(adapter.getItemCount(), equalTo(16));
 
         // Remove a subsection.
         section.remove(insertPos);
-        assertThat(section.getTotalItems(), equalTo(10));
+        assertThat(section.getItemCount(), equalTo(10));
         assertThat(adapter.getItemCount(), equalTo(10));
 
         int offset = checkItems(sItems, 0, insertPos2, 0);
@@ -281,8 +281,8 @@ public class TestSectionGraphAdapter {
 
         // Remove an item.
         subsection2.remove(2);
-        assertThat(subsection2.getTotalItems(), equalTo(4));
-        assertThat(section.getTotalItems(), equalTo(9));
+        assertThat(subsection2.getItemCount(), equalTo(4));
+        assertThat(section.getItemCount(), equalTo(9));
         assertThat(adapter.getItemCount(), equalTo(9));
         // Match removal in local item array to make it easy to check.
         ss2Items = new ItemData[]{ss2Items[0], ss2Items[1], ss2Items[3], ss2Items[4]};
@@ -292,7 +292,7 @@ public class TestSectionGraphAdapter {
 
         // Remove last item to ensure all item mappings were tracked properly.
         section.remove(5);
-        assertThat(section.getTotalItems(), equalTo(8));
+        assertThat(section.getItemCount(), equalTo(8));
         assertThat(adapter.getItemCount(), equalTo(8));
         // Match removal in local item array to make it easy to check.
         sItems = new ItemData[]{sItems[0], sItems[1], sItems[2], sItems[3]};
