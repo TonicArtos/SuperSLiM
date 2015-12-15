@@ -1,10 +1,7 @@
 package com.tonicartos.superslim.adapter
 
 import android.support.v7.widget.RecyclerView
-import com.tonicartos.superslim.AdapterContract
-import com.tonicartos.superslim.BuildConfig
-import com.tonicartos.superslim.SuperSlimLayoutManager
-import com.tonicartos.superslim.internal.AdapterContract
+import com.tonicartos.superslim.*
 import com.tonicartos.superslim.internal.layout.LinearSectionConfig
 import java.util.*
 
@@ -17,7 +14,7 @@ interface SectionGraph {
     fun moveSection(from: Int, to: Int)
 }
 
-interface WatchableSectionGraph: SectionGraph {
+interface WatchableSectionGraph : SectionGraph {
     fun init(itemManager: ItemManager)
     var sectionChangeWatcher: SectionChangeWatcher?
 }
@@ -36,7 +33,7 @@ interface ItemManager {
 
 interface SectionManager<ID : Comparable<ID>> {
     fun createSection(id: ID): Section
-    fun createSection(id: ID, header: Item? = null, config: Section.Config? = null): Section
+    fun createSection(id: ID, header: Item? = null, config: SectionConfig? = null): Section
     fun registerSection(id: ID, section: Section, cascade: Boolean = true)
     /**
      * Deregister section with [id], stripping it, and repeat the same for all descendant sections.
@@ -55,6 +52,14 @@ interface SectionManager<ID : Comparable<ID>> {
     fun getSectionWithId(id: ID): Section?
 }
 
+abstract class BaseSectionManager<ID : Comparable<ID>> : SectionManager<ID>, AdapterContract<ID> {
+    override fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager) {
+    }
+
+    override fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager) {
+    }
+}
+
 interface SectionChangeWatcher {
     fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
@@ -69,24 +74,24 @@ interface SectionChangeWatcher {
     fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int)
 }
 
+
 abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHolder>
 @JvmOverloads constructor(private val graph: WatchableSectionGraph = DefaultSectionGraph(),
-            private val itemManager: ItemManager = DefaultItemManager(),
-            manager: SectionManager<ID> = DefaultSectionManager()) : RecyclerView.Adapter<VH>(), AdapterContract,
-        SectionManager<ID> by manager, SectionGraph by graph {
+                          private val itemManager: ItemManager = DefaultItemManager(),
+                          private val manager: BaseSectionManager<ID> = DefaultSectionManager()) : RecyclerView.Adapter<VH>(),
+        AdapterContract<ID> by manager, SectionManager<ID> by manager, SectionGraph by graph {
 
     init {
         graph.init(itemManager)
         itemManager.init(this)
     }
 
-    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+    override fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager) {
         if (graph.sectionChangeWatcher != null) throw OnlySupportsOneRecyclerViewException()
-        val layoutManager = recyclerView.layoutManager as? SuperSlimLayoutManager ?: return
-        graph.sectionChangeWatcher = DataChangeBridge(layoutManager)
+        graph.sectionChangeWatcher = DataChangeContract(layoutManager)
     }
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView?) {
+    override fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager) {
         graph.sectionChangeWatcher = null
     }
 
@@ -98,21 +103,7 @@ abstract class SectionGraphAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHo
     final override fun getItemCount() = itemManager.itemCount
     final override fun getItemViewType(position: Int) = itemManager[position].type
 
-    inner private class AdapterContractc: AdapterContract {
-        override fun getSections(): List<Section.Config> {
-            // Todo:
-        }
-
-        override fun setSectionIds(map: List<Int>) {
-            // Todo:
-        }
-
-        override fun populateSection(sectionId: Int, sectionData: AdapterContract.SectionData) {
-            // Todo:
-        }
-    }
-
-    inner private class DataChangeBridge(val layoutManager: SuperSlimLayoutManager): SectionChangeWatcher {
+    inner private class DataChangeContract(val layoutManager: SuperSlimLayoutManager) : SectionChangeWatcher {
         final override fun notifySectionInserted(section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
 
         final override fun notifySectionRemoved(section: Section) {
@@ -211,13 +202,13 @@ internal class Registration<ID : Comparable<ID>>(val id: ID, val manager: Sectio
     }
 }
 
-class DefaultSectionManager<ID : Comparable<ID>> : SectionManager<ID> {
+class DefaultSectionManager<ID : Comparable<ID>> : BaseSectionManager<ID>() {
     private val sectionLookup = HashMap<ID, Section>()
 
     override fun getSectionWithId(id: ID): Section? = sectionLookup[id]
 
     override fun createSection(id: ID) = createSection(id, null, null)
-    override fun createSection(id: ID, header: Item?, config: Section.Config?): Section {
+    override fun createSection(id: ID, header: Item?, config: SectionConfig?): Section {
         val section = Section()
         section.header = header
         section.configuration = config ?: LinearSectionConfig()
@@ -238,12 +229,12 @@ class DefaultSectionManager<ID : Comparable<ID>> : SectionManager<ID> {
             // If there are any descendants
             section.getSubsections().forEach { subsection ->
                 @Suppress("UNCHECKED_CAST")
-                var attemptedCast = (subsection.registration as? Registration<ID>)?.apply {
-                    registerSection(this.id, subsection)
-                }
-                if (attemptedCast == null) {
+                var reusableRegistration = subsection.registration as? Registration<ID>
+                if (reusableRegistration == null) {
                     // Can't understand registration, and since it can't be used, ditch it.
                     subsection.registration = null
+                } else {
+                    registerSection(reusableRegistration.id, subsection)
                 }
             }
         }
@@ -260,6 +251,24 @@ class DefaultSectionManager<ID : Comparable<ID>> : SectionManager<ID> {
                 getSubsections().forEach { it.registration?.deregister(stripIds, cascade) }
             }
         }
+    }
+
+    override fun getSections() = sectionLookup.mapValues { it.value.configuration }
+
+    override fun setSectionIds(idMap: Map<ID, Int>) {
+        idMap.forEach {
+            val section = sectionLookup[it.key] ?: throw IllegalArgumentException("unknown id \"${it.key}\" for section lookup")
+            section.id = it.value
+        }
+    }
+
+    override fun populateSection(data: Pair<ID, SectionData>) {
+        val section = sectionLookup[data.first] ?: throw IllegalArgumentException("unknown id \"${data.first}\" for section lookup")
+        data.second.adapterPosition = section.positionInAdapter
+        data.second.hasHeader = section.header != null
+        data.second.itemCount = section.totalItems
+        data.second.numChildren = section.childCount
+        data.second.subsectionsById = section.getSubsections().map { it.id }
     }
 }
 
@@ -308,7 +317,6 @@ class DefaultSectionGraph() : WatchableSectionGraph, SectionChangeWatcher {
         get() = _scw
         set(value) {
             _scw = value
-            root.id = value?.notifySectionInserted(root) ?: -1
         }
 
     override fun notifySectionInserted(section: Section) = sectionChangeWatcher?.notifySectionInserted(section) ?: -1

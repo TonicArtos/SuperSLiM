@@ -1,6 +1,7 @@
 package com.tonicartos.superslim.internal.layout
 
 import com.tonicartos.superslim.LayoutHelper
+import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.SectionState
@@ -10,8 +11,8 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
         if (section.hasHeader) {
             selectHeaderLayout(section).onLayout(helper, section)
         } else {
-            val left = if (section.baseConfig.gutterLeft == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-            val right = if (section.baseConfig.gutterRight == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+            val left = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
+            val right = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
             section.layoutContent(helper, left, 0, helper.layoutWidth - right)
         }
     }
@@ -32,8 +33,8 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
 
     private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
         return when (section.baseConfig.headerStyle) {
-            Section.Config.HEADER_EMBEDDED -> EmbeddedHlm
-            Section.Config.HEADER_START, Section.Config.HEADER_END -> GutterHlm
+            SectionConfig.HEADER_EMBEDDED -> EmbeddedHlm
+            SectionConfig.HEADER_START, SectionConfig.HEADER_END -> GutterHlm
             else -> InlineHlm
         }
     }
@@ -52,8 +53,8 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
             child.done()
         }
 
-        val left = if (section.baseConfig.gutterLeft == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-        val right = if (section.baseConfig.gutterRight == Section.Config.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+        val left = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
+        val right = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
 
         section.layoutContent(helper, left, y, right)
 

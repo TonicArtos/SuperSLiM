@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.adapter
 
+import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.layout.LinearSectionConfig
 import java.util.*
@@ -58,7 +59,7 @@ class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
     }
 }
 
-open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), Iterable<Node> {
+class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), Iterable<Node> {
     /**
      * An id assigned by the layout manager.
      */
@@ -69,8 +70,8 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
         registration?.deregister()
     }
 
-    private var _configuration: Section.Config = LinearSectionConfig()
-    var configuration: Section.Config
+    private var _configuration: SectionConfig = LinearSectionConfig()
+    var configuration: SectionConfig
         get() = _configuration
         set(value) {
             _configuration = value
@@ -403,98 +404,4 @@ open class Section(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), 
         totalItemsChanged(change)
     }
 
-    /**
-     * Configuration of a section.
-     */
-    abstract class Config(gutterStart: Int = Config.DEFAULT_GUTTER, gutterEnd: Int = Config.DEFAULT_GUTTER,
-                          @HeaderStyle var headerStyle: Int = Config.DEFAULT_HEADER_STYLE) {
-        private var _gutterStart: Int = 0
-        var gutterStart: Int
-            get() = _gutterStart
-            set(value) {
-                _gutterStart = if (value < 0) GUTTER_AUTO else value
-            }
-        private var _gutterEnd: Int = 0
-        var gutterEnd: Int
-            get() = _gutterEnd
-            set(value) {
-                _gutterEnd = if (value < 0) GUTTER_AUTO else value
-            }
-
-        var hasHeader = false
-
-        init {
-            this.gutterStart = gutterStart
-            this.gutterEnd = gutterEnd
-        }
-
-        // Remap names since internally left and right are used since section coordinates are LTR, TTB. The start and
-        // end intention will be applied correctly (from left and right) through the config transformations.
-        internal var gutterLeft: Int
-            get() = gutterStart
-            set(value) {
-                gutterStart = value
-            }
-        internal var gutterRight: Int
-            get() = gutterEnd
-            set(value) {
-                gutterEnd = value
-            }
-
-        internal fun makeSection(oldState: SectionState? = null) = onMakeSection(oldState)
-        abstract protected fun onMakeSection(oldState: SectionState?): SectionState
-
-        /**
-         * Copy the configuration. Section configs are always copied when they are passed to the layout manager.
-         */
-        fun copy(): Config {
-            val copy = onCopy()
-            copy.hasHeader = hasHeader
-            return copy
-        }
-
-        abstract fun onCopy(): Config
-
-        companion object {
-            /**
-             * Header is positioned at the head of the section content. Content starts below the header. Inline headers
-             * are always sticky. Use the embedded style if you want an inline header that is not sticky.
-             */
-            const val HEADER_INLINE = 1
-
-            /**
-             * Header is positioned at the head of the section content. Content starts below the header, but the header
-             * never becomes sticky. Embedded headers can not float and ignores that flag if set.
-             */
-            const val HEADER_EMBEDDED = 1 shl 1
-
-            /**
-             * Header is placed inside the gutter at the start edge of the section. This is the left for LTR locales.
-             * Gutter headers are always sticky.
-             */
-            const val HEADER_START = 1 shl 2
-
-            /**
-             * Header is placed inside the gutter at the end edge of the section. This is the right for LTR locales.
-             * Gutter headers are always sticky. Overridden
-             */
-            const val HEADER_END = 1 shl 3
-
-            /**
-             * Float header above the content. Floating headers are always sticky.
-             */
-            const val HEADER_FLOAT = 1 shl 4
-
-            /**
-             * Header is placed at the tail of the section. If sticky, it will stick to the bottom edge rather than the
-             * top. Combines with all other options.
-             */
-            const val HEADER_TAIL = 1 shl 5
-
-            const val GUTTER_AUTO = -1
-
-            internal const val DEFAULT_GUTTER = GUTTER_AUTO
-            internal const val DEFAULT_HEADER_STYLE = HEADER_INLINE
-        }
-    }
 }

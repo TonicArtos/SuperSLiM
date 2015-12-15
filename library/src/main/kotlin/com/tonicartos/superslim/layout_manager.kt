@@ -1,32 +1,55 @@
 package com.tonicartos.superslim
 
-import android.os.Parcelable
+import android.content.Context
 import android.support.v4.view.ViewCompat
 import android.support.v7.widget.RecyclerView
+import android.util.AttributeSet
 import android.view.View
 import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.*
 import com.tonicartos.superslim.internal.layout.LinearSectionConfig
 import com.tonicartos.superslim.internal.layout.LinearSectionState
 
-interface AdapterContract {
-    fun getSections(): List<Section.Config>
-    fun setSectionIds(map: List<Int>)
-    fun populateSection(sectionId: Int, sectionData: SectionData)
+internal interface AdapterContract<ID> {
+    fun getRoot(): SectionConfig
+    fun setRootId(id: Int)
+    fun populateRoot(out: SectionData)
 
-    interface SectionData {
-        var hasHeader: Boolean
-        var numChildren: Int
-        var childSections: IntArray
-        var adapterPosition: Int
-        var itemCount: Int
-    }
+    fun getSections(): Map<ID, SectionConfig>
+    fun setSectionIds(idMap: Map<ID, Int>)
+    fun populateSection(data: Pair<ID, SectionData>)
+
+    fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager)
+    fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager)
+}
+
+class SectionData {
+    var adapterPosition: Int = 0
+    var itemCount: Int = 0
+    var hasHeader = false
+    var numChildren = 0
+    var subsectionsById = emptyList<Int>()
+    internal var subsections = emptyList<SectionState>()
 }
 
 /**
  *
  */
-class SuperSlimLayoutManager : RecyclerView.LayoutManager(), ManagerHelper, ReadWriteLayoutHelper {
+class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWriteLayoutHelper {
+    @JvmOverloads constructor(context: Context, @Orientation orientation: Int = VERTICAL, reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
+        this.orientation = orientation
+        this.reverseLayout = reverseLayout
+        this.stackFromEnd = stackFromEnd
+    }
+
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int) {
+        getProperties(context, attrs, defStyleAttr, defStyleRes)?.let {
+            orientation = it.orientation
+            reverseLayout = it.reverseLayout
+            stackFromEnd = it.stackFromEnd
+        }
+    }
+
     companion object {
         const val VERTICAL = 0
         const val HORIZONTAL = 1
@@ -40,33 +63,38 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager(), ManagerHelper, Read
      * Graph
      *************************/
 
-    var adapterContract: AdapterContract? = null
+    private var adapterContract: AdapterContract<*>? = null
 
     override fun onAdapterChanged(oldAdapter: RecyclerView.Adapter<*>?, newAdapter: RecyclerView.Adapter<*>?) {
         super.onAdapterChanged(oldAdapter, newAdapter)
         if (oldAdapter == newAdapter) return
-        newAdapter ?: return graph.reset()
 
-        val adapter = newAdapter as? AdapterContract ?: throw IllegalArgumentException("adapter does not implement AdapterContract")
-        graph.loadGraph(adapter)
-        adapterContract = adapter
+        adapterContract?.onLayoutManagerDetached(this)
+        contractAdapter(newAdapter ?: return graph.reset())
     }
 
     override fun onAttachedToWindow(view: RecyclerView) {
         super.onAttachedToWindow(view)
-        view.adapter ?: return graph.reset()
-        graph.loadGraph(view.adapter as? AdapterContract ?: throw IllegalArgumentException("adapter does not implement AdapterContract"))
+        if (adapterContract == view.adapter) return
+        contractAdapter(view.adapter ?: return graph.reset())
     }
 
-    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
-        super.onDetachedFromWindow(view, recycler)
-        graph.reset()
-    }
+//    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
+//        super.onDetachedFromWindow(view, recycler)
+//        adapterContract?.onLayoutManagerDetached(this)
+//        adapterContract = null
+//        graph.reset()
+//    }
 
     override fun onItemsChanged(view: RecyclerView) {
-        val adapter = view.adapter as? AdapterContract ?: throw IllegalArgumentException("adapter does not implement AdapterContract")
-        graph.loadGraph(adapter)
-        adapterContract = adapter
+        graph.loadGraph(adapterContract ?: return)
+    }
+
+    private fun contractAdapter(adapter: RecyclerView.Adapter<*>) {
+        val contract = adapter as? AdapterContract<*> ?: throw IllegalArgumentException("adapter does not implement AdapterContract")
+        contract.onLayoutManagerAttached(this)
+        adapterContract = contract
+        graph.loadGraph(contract)
     }
 
     /*************************
@@ -235,7 +263,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager(), ManagerHelper, Read
      * Section changes from adapter
      *************************/
 
-    fun notifySectionAdded(parent: Int, position: Int, config: Section.Config): Int {
+    fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
         // Always copy the config as soon as it enters this domain.
         return graph.sectionAdded(parent, position, config.copy())
     }
@@ -248,7 +276,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager(), ManagerHelper, Read
     //        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
     //    }
 
-    fun notifySectionUpdated(section: Int, config: Section.Config) {
+    fun notifySectionUpdated(section: Int, config: SectionConfig) {
         // Always copy the config as soon as it enters this domain.
         graph.queueSectionUpdated(section, config.copy())
     }

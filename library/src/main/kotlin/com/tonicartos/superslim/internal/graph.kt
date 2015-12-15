@@ -3,35 +3,23 @@ package com.tonicartos.superslim.internal
 import android.support.v7.widget.RecyclerView
 import android.util.SparseArray
 import android.view.View
-import com.tonicartos.superslim.AdapterContract
-import com.tonicartos.superslim.AnimationState
-import com.tonicartos.superslim.Child
-import com.tonicartos.superslim.LayoutHelper
-import com.tonicartos.superslim.adapter.Section
+import com.tonicartos.superslim.*
 import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import java.util.*
 
-internal class SectionData : AdapterContract.SectionData {
-    override var hasHeader = false
-    override var numChildren = 0
-    override var childSections = IntArray(0)
-    override var adapterPosition: Int = 0
-    override var itemCount: Int = 0
-    var subsections: List<SectionState> = ArrayList()
-}
-
-
 internal class GraphManager(private val root: SectionState) {
-    fun loadGraph(adapter: AdapterContract) {
+    fun loadGraph(adapter: AdapterContract<*>) {
         reset()
 
-        val sectionConfigs: List<Section.Config> = adapter.getSections()
-        adapter.setSectionIds(sectionConfigs.map { indexSection(it.makeSection()) })
+        val sectionConfigs = adapter.getSections()
+        val adapterIds2SlmIds = sectionConfigs.mapValues { indexSection(it.value.makeSection()) }
+        adapter.setSectionIds(adapterIds2SlmIds)
 
         val sectionData = SectionData()
-        for (i in 0..sectionIndex.size()) {
-            adapter.populateSection(sectionIndex.keyAt(i), sectionData)
-            sectionIndex.valueAt(i).load(sectionData)
+        adapterIds2SlmIds.forEach {
+            adapter.populateSection(it.key to sectionData)
+            sectionData.subsections = sectionData.subsectionsById.map { getSection(it) }
+            sectionIndex.valueAt(it.value).load(sectionData)
         }
     }
 
@@ -85,13 +73,13 @@ internal class GraphManager(private val root: SectionState) {
 
     //    private data class ScheduledSectionMove(val section: Int, val fromParent: Int, val fromPosition: Int, val toParent: Int, val toPosition: Int)
 
-    private data class ScheduledSectionUpdate(val section: Int, val config: Section.Config)
+    private data class ScheduledSectionUpdate(val section: Int, val config: SectionConfig)
 
     private val sectionsToRemove = arrayListOf<ScheduledSectionRemoval>()
     //    private val sectionsToMove = arrayListOf<ScheduledSectionMove>()
     private val sectionsToUpdate = arrayListOf<ScheduledSectionUpdate>()
 
-    fun sectionAdded(parent: Int, position: Int, config: Section.Config): Int {
+    fun sectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
         val newSection = config.makeSection()
         getSection(parent).insertSection(position, newSection)
         return indexSection(newSection)
@@ -105,7 +93,7 @@ internal class GraphManager(private val root: SectionState) {
     //        sectionsToMove.add(ScheduledSectionMove(section, fromParent, fromPosition, toParent, toPosition))
     //    }
 
-    fun queueSectionUpdated(section: Int, config: Section.Config) {
+    fun queueSectionUpdated(section: Int, config: SectionConfig) {
         sectionsToUpdate.add(ScheduledSectionUpdate(section, config))
     }
 
@@ -183,7 +171,7 @@ internal class GraphManager(private val root: SectionState) {
 /**
  * Section data
  */
-abstract class SectionState(val baseConfig: Section.Config, oldState: SectionState? = null) {
+abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionState? = null) {
     /**
      * The height of the section for this layout pass. Only valid after section is laid out, and never use outside the
      * same layout pass.
