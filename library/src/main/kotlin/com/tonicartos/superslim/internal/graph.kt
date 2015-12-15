@@ -7,35 +7,30 @@ import com.tonicartos.superslim.*
 import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import java.util.*
 
-internal class GraphManager(private val root: SectionState) {
-    fun loadGraph(adapter: AdapterContract<*>) {
-        reset()
+internal class GraphManager(adapter: AdapterContract<*>) {
+    val root: SectionState
+    private val sectionIndex = SectionManager()
 
+    init {
         // Init root
-        val rootId = indexSection((adapter.getRoot().makeSection()))
+        root = adapter.getRoot().makeSection()
+        val rootId = sectionIndex.add(root)
         adapter.setRootId(rootId)
         // Init rest
-        val adapterIds2SlmIds = adapter.getSections().mapValues { indexSection(it.value.makeSection()) }
+        val adapterIds2SlmIds = adapter.getSections().mapValues { sectionIndex.add(it.value.makeSection()) }
         adapter.setSectionIds(adapterIds2SlmIds)
 
         val sectionData = SectionData()
         // Populate root
         adapter.populateRoot(sectionData)
-        sectionData.subsections = sectionData.subsectionsById.map { getSection(it) }
+        sectionData.subsections = sectionData.subsectionsById.map { sectionIndex[it] }
         sectionIndex[rootId].load(sectionData)
         // Populate rest
         adapterIds2SlmIds.forEach {
             adapter.populateSection(it.key to sectionData)
-            sectionData.subsections = sectionData.subsectionsById.map { getSection(it) }
+            sectionData.subsections = sectionData.subsectionsById.map { sectionIndex[it] }
             sectionIndex[it.value].load(sectionData)
         }
-    }
-
-    fun reset() {
-        sectionsToRemove.clear()
-        sectionsToUpdate.clear()
-        numSectionsSeen = 0
-        sectionIndex.clear()
     }
 
     /*************************
@@ -43,34 +38,16 @@ internal class GraphManager(private val root: SectionState) {
      *************************/
 
     fun layout(helper: LayoutHelper) {
-        if (helper.isPreLayout) {
-            initPreLayout()
-        } else {
-            initPostLayout()
+        if (!helper.isPreLayout) {
+            //doSectionMoves()
+            doSectionUpdates()
         }
 
         root.layout(helper, 0, 0, helper.layoutWidth)
 
         if (helper.isPreLayout) {
-            cleanupPreLayout()
-        } else {
-            cleanupPostLayout()
+            doSectionRemovals()
         }
-    }
-
-    private fun initPreLayout() {
-    }
-
-    private fun initPostLayout() {
-        //        doSectionMoves()
-        doSectionUpdates()
-    }
-
-    private fun cleanupPreLayout() {
-    }
-
-    private fun cleanupPostLayout() {
-        doSectionRemovals()
     }
 
     /*************************
@@ -79,83 +56,59 @@ internal class GraphManager(private val root: SectionState) {
 
     private data class ScheduledSectionRemoval(val section: Int, val parent: Int, val position: Int)
 
-    //    private data class ScheduledSectionMove(val section: Int, val fromParent: Int, val fromPosition: Int, val toParent: Int, val toPosition: Int)
-
     private data class ScheduledSectionUpdate(val section: Int, val config: SectionConfig)
 
+    //private data class ScheduledSectionMove(val section: Int, val fromParent: Int, val fromPosition: Int, val toParent: Int, val toPosition: Int)
+
     private val sectionsToRemove = arrayListOf<ScheduledSectionRemoval>()
-    //    private val sectionsToMove = arrayListOf<ScheduledSectionMove>()
     private val sectionsToUpdate = arrayListOf<ScheduledSectionUpdate>()
+    //private val sectionsToMove = arrayListOf<ScheduledSectionMove>()
 
     fun sectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
         val newSection = config.makeSection()
-        getSection(parent).insertSection(position, newSection)
-        return indexSection(newSection)
+        sectionIndex[parent].insertSection(position, newSection)
+        return sectionIndex.add(newSection)
     }
 
     fun queueSectionRemoved(section: Int, parent: Int, position: Int) {
         sectionsToRemove.add(ScheduledSectionRemoval(section, parent, position))
     }
 
-    //    fun queueSectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
-    //        sectionsToMove.add(ScheduledSectionMove(section, fromParent, fromPosition, toParent, toPosition))
-    //    }
-
     fun queueSectionUpdated(section: Int, config: SectionConfig) {
         sectionsToUpdate.add(ScheduledSectionUpdate(section, config))
     }
 
+    //fun queueSectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
+    //    sectionsToMove.add(ScheduledSectionMove(section, fromParent, fromPosition, toParent, toPosition))
+    //}
+
     private fun doSectionRemovals() {
         for (remove in sectionsToRemove) {
-            getSection(remove.parent).removeSection(getSection(remove.section))
-            deIndexSection(remove.section)
+            sectionIndex[remove.parent].removeSection(sectionIndex[remove.section])
+            sectionIndex.remove(remove.section)
         }
         sectionsToRemove.clear()
     }
 
-    //    private fun doSectionMoves() {
-    //        for (move in sectionsToMove) {
-    //            getSection(move.fromParent).removeSection(move.fromPosition)
-    //            getSection(move.toParent).insertSection(move.toPosition, getSection(move.section))
-    //        }
-    //        sectionsToMove.clear()
-    //    }
-
     private fun doSectionUpdates() {
         for (update in sectionsToUpdate) {
-            replaceSection(update.section, update.config.makeSection(getSection(update.section)))
+            sectionIndex[update.section] = update.config.makeSection(sectionIndex[update.section])
         }
     }
 
-    /*************************
-     * Section management
-     *************************/
-
-    private var numSectionsSeen = 0
-    private val sectionIndex = SparseArray<SectionState>()
-
-    private fun indexSection(section: SectionState): Int {
-        val id = numSectionsSeen
-        numSectionsSeen += 1
-        sectionIndex.put(id, section)
-        return id
-    }
-
-    private fun deIndexSection(section: Int) {
-        sectionIndex.remove(section)
-    }
-
-    private fun getSection(id: Int) = sectionIndex[id]
-
-    private fun replaceSection(id: Int, newSection: SectionState) {
-        sectionIndex.put(id, newSection)
-    }
+    //private fun doSectionMoves() {
+    //    for (move in sectionsToMove) {
+    //        sections[move.fromParent).removeSection(move.fromPosition)
+    //        sections[move.toParent).insertSection(move.toPosition, sections[move.section))
+    //    }
+    //    sectionsToMove.clear()
+    //}
 
     /*************************
      * Item events
      *************************/
     fun addItems(eventData: EventData, positionStart: Int, itemCount: Int) {
-        val section = getSection(eventData.section)
+        val section = sectionIndex[eventData.section]
         if (eventData.action and EventData.HEADER > 0) {
             section.baseConfig.hasHeader = true
         }
@@ -163,7 +116,7 @@ internal class GraphManager(private val root: SectionState) {
     }
 
     fun removeItems(eventData: EventData, positionStart: Int, itemCount: Int) {
-        val section = getSection(eventData.section)
+        val section = sectionIndex[eventData.section]
         if (eventData.action and EventData.HEADER > 0) {
             section.baseConfig.hasHeader = false
         }
@@ -171,8 +124,30 @@ internal class GraphManager(private val root: SectionState) {
     }
 
     fun moveItems(fromSection: Int, from: Int, toSection: Int, to: Int) {
-        getSection(fromSection).removeItems(from, 1)
-        getSection(toSection).addItems(to, 1)
+        sectionIndex[fromSection].removeItems(from, 1)
+        sectionIndex[toSection].addItems(to, 1)
+    }
+}
+
+private class SectionManager {
+    private var numSectionsSeen = 0
+    private val sectionIndex = SparseArray<SectionState>()
+
+    fun add(section: SectionState): Int {
+        val id = numSectionsSeen
+        numSectionsSeen += 1
+        sectionIndex.put(id, section)
+        return id
+    }
+
+    fun remove(section: Int) {
+        sectionIndex.remove(section)
+    }
+
+    operator fun get(id: Int) = sectionIndex[id]
+
+    operator fun set(id: Int, newSection: SectionState) {
+        sectionIndex.put(id, newSection)
     }
 }
 
@@ -247,7 +222,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 null
             }
 
-    fun getChildAt(helper: LayoutHelper, position: Int): ChildInternal {
+    internal fun getChildAt(helper: LayoutHelper, position: Int): ChildInternal {
         // Find preceding subsection, or the section which is the requested child.
         var precedingSubsection: SectionState? = null
         subsections.forEach {
@@ -278,7 +253,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     protected abstract fun doLayout(helper: LayoutHelper)
 
-    infix operator fun contains(viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.adapterPosition >= adapterPosition && viewHolder.adapterPosition < adapterPosition + totalItems
+    infix operator fun contains(
+            viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.adapterPosition >= adapterPosition && viewHolder.adapterPosition < adapterPosition + totalItems
 
     /*************************
      * Item management
@@ -350,7 +326,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 }
 
-abstract class ChildInternal(var helper: LayoutHelper) : Child {
+internal abstract class ChildInternal(var helper: LayoutHelper) : Child {
     @AnimationState override var animationState: Int = Child.ANIM_NONE
 }
 
@@ -482,7 +458,7 @@ private class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(he
         val view = this.view
         when (animationState) {
             Child.ANIM_APPEARING, Child.ANIM_NONE -> helper.addView(view, i)
-            Child.ANIM_DISAPPEARING -> helper.addDisappearingView(view, i)
+            Child.ANIM_DISAPPEARING               -> helper.addDisappearingView(view, i)
         }
     }
 }

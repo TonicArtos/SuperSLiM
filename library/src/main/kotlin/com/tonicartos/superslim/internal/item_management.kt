@@ -86,7 +86,7 @@ internal class ItemChangeHelper {
     }
 }
 
-class NoMatchedOpException : Throwable()
+private class NoMatchedOpException : Throwable()
 
 private abstract class Op {
     abstract val cmd: Int

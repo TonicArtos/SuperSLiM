@@ -3,7 +3,6 @@ package com.tonicartos.superslim.internal.layout
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
-import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.SectionState
 
 internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
@@ -33,9 +32,9 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
 
     private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
         return when (section.baseConfig.headerStyle) {
-            SectionConfig.HEADER_EMBEDDED -> EmbeddedHlm
+            SectionConfig.HEADER_EMBEDDED                        -> EmbeddedHlm
             SectionConfig.HEADER_START, SectionConfig.HEADER_END -> GutterHlm
-            else -> InlineHlm
+            else                                                 -> InlineHlm
         }
     }
 }

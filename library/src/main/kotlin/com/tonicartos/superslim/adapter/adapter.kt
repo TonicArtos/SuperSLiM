@@ -16,8 +16,8 @@ interface Graph {
 
 abstract class SuperSlimAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHolder>
 private constructor(private val graph: GraphImpl, private val itemManager: ItemManager) : RecyclerView.Adapter<VH>(),
-        AdapterContract<ID>, Graph by graph {
-
+                                                                                          AdapterContract<ID>,
+                                                                                          Graph by graph {
     init {
         graph.init(itemManager)
         itemManager.init(this)
@@ -88,7 +88,8 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 
     fun getSectionWithId(id: ID): Section? = sectionLookup[id]
 
-    @JvmOverloads fun createSection(id: ID, header: Item? = null, config: SectionConfig = LinearSectionConfig()): Section {
+    @JvmOverloads fun createSection(id: ID, header: Item? = null,
+                                    config: SectionConfig = LinearSectionConfig()): Section {
         val section = Section()
         section.header = header
         section.configuration = config
@@ -135,7 +136,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 internal interface SectionChangeWatcher {
     fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
-    //    fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
+    //fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
     fun notifySectionUpdated(section: Section)
 
     fun notifySectionHeaderInserted(section: Section)
@@ -143,19 +144,21 @@ internal interface SectionChangeWatcher {
 
     fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int)
     fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int)
+    fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section,
+                                toAdapterPosition: Int)
 }
 
 private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layoutManager: SuperSlimLayoutManager) : SectionChangeWatcher {
-    final override fun notifySectionInserted(section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
+    final override fun notifySectionInserted(
+            section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
 
     final override fun notifySectionRemoved(section: Section) {
         layoutManager.notifySectionRemoved(section.id, section.parent!!.id, section.positionInParent)
     }
 
-    //    final override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
-    //        layoutManager.notifySectionMoved(section.id, section.parent!!.id, section.positionInParent, toParent.id, toPosition)
-    //    }
+    //final override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
+    //    layoutManager.notifySectionMoved(section.id, section.parent!!.id, section.positionInParent, toParent.id, toPosition)
+    //}
 
     final override fun notifySectionUpdated(section: Section) {
         layoutManager.notifySectionUpdated(section.id, section.configuration)
@@ -180,7 +183,8 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layout
         layoutManager.notifySectionItemsRemoved(section.id, adapterPositionStart, itemCount)
     }
 
-    final override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int) {
+    final override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section,
+                                               toAdapterPosition: Int) {
         layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromAdapterPosition, toSection.parent!!.id, toAdapterPosition)
     }
 }

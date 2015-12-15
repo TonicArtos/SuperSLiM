@@ -5,10 +5,7 @@ import android.support.v4.view.ViewCompat
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.view.View
-import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.*
-import com.tonicartos.superslim.internal.layout.LinearSectionConfig
-import com.tonicartos.superslim.internal.layout.LinearSectionState
 
 internal interface AdapterContract<ID> {
     fun getRoot(): SectionConfig
@@ -43,11 +40,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int) {
-        getProperties(context, attrs, defStyleAttr, defStyleRes)?.let {
-            orientation = it.orientation
-            reverseLayout = it.reverseLayout
-            stackFromEnd = it.stackFromEnd
-        }
+        val properties = getProperties(context, attrs, defStyleAttr, defStyleRes)
+        properties ?: return
+        orientation = properties.orientation
+        reverseLayout = properties.reverseLayout
+        stackFromEnd = properties.stackFromEnd
     }
 
     companion object {
@@ -57,6 +54,69 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
         throw UnsupportedOperationException()
+    }
+
+    /****************************************************
+     * Layout
+     ****************************************************/
+
+    private val recyclerHelper = RecyclerWrapper()
+    private val stateHelper = StateWrapper()
+
+    override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+        graph!!.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+    }
+
+    /****************************************************
+     * Scrolling
+     ****************************************************/
+
+    override fun canScrollVertically() = orientation == VERTICAL
+
+    override fun canScrollHorizontally() = orientation == HORIZONTAL
+
+    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
+        // TODO:
+        return super.scrollVerticallyBy(dy, recycler, state)
+    }
+
+    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler?, state: RecyclerView.State?): Int {
+        // TODO:
+        return super.scrollHorizontallyBy(dx, recycler, state)
+    }
+
+    /****************************************************
+     * Scroll indicator computation
+     ****************************************************/
+
+    override fun computeVerticalScrollExtent(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeVerticalScrollExtent(state)
+    }
+
+    override fun computeVerticalScrollRange(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeVerticalScrollRange(state)
+    }
+
+    override fun computeVerticalScrollOffset(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeVerticalScrollOffset(state)
+    }
+
+    override fun computeHorizontalScrollExtent(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeHorizontalScrollExtent(state)
+    }
+
+    override fun computeHorizontalScrollRange(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeHorizontalScrollRange(state)
+    }
+
+    override fun computeHorizontalScrollOffset(state: RecyclerView.State?): Int {
+        // TODO:
+        return super.computeHorizontalScrollOffset(state)
     }
 
     /*************************
@@ -70,31 +130,40 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         if (oldAdapter == newAdapter) return
 
         adapterContract?.onLayoutManagerDetached(this)
-        contractAdapter(newAdapter ?: return graph.reset())
+        if (newAdapter == null) {
+            graph = null
+            return
+        }
+        contractAdapter(newAdapter)
     }
 
     override fun onAttachedToWindow(view: RecyclerView) {
         super.onAttachedToWindow(view)
-        if (adapterContract == view.adapter) return
-        contractAdapter(view.adapter ?: return graph.reset())
+        val adapter: RecyclerView.Adapter<*>? = view.adapter
+        if (adapterContract == adapter) return
+        if (adapter == null) {
+            graph = null
+            return
+        }
+        contractAdapter(adapter)
     }
 
-//    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
-//        super.onDetachedFromWindow(view, recycler)
-//        adapterContract?.onLayoutManagerDetached(this)
-//        adapterContract = null
-//        graph.reset()
-//    }
+    //    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
+    //        super.onDetachedFromWindow(view, recycler)
+    //        adapterContract?.onLayoutManagerDetached(this)
+    //        adapterContract = null
+    //        graph.reset()
+    //    }
 
     override fun onItemsChanged(view: RecyclerView) {
-        graph.loadGraph(adapterContract ?: return)
+        graph = GraphManager(adapterContract ?: return)
     }
 
     private fun contractAdapter(adapter: RecyclerView.Adapter<*>) {
         val contract = adapter as? AdapterContract<*> ?: throw IllegalArgumentException("adapter does not implement AdapterContract")
         contract.onLayoutManagerAttached(this)
         adapterContract = contract
-        graph.loadGraph(contract)
+        graph = GraphManager(contract)
     }
 
     /*************************
@@ -152,69 +221,6 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         }
 
     /****************************************************
-     * Layout
-     ****************************************************/
-
-    private val recyclerHelper = RecyclerWrapper()
-    private val stateHelper = StateWrapper()
-
-    override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
-        graph.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
-    }
-
-    /****************************************************
-     * Scrolling
-     ****************************************************/
-
-    override fun canScrollVertically() = orientation == VERTICAL
-
-    override fun canScrollHorizontally() = orientation == HORIZONTAL
-
-    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        // TODO:
-        return super.scrollVerticallyBy(dy, recycler, state)
-    }
-
-    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler?, state: RecyclerView.State?): Int {
-        // TODO:
-        return super.scrollHorizontallyBy(dx, recycler, state)
-    }
-
-    /****************************************************
-     * Scroll indicator computation
-     ****************************************************/
-
-    override fun computeVerticalScrollExtent(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeVerticalScrollExtent(state)
-    }
-
-    override fun computeVerticalScrollRange(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeVerticalScrollRange(state)
-    }
-
-    override fun computeVerticalScrollOffset(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeVerticalScrollOffset(state)
-    }
-
-    override fun computeHorizontalScrollExtent(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeHorizontalScrollExtent(state)
-    }
-
-    override fun computeHorizontalScrollRange(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeHorizontalScrollRange(state)
-    }
-
-    override fun computeHorizontalScrollOffset(state: RecyclerView.State?): Int {
-        // TODO:
-        return super.computeHorizontalScrollOffset(state)
-    }
-
-    /****************************************************
      * ReadWriteLayoutHelper implementation
      ****************************************************/
 
@@ -234,7 +240,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         measureChildWithMargins(view, usedWidth, usedHeight)
     }
 
-    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
+    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int,
+                        marginRight: Int, marginBottom: Int) {
         layoutDecorated(view, left, top, right, bottom)
     }
 
@@ -256,7 +263,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * adapter and need to be re-sequenced appropriately.
      ****************************************************/
 
-    private val graph = GraphManager(LinearSectionState(LinearSectionConfig(0, 0, 0)))
+    private var graph: GraphManager? = null
     private val itemChangeHelper = ItemChangeHelper()
 
     /*************************
@@ -265,11 +272,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
         // Always copy the config as soon as it enters this domain.
-        return graph.sectionAdded(parent, position, config.copy())
+        return graph!!.sectionAdded(parent, position, config.copy())
     }
 
     fun notifySectionRemoved(section: Int, parent: Int, position: Int) {
-        graph.queueSectionRemoved(section, parent, position)
+        graph!!.queueSectionRemoved(section, parent, position)
     }
 
     //    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
@@ -278,7 +285,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     fun notifySectionUpdated(section: Int, config: SectionConfig) {
         // Always copy the config as soon as it enters this domain.
-        graph.queueSectionUpdated(section, config.copy())
+        graph!!.queueSectionUpdated(section, config.copy())
     }
 
     /*************************
@@ -311,17 +318,17 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
         val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
-        graph.addItems(event, positionStart, itemCount)
+        graph!!.addItems(event, positionStart, itemCount)
     }
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
         val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
-        graph.removeItems(event, positionStart, itemCount)
+        graph!!.removeItems(event, positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
         var (fromSection, toSection) = itemChangeHelper.pullMoveEventData(from, to)
-        graph.moveItems(fromSection, from, toSection, to)
+        graph!!.moveItems(fromSection, from, toSection, to)
     }
 
     /*************************

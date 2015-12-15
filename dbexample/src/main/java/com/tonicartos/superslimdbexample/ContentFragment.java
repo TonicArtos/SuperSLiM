@@ -2,7 +2,6 @@ package com.tonicartos.superslimdbexample;
 
 import com.tonicartos.superslim.SuperSlimLayoutManager;
 import com.tonicartos.superslim.adapter.Section;
-import com.tonicartos.superslim.adapter.SuperSlimAdapter;
 
 import android.database.Cursor;
 import android.net.Uri;

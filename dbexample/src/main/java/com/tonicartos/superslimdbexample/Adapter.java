@@ -54,7 +54,6 @@ public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
     }
 
     private void reset() {
-
     }
 
     private void updateGraph() {
