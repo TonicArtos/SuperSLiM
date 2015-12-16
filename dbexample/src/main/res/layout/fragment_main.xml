@@ -15,6 +15,7 @@
         android:paddingTop="@dimen/activity_vertical_margin"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:context=".MainActivityFragment"
+        app:layoutManager="com.tonicartos.superslim.SuperSlimLayoutManager"
         />
 
     <android.support.design.widget.AppBarLayout

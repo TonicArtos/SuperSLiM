@@ -71,11 +71,7 @@ public class ContentFragment extends Fragment {
         setHasOptionsMenu(true);
 
         mAdapter = new Adapter();
-
-        RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
-        rv.setLayoutManager(new SuperSlimLayoutManager(getActivity()));
-//        rv.setLayoutManager(new LinearLayoutManager(getActivity()));
-        rv.setAdapter(mAdapter);
+        ((RecyclerView) view.findViewById(R.id.recycler_view)).setAdapter(mAdapter);
     }
 
     @Override
