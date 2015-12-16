@@ -19,13 +19,10 @@ import static org.hamcrest.Matchers.is;
  * Tests for a section independent from section graph.
  */
 public class TestOrphanSectionWithItems {
+
     SuperSlimAdapter<String, RecyclerView.ViewHolder> adapter;
+
     Section section;
-    @Before
-    public void setup() {
-        adapter = new AdapterStub();
-        section = adapter.createSection("id");
-    }
 
     @Test
     public void addsToSection() {
@@ -137,5 +134,11 @@ public class TestOrphanSectionWithItems {
 
         section.remove(0);
         assertThat(section, hasChildCount(equalTo(0)));
+    }
+
+    @Before
+    public void setup() {
+        adapter = new AdapterStub();
+        section = adapter.createSection("id");
     }
 }

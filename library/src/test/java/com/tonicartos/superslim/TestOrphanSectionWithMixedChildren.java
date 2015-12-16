@@ -52,8 +52,8 @@ public class TestOrphanSectionWithMixedChildren {
     public void insertsToSection() {
         Section first = adapter.createSection("first");
         Section second = adapter.createSection("second");
-        Item third =  new Item(0, ItemData.newInstance());
-        Item start =  new Item(0, ItemData.newInstance());
+        Item third = new Item(0, ItemData.newInstance());
+        Item start = new Item(0, ItemData.newInstance());
         Item middle = new Item(0, ItemData.newInstance());
         Section end = adapter.createSection("end");
 
@@ -97,9 +97,9 @@ public class TestOrphanSectionWithMixedChildren {
     public void removesFromSection() {
         Section first = adapter.createSection("first");
         Section second = adapter.createSection("second");
-        Item third =  new Item(0, ItemData.newInstance());
+        Item third = new Item(0, ItemData.newInstance());
         Item fourth = new Item(0, ItemData.newInstance());
-        Item fifth =  new Item(0, ItemData.newInstance());
+        Item fifth = new Item(0, ItemData.newInstance());
 
         section.add(first);
         section.add(second);

@@ -19,10 +19,46 @@ public class TestSectionGraphAdapter {
     AdapterStub adapter;
 
     @Test
+    public void adapterSectionManagement() {
+        adapter.addSection(adapter.createSection("1"));
+        adapter.addSection(adapter.createSection("2"));
+        adapter.addSection(adapter.createSection("3"));
+
+        adapter.insertSection(1, adapter.createSection("middle"));
+
+        final Section section2 = adapter.getSectionWithId("2");
+        assert section2 != null;
+        section2.add(adapter.createSection("deep"));
+        createSectionItems(adapter.getSectionWithId("deep"), 5);
+
+        assertThat(adapter.getNumSections(), equalTo(4));
+        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
+        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("middle")));
+        assertThat(adapter.getSection(2), equalTo(adapter.getSectionWithId("2")));
+        assertThat(adapter.getSection(3), equalTo(adapter.getSectionWithId("3")));
+
+        assertThat(adapter.getItemCount(), equalTo(5));
+        Section deregistered = adapter.deregister("2");
+        assert deregistered != null;
+        deregistered.removeFromParent();
+        assertThat(adapter.getItemCount(), equalTo(0));
+
+        assertThat(adapter.getNumSections(), equalTo(3));
+        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
+        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("middle")));
+        assertThat(adapter.getSection(2), equalTo(adapter.getSectionWithId("3")));
+
+        adapter.removeSection(1).deregister();
+        assertThat(adapter.getNumSections(), equalTo(2));
+        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
+        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("3")));
+    }
+
+    @Test
     public void addAndRemoveHeader() {
         final ItemData header = ItemData.newInstance();
         final ItemData altHeader = ItemData.newInstance();
-        final Section section = adapter.createSection("root", new Item(0, header), null);
+        final Section section = adapter.createSection("root", new Item(0, header));
         final ItemData[] items = createSectionItems(section, 5);
 
         adapter.addSection(section);
@@ -182,51 +218,6 @@ public class TestSectionGraphAdapter {
     }
 
     @Test
-    public void updateAnItem() {
-        Section section = adapter.createSection("section");
-        ItemData update = ItemData.newInstance();
-        createSectionItems(section, 5);
-
-        section.set(3, new Item(0, update));
-        adapter.addSection(section);
-        section.set(3, new Item(0, update));
-        adapter.bindViewHolder(mock(RecyclerView.ViewHolder.class), 3);
-        assertThat(adapter.lastBoundItem, equalTo(update));
-    }
-
-    @Test
-    public void adapterSectionManagement() {
-        adapter.addSection(adapter.createSection("1"));
-        adapter.addSection(adapter.createSection("2"));
-        adapter.addSection(adapter.createSection("3"));
-
-        adapter.insertSection(1, adapter.createSection("middle"));
-
-        adapter.getSectionWithId("2").add(adapter.createSection("deep"));
-        createSectionItems(adapter.getSectionWithId("deep"), 5);
-
-        assertThat(adapter.getNumSections(), equalTo(4));
-        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
-        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("middle")));
-        assertThat(adapter.getSection(2), equalTo(adapter.getSectionWithId("2")));
-        assertThat(adapter.getSection(3), equalTo(adapter.getSectionWithId("3")));
-
-        assertThat(adapter.getItemCount(), equalTo(5));
-        adapter.deregister("2").removeFromParent();
-        assertThat(adapter.getItemCount(), equalTo(0));
-
-        assertThat(adapter.getNumSections(), equalTo(3));
-        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
-        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("middle")));
-        assertThat(adapter.getSection(2), equalTo(adapter.getSectionWithId("3")));
-
-        adapter.removeSection(1).deregister();
-        assertThat(adapter.getNumSections(), equalTo(2));
-        assertThat(adapter.getSection(0), equalTo(adapter.getSectionWithId("1")));
-        assertThat(adapter.getSection(1), equalTo(adapter.getSectionWithId("3")));
-    }
-
-    @Test
     public void incrementalBuild() {
         final Section section = adapter.createSection("root");
         adapter.addSection(section);
@@ -256,7 +247,7 @@ public class TestSectionGraphAdapter {
         final Section section = adapter.createSection("root");
         ItemData[] sItems = createSectionItems(section, 5);
 
-        final Section subsection = adapter.createSection("subsection", new Item(0, header), null);
+        final Section subsection = adapter.createSection("subsection", new Item(0, header));
         createSectionItems(subsection, 5);
         final Section subsection2 = adapter.createSection("subsection2");
         ItemData[] ss2Items = createSectionItems(subsection2, 5);
@@ -307,6 +298,19 @@ public class TestSectionGraphAdapter {
     @Before
     public void setup() {
         adapter = new AdapterStub();
+    }
+
+    @Test
+    public void updateAnItem() {
+        Section section = adapter.createSection("section");
+        ItemData update = ItemData.newInstance();
+        createSectionItems(section, 5);
+
+        section.set(3, new Item(0, update));
+        adapter.addSection(section);
+        section.set(3, new Item(0, update));
+        adapter.bindViewHolder(mock(RecyclerView.ViewHolder.class), 3);
+        assertThat(adapter.lastBoundItem, equalTo(update));
     }
 
     private int checkItems(ItemData[] items, int offset) {
