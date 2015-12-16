@@ -10,6 +10,7 @@
     android:paddingEnd="16dip"
     android:paddingStart="16dip"
     android:textAppearance="@style/TextAppearance.AppCompat.Title"
+    android:textDirection="locale"
     tools:text="Region Header"
     />
 
