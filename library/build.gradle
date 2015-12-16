@@ -14,7 +14,12 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            buildConfigField("boolean", "UNIT_TEST", "false")
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        unitTest {
+            buildConfigField("boolean", "UNIT_TEST", "true")
+            debuggable true
         }
     }
 

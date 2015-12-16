@@ -207,25 +207,25 @@ internal class ItemManager {
 
     fun insert(position: Int, item: Item) {
         items.add(position, item)
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemInserted(position)
     }
 
     fun insert(start: Int, items: List<Item>) {
         this.items.addAll(start, items)
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemRangeInserted(start, items.size)
     }
 
     fun move(from: Int, to: Int) {
         items.add(to, items.removeAt(from))
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemMoved(from, to)
     }
 
     fun remove(position: Int) {
         items.removeAt(position)
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemRemoved(position)
     }
 
@@ -233,13 +233,13 @@ internal class ItemManager {
         for (i in start until start + range) {
             items.removeAt(start)
         }
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemRangeRemoved(start, range)
     }
 
     operator fun set(position: Int, value: Item) {
         items[position] = value
-        if (BuildConfig.DEBUG) return
+        if (BuildConfig.UNIT_TEST) return
         adapter?.notifyItemChanged(position)
     }
 }
