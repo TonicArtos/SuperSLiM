@@ -24,6 +24,10 @@ internal data class EventData(var action: Int, var section: Int) {
             else                  -> "Unknown"
         } + if (opCode and HEADER > 0) "|HEADER" else ""
     }
+
+    override fun toString(): String {
+        return "section: $section, cmd: ${stringify(action)}"
+    }
 }
 
 /**

@@ -1,6 +1,7 @@
 package com.tonicartos.superslim.internal
 
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.*
@@ -108,6 +109,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      * Item events
      *************************/
     fun addItems(eventData: EventData, positionStart: Int, itemCount: Int) {
+        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "addItems - event: $eventData, positionStart: $positionStart, itemCount $itemCount")
         val section = sectionIndex[eventData.section]
         if (eventData.action and EventData.HEADER > 0) {
             section.baseConfig.hasHeader = true
@@ -116,6 +118,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun removeItems(eventData: EventData, positionStart: Int, itemCount: Int) {
+        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "removeItems - event: $eventData, positionStart: $positionStart, itemCount $itemCount")
         val section = sectionIndex[eventData.section]
         if (eventData.action and EventData.HEADER > 0) {
             section.baseConfig.hasHeader = false
@@ -124,6 +127,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun moveItems(fromSection: Int, from: Int, toSection: Int, to: Int) {
+        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "moveItems - fromSection, $fromSection, from: $from, toSection: $toSection, to: $to")
         sectionIndex[fromSection].removeItems(from, 1)
         sectionIndex[toSection].addItems(to, 1)
     }
