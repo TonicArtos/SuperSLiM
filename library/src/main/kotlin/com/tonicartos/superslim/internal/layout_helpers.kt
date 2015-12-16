@@ -44,11 +44,18 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
 private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by root {
     private var offset = Offset()
     private var width: Int = 0
+    override val layoutWidth: Int
+        get() = width
+
 
     constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int) : this(root) {
         offset.x = x
         offset.y = y
         this.width = width
+    }
+
+    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
+        root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom, marginLeft, marginTop, marginRight, marginBottom)
     }
 
     override fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.x + left, offset.y + top, offset.x + right)
