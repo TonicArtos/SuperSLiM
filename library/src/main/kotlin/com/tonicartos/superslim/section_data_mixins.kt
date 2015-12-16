@@ -24,7 +24,7 @@ interface ColumnsSectionStateMixin {
     fun resolveColumns(helper: LayoutHelper)
 }
 
-class ColumnsState(configuration: ColumnsSectionConfigurationMixin): ColumnsSectionStateMixin {
+class ColumnsState(configuration: ColumnsSectionConfigurationMixin) : ColumnsSectionStateMixin {
     override var numColumns: Int = 0
     private var requestedColumnWidth = -1
     private var columnsResolved = false

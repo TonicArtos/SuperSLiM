@@ -6,7 +6,8 @@ import com.tonicartos.superslim.*
 
 internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWriteLayoutHelper,
                                 val recycler: RecyclerHelper, val state: StateHelper) : LayoutHelper,
-        ManagerHelper by manager, ReadWriteLayoutHelper by config, RecyclerHelper by recycler, StateHelper by state {
+                                                                                        ManagerHelper by manager, ReadWriteLayoutHelper by config,
+                                                                                        RecyclerHelper by recycler, StateHelper by state {
     private var layoutLimitExtension: Int = 0
     override val layoutLimit: Int
         get() = config.layoutLimit + layoutLimitExtension

@@ -2,12 +2,11 @@ package com.tonicartos.superslim.internal.layout
 
 import com.tonicartos.superslim.*
 import com.tonicartos.superslim.adapter.HeaderStyle
-import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.SectionState
 
 class StaggeredGridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                                  @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle),
-        ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
+                                                                                                       ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
 
     override protected fun onMakeSection(oldState: SectionState?): SectionState = StaggeredGridSection(this, oldState)
 
@@ -20,7 +19,7 @@ class StaggeredGridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER
 }
 
 class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState),
-        ColumnsSectionStateMixin by ColumnsState(configuration) {
+                                                                                                            ColumnsSectionStateMixin by ColumnsState(configuration) {
     override fun doLayout(helper: LayoutHelper) {
         resolveColumns(helper)
 

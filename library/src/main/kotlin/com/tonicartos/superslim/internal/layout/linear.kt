@@ -5,7 +5,6 @@ import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.HeaderStyle
-import com.tonicartos.superslim.adapter.Section
 import com.tonicartos.superslim.internal.SectionState
 
 class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,

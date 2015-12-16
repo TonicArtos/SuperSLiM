@@ -6,7 +6,7 @@ import com.tonicartos.superslim.internal.SectionState
 
 class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                         @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle),
-        ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
+                                                                                              ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
 
     override protected fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
 
@@ -19,7 +19,7 @@ class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterE
 }
 
 private class GridSectionState(var configuration: GridSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState),
-        ColumnsSectionStateMixin by ColumnsState(configuration) {
+                                                                                                       ColumnsSectionStateMixin by ColumnsState(configuration) {
     override fun doLayout(helper: LayoutHelper) {
         resolveColumns(helper)
 

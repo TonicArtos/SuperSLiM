@@ -62,6 +62,7 @@ interface LayoutHelper : ManagerHelper, StateHelper, RecyclerHelper, ReadWriteLa
      * Create a new layout helper for a subsection of this helper's section.
      */
     fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper
+
     fun release()
     fun addIgnoredHeight(ignoredHeight: Int)
 }
