@@ -212,8 +212,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             // Build a chain of configuration transformations.
             var chain: ReadWriteLayoutHelper? = if (stackFromEnd) StackFromEndConfigHelper(this) else null
             chain = if (reverseLayout) ReverseLayoutConfigHelper(chain ?: this) else chain
-            chain = if (orientation == HORIZONTAL) HorizontalConfigHelper(chain ?: this) else chain
             chain = if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) RtlConfigHelper(chain ?: this) else chain
+            chain = if (orientation == HORIZONTAL) HorizontalConfigHelper(chain ?: this) else chain
             _configHelper = chain
             configChanged = false
             chain ?: this
