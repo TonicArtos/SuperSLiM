@@ -49,8 +49,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     companion object {
-        const val VERTICAL = 0
-        const val HORIZONTAL = 1
+        const val VERTICAL = RecyclerView.VERTICAL
+        const val HORIZONTAL = RecyclerView.HORIZONTAL
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
