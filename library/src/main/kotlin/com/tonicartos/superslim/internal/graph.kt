@@ -311,6 +311,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Section management
      *************************/
 
+    //TODO: Fix bug here, caused when inserting after a section with 0 items, this will insert before.
+    //TODO: Fix is to use subsection child position for insertions.
     fun insertSection(position: Int, newSection: SectionState) {
         // Keep subsections in order.
         var insertPoint = 0
