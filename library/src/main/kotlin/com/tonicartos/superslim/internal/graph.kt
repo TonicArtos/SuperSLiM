@@ -179,10 +179,22 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      */
     var numChildren: Int = 0
         private set
+
+    private var _totalItems: Int = 0
     /**
      * Total number of items in the section, including the header and items in subsections.
      */
-    private var totalItems: Int = 0
+    private var totalItems: Int
+        get() = _totalItems
+        set(value) {
+            // Bubble up item count changes.
+            parent?.let {
+                it.totalItems += value - _totalItems
+            }
+            _totalItems = value
+        }
+    internal var parent: SectionState? = null
+
     /**
      * Sorted list of subsections.
      */
@@ -208,6 +220,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             numChildren = oldState.numChildren
             subsections = oldState.subsections
             adapterPosition = oldState.adapterPosition
+            parent = oldState.parent
         } else {
             subsections = ArrayList()
         }
@@ -310,6 +323,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
         subsections.add(insertPoint, newSection)
 
+        newSection.parent = this
         numChildren += 1
         totalItems += newSection.totalItems
     }
