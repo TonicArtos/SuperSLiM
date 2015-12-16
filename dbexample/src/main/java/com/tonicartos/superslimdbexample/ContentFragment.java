@@ -1,6 +1,5 @@
 package com.tonicartos.superslimdbexample;
 
-import com.tonicartos.superslim.SuperSlimLayoutManager;
 import com.tonicartos.superslim.adapter.Section;
 
 import android.database.Cursor;
@@ -10,7 +9,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -27,8 +25,7 @@ public class ContentFragment extends Fragment {
 
     private static final int LOADER = 0;
 
-    private static final Uri URI = Uri
-            .parse("content://com.tonicartos.superslimdbexample.provider/all");
+    private static final Uri URI = Uri.parse("content://com.tonicartos.superslimdbexample.provider/all");
 
     Adapter mAdapter;
 
