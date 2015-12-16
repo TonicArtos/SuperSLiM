@@ -239,21 +239,21 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 null
             }
 
-    internal fun getChildAt(helper: LayoutHelper, position: Int): ChildInternal {
-        // Find preceding subsection, or the section which is the requested child.
-        var precedingSubsection: SectionState? = null
-        subsections.forEach {
-            if (it.adapterPosition < position) {
-                precedingSubsection = it
-            } else if (it.adapterPosition == position) {
-                return SectionChild.wrap(it, helper)
+    fun getChildAt(helper: LayoutHelper, position: Int): Child {
+        // Translate child position into adapter position.
+        // Adjust initial position by section's adapter position. Hide header
+        var finalAdapterPosition = position + adapterPosition + if (hasHeader) 1 else 0
+        // Walk over subsections incrementing position when subsections are passed.
+        for (s in subsections) {
+            if (s.adapterPosition < finalAdapterPosition) {
+                finalAdapterPosition += s.totalItems - 1
+            } else if (s.adapterPosition == finalAdapterPosition) {
+                return SectionChild.wrap(s, helper)
             } else {
-                return@forEach
+                break
             }
         }
-
-        var itemAdapterPosition = position - (precedingSubsection?.adapterPosition ?: adapterPosition - if (hasHeader) 1 else 0)
-        return ItemChild.wrap(helper.getView(itemAdapterPosition), helper)
+        return ItemChild.wrap(helper.getView(finalAdapterPosition), helper)
     }
 
     final fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
@@ -279,7 +279,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun addItems(adapterPositionStart: Int, itemCount: Int) {
         subsections.forEach {
-            if (it.adapterPosition > adapterPositionStart) {
+            if (it.adapterPosition >= adapterPositionStart) {
                 it.adapterPosition += itemCount
             }
         }
@@ -301,7 +301,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 }
             }
         }
-        val totalNonChildrenRemoved = toRemove.reduce { r, i -> r + subsections[i].totalItems }
+        val totalNonChildrenRemoved = if (toRemove.isNotEmpty()) toRemove.reduce { r, i -> r + subsections[i].totalItems } else 0
         toRemove.forEach { i -> subsections.removeAt(i) }
         totalItems -= itemCount
         numChildren -= toRemove.size + (itemCount - totalNonChildrenRemoved)
@@ -462,8 +462,8 @@ private class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(he
         get() = helper.getBottom(view)
 
     override fun layout(left: Int, top: Int, right: Int, bottom: Int) {
-        val helper = this.helper
-        helper.layout(view, left, top, right, bottom, 0, 0, 0, 0)
+        val m = view.rvLayoutParams
+        helper.layout(view, left, top, right, bottom, m.leftMargin, m.topMargin, m.rightMargin, m.bottomMargin)
     }
 
     override val width: Int

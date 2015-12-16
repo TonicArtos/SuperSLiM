@@ -43,8 +43,8 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState) {
         // if the current position is the header
         var y = 0
-        if (section.headPosition == 0) {
-            val child = section.getChildAt(helper, 0)
+        if (section.hasHeader && section.headPosition == 0) {
+            val child = section.getHeader(helper)!!
             child.addToRecyclerView()
             child.measure()
             child.layout(0, 0, child.measuredWidth, child.measuredHeight)
@@ -55,7 +55,7 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
         val left = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
         val right = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
 
-        section.layoutContent(helper, left, y, right)
+        section.layoutContent(helper, left, y, helper.layoutWidth - right)
 
         y += section.height
         section.height = y
