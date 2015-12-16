@@ -50,15 +50,25 @@ sealed class Node {
 
 open class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
     internal override fun insertItemsToAdapter() {
+        parent?.contract?.notifySectionItemsInserted(parent!!, positionInAdapter, 1)
         itemManager?.insert(positionInAdapter, this)
     }
 
     internal override fun removeItemsFromAdapter() {
+        parent?.contract?.notifySectionItemsRemoved(parent!!, positionInAdapter, 1)
         itemManager?.remove(positionInAdapter)
     }
 }
 
-class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node.SectionNode(), Iterable<Node> {
+class Section internal constructor(contract: SectionContract? = null) : Node.SectionNode(), Iterable<Node> {
+    private val _contract: SectionContract?
+    internal val contract: SectionContract?
+        get() = _contract ?: parent?.contract
+
+    init {
+        _contract = contract
+    }
+
     /**
      * An id assigned by the layout manager.
      */
@@ -74,7 +84,7 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
         get() = _configuration
         set(value) {
             _configuration = value
-            scw?.notifySectionUpdated(this)
+            contract?.notifySectionUpdated(this)
         }
 
     override var itemManager: ItemManager?
@@ -104,7 +114,7 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
                 itemManager?.set(positionInAdapter, value)
             } else {
                 itemManager?.insert(positionInAdapter, value)
-                scw?.notifySectionHeaderInserted(this)
+                contract?.notifySectionHeaderInserted(this)
                 children.forEach { it.peersItemsBeforeThis += 1 }
                 totalItemsChanged(1)
             }
@@ -114,15 +124,11 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
     fun removeHeader() {
         header?.let { header ->
             header.removeItemsFromAdapter()
-            scw?.notifySectionHeaderRemoved(this)
+            contract?.notifySectionHeaderRemoved(this)
             totalItemsChanged(-1)
             children.forEach { child -> child.peersItemsBeforeThis -= 1 }
             _header = null
         }
-    }
-
-    private fun fulfillRemoveHeaderContract() {
-
     }
 
     /*************************
@@ -139,9 +145,6 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
         children.forEachIndexed { i, child ->
             initChild(i, child)
             child.insertItemsToAdapter()
-            if (child is ItemNode) {
-                scw?.notifySectionItemsInserted(this, child.positionInAdapter, 1)
-            }
             numItemsAdded += child.itemCount
         }
         totalItemsChanged(numItemsAdded)
@@ -152,7 +155,7 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
         val jumpHeader = if (header == null) 0 else 1
         val numItemsToRemove = itemCount - jumpHeader
         itemManager?.removeRange(positionInAdapter + jumpHeader, numItemsToRemove)
-        scw?.notifySectionItemsRemoved(this, positionInAdapter + jumpHeader, numItemsToRemove)
+        contract?.notifySectionItemsRemoved(this, positionInAdapter + jumpHeader, numItemsToRemove)
         children.forEach { it.reset() }
         totalItemsChanged(-numItemsToRemove)
         collapsed = true
@@ -163,34 +166,30 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
      *************************/
 
     override internal fun insertItemsToAdapter() {
-        id = scw?.notifySectionInserted(this) ?: -1
+        id = contract?.notifySectionInserted(this) ?: -1
 
         header?.let {
-            it.itemManager = itemManager
-            it.insertItemsToAdapter()
-            scw?.notifySectionHeaderInserted(this)
+            itemManager?.insert(positionInAdapter, it)
+            contract?.notifySectionHeaderInserted(this)
         }
 
         if (!collapsed) {
             for (child in children) {
                 child.itemManager = itemManager
                 child.insertItemsToAdapter()
-                if (child is ItemNode) {
-                    scw?.notifySectionItemsInserted(this, child.positionInAdapter, 1)
-                }
             }
         }
     }
 
     override internal fun removeItemsFromAdapter() {
-        scw?.notifySectionRemoved(this)
+        contract?.notifySectionRemoved(this)
 
         itemManager?.removeRange(positionInAdapter, itemCount)
         if (header == null) {
-            scw?.notifySectionItemsRemoved(this, positionInAdapter, itemCount)
+            contract?.notifySectionItemsRemoved(this, positionInAdapter, itemCount)
         } else {
-            scw?.notifySectionHeaderInserted(this)
-            scw?.notifySectionItemsRemoved(this, positionInAdapter + 1, itemCount)
+            contract?.notifySectionHeaderRemoved(this)
+            contract?.notifySectionItemsRemoved(this, positionInAdapter + 1, itemCount)
         }
     }
 
@@ -377,14 +376,8 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
         return children.filterTo(ArrayList<Node>(), predicate)
     }
 
-    override fun init(positionInParent: Int, itemsBeforeThis: Int, parent: Section, itemManager: ItemManager?) {
-        super.init(positionInParent, itemsBeforeThis, parent, itemManager)
-        scw = parent.scw
-    }
-
     override fun reset() {
         super.reset()
-        scw = null
     }
 
     private fun totalItemsChanged(change: Int) {
@@ -405,7 +398,7 @@ class Section internal constructor(var scw: SectionChangeWatcher? = null) : Node
 
 }
 
-internal class GraphImpl() : Graph, SectionChangeWatcher {
+internal class GraphImpl() : Graph, SectionContract {
     internal val root: Section
 
     init {
@@ -445,16 +438,16 @@ internal class GraphImpl() : Graph, SectionChangeWatcher {
         root.move(from, to)
     }
 
-    var sectionChangeWatcher: SectionChangeWatcher? = null
+    var contract: SectionContract? = null
 
-    override fun notifySectionInserted(section: Section) = sectionChangeWatcher?.notifySectionInserted(section) ?: -1
+    override fun notifySectionInserted(section: Section) = contract?.notifySectionInserted(section) ?: -1
 
     override fun notifySectionRemoved(section: Section) {
-        sectionChangeWatcher?.notifySectionRemoved(section)
+        contract?.notifySectionRemoved(section)
     }
 
     override fun notifySectionUpdated(section: Section) {
-        sectionChangeWatcher?.notifySectionUpdated(section)
+        contract?.notifySectionUpdated(section)
     }
 
     //    override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
@@ -462,22 +455,22 @@ internal class GraphImpl() : Graph, SectionChangeWatcher {
     //    }
 
     override fun notifySectionHeaderInserted(section: Section) {
-        sectionChangeWatcher?.notifySectionHeaderInserted(section)
+        contract?.notifySectionHeaderInserted(section)
     }
 
     override fun notifySectionHeaderRemoved(section: Section) {
-        sectionChangeWatcher?.notifySectionHeaderRemoved(section)
+        contract?.notifySectionHeaderRemoved(section)
     }
 
     override fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        sectionChangeWatcher?.notifySectionItemsInserted(section, adapterPositionStart, itemCount)
+        contract?.notifySectionItemsInserted(section, adapterPositionStart, itemCount)
     }
 
     override fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        sectionChangeWatcher?.notifySectionItemsRemoved(section, adapterPositionStart, itemCount)
+        contract?.notifySectionItemsRemoved(section, adapterPositionStart, itemCount)
     }
 
     override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int) {
-        sectionChangeWatcher?.notifySectionItemsMoved(fromSection, fromAdapterPosition, toSection, toAdapterPosition)
+        contract?.notifySectionItemsMoved(fromSection, fromAdapterPosition, toSection, toAdapterPosition)
     }
 }

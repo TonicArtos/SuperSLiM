@@ -4,6 +4,7 @@ import android.content.Context
 import android.support.v4.view.ViewCompat
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import com.tonicartos.superslim.internal.*
 
@@ -271,11 +272,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
+        Log.d("SSlm-DCs", "notifySectionAdded - parent: $parent, position: $position, config: $config")
         // Always copy the config as soon as it enters this domain.
         return graph!!.sectionAdded(parent, position, config.copy())
     }
 
     fun notifySectionRemoved(section: Int, parent: Int, position: Int) {
+        Log.d("SSlm-DCs", "notifySectionAdded - section: $section, parent: $parent, position: $position")
         graph!!.queueSectionRemoved(section, parent, position)
     }
 
@@ -284,6 +287,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     //    }
 
     fun notifySectionUpdated(section: Int, config: SectionConfig) {
+        Log.d("SSlm-DCs", "notifySectionAdded - section: $section, config: $config")
         // Always copy the config as soon as it enters this domain.
         graph!!.queueSectionUpdated(section, config.copy())
     }
@@ -293,22 +297,27 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     fun notifySectionHeaderAdded(section: Int, position: Int) {
+        Log.d("Sslm-DCs", "notifySectionHeaderAdded - section: $section, position: $position")
         itemChangeHelper.queueSectionHeaderAdded(section, position)
     }
 
     fun notifySectionHeaderRemoved(section: Int, position: Int) {
+        Log.d("Sslm-DCs", "notifySectionHeaderRemoved - section: $section, position: $position")
         itemChangeHelper.queueSectionHeaderRemoved(section, position)
     }
 
     fun notifySectionItemsAdded(section: Int, positionStart: Int, itemCount: Int) {
+        Log.d("Sslm-DCs", "notifySectionItemsAdded - section: $section, positionStart: $positionStart, itemCount: $itemCount")
         itemChangeHelper.queueSectionItemsAdded(section, positionStart, itemCount)
     }
 
     fun notifySectionItemsRemoved(section: Int, positionStart: Int, itemCount: Int) {
+        Log.d("Sslm-DCs", "notifySectionItemsRemoved - section: $section, positionStart: $positionStart, itemCount: $itemCount")
         itemChangeHelper.queueSectionItemsRemoved(section, positionStart, itemCount)
     }
 
     fun notifySectionItemsMoved(fromSection: Int, from: Int, toSection: Int, to: Int) {
+        Log.d("Sslm-DCs", "notifySectionItemsMoved - fromSection: $fromSection, from: $from, toSection: $toSection, to: $to")
         itemChangeHelper.queueSectionItemsMoved(fromSection, from, toSection, to)
     }
 
@@ -317,16 +326,19 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
+        Log.d("Sslm-DCs", "onItemsAdded - position: $positionStart, itemCount: $itemCount")
         val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
         graph!!.addItems(event, positionStart, itemCount)
     }
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
+        Log.d("Sslm-DCs", "onItemsRemoved - position: $positionStart, itemCount: $itemCount")
         val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
         graph!!.removeItems(event, positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
+        Log.d("Sslm-DCs", "onItemsMoved - from: $from, to: $to, itemCount: $itemCount")
         var (fromSection, toSection) = itemChangeHelper.pullMoveEventData(from, to)
         graph!!.moveItems(fromSection, from, toSection, to)
     }

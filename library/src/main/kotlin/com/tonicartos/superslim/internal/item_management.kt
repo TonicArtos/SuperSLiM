@@ -16,6 +16,13 @@ internal data class EventData(var action: Int, var section: Int) {
         const val ADD = com.tonicartos.superslim.internal.ADD
         const val REMOVE = com.tonicartos.superslim.internal.REMOVE
         const val MOVE = com.tonicartos.superslim.internal.MOVE
+
+        fun stringify(opCode: Int) = when {
+            opCode and ADD > 0    -> "ADD"
+            opCode and REMOVE > 0 -> "REMOVE"
+            opCode and MOVE > 0   -> "MOVE"
+            else                  -> "Unknown"
+        } + if (opCode and HEADER > 0) "|HEADER" else ""
     }
 }
 
@@ -63,7 +70,8 @@ internal class ItemChangeHelper {
                 return result
             }
         }
-        throw NoMatchedOpException() // Should have found a match.
+        // Should have found a match.
+        throw NoMatchedOpException("Could not find a matching op for cmd: MOVE, from: $from, to: $to")
     }
 
     fun pullAddEventData(positionStart: Int, itemCount: Int) = pullEventData(ADD, positionStart, itemCount)
@@ -73,7 +81,7 @@ internal class ItemChangeHelper {
         for ((i, op) in ops.withIndex()) {
             if (op is SimpleOp && (op.cmd and opCode > 0) && op.positionStart == positionStart && op.itemCount >= itemCount) {
                 op.positionStart += itemCount
-                op.itemCount -= op.itemCount - itemCount
+                op.itemCount -= itemCount
 
                 val result = reusedEvent.copy(op.cmd, op.section)
                 if (op.itemCount == 0) {
@@ -82,11 +90,12 @@ internal class ItemChangeHelper {
                 return result
             }
         }
-        throw NoMatchedOpException() // Should have found a match
+        // Should have found a match
+        throw NoMatchedOpException("Could not find a matching op for cmd: ${EventData.stringify(opCode)}, positionStart: $positionStart, itemCount: $itemCount")
     }
 }
 
-private class NoMatchedOpException : Throwable()
+private class NoMatchedOpException(detailMessage: String) : RuntimeException(detailMessage)
 
 private abstract class Op {
     abstract val cmd: Int
@@ -180,9 +189,9 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
 
     override fun apply(op: SimpleOp, positionInOps: Int, ops: ArrayList<Op>): Int {
         return when (op.cmd) {
-            ADD -> applyAdd(op)
+            ADD    -> applyAdd(op)
             REMOVE -> applyRemove(op, ops, positionInOps)
-            else -> 0
+            else   -> 0
         }
     }
 

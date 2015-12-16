@@ -10,6 +10,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -73,6 +74,7 @@ public class ContentFragment extends Fragment {
 
         RecyclerView rv = (RecyclerView) view.findViewById(R.id.recycler_view);
         rv.setLayoutManager(new SuperSlimLayoutManager(getActivity()));
+//        rv.setLayoutManager(new LinearLayoutManager(getActivity()));
         rv.setAdapter(mAdapter);
     }
 

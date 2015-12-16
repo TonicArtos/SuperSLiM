@@ -38,12 +38,13 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
      ****************************************************/
 
     override fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager) {
-        if (graph.sectionChangeWatcher != null) throw OnlySupportsOneRecyclerViewException()
-        graph.sectionChangeWatcher = DataChangeContract(this, layoutManager)
+        if (graph.contract != null) throw OnlySupportsOneRecyclerViewException()
+        val contract = DataChangeContract(this, layoutManager)
+        graph.contract = contract
     }
 
     override fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager) {
-        graph.sectionChangeWatcher = null
+        graph.contract = null
     }
 
 
@@ -91,6 +92,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
     @JvmOverloads fun createSection(id: ID, header: Item? = null,
                                     config: SectionConfig = LinearSectionConfig()): Section {
         val section = Section()
+        config.headerStyle = SectionConfig.HEADER_EMBEDDED
         section.header = header
         section.configuration = config
         section.configuration.hasHeader = header != null
@@ -133,7 +135,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
     }
 }
 
-internal interface SectionChangeWatcher {
+internal interface SectionContract {
     fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
     //fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
@@ -148,7 +150,7 @@ internal interface SectionChangeWatcher {
                                 toAdapterPosition: Int)
 }
 
-private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layoutManager: SuperSlimLayoutManager) : SectionChangeWatcher {
+private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layoutManager: SuperSlimLayoutManager) : SectionContract {
     final override fun notifySectionInserted(
             section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
 
@@ -248,4 +250,4 @@ internal class Registration<ID : Comparable<ID>>(val id: ID, val manager: SuperS
     }
 }
 
-class OnlySupportsOneRecyclerViewException : Throwable("SuperSLiM currently only supports a single recycler view per adapter.")
+class OnlySupportsOneRecyclerViewException : RuntimeException("SuperSLiM currently only supports a single recycler view per adapter.")
