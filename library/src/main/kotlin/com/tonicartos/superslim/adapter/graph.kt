@@ -48,18 +48,25 @@ sealed class Node {
     }
 }
 
+/**
+ * An item in the graph. Used in [SuperSlimAdapter.onBindViewHolder] so any packaged data can be used for the
+ * binding or to lookup data elsewhere.
+ */
 open class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
     internal override fun insertItemsToAdapter() {
-        parent?.contract?.notifySectionItemsInserted(parent!!, positionInAdapter, 1)
+        parent?.contract?.notifySectionItemsInserted(parent!!, positionInParent, positionInAdapter, 1)
         itemManager?.insert(positionInAdapter, this)
     }
 
     internal override fun removeItemsFromAdapter() {
-        parent?.contract?.notifySectionItemsRemoved(parent!!, positionInAdapter, 1)
+        parent?.contract?.notifySectionItemsRemoved(parent!!, positionInParent, positionInAdapter, 1)
         itemManager?.remove(positionInAdapter)
     }
 }
 
+/**
+ * A section in the graph.
+ */
 class Section internal constructor(contract: SectionContract? = null) : Node.SectionNode(), Iterable<Node> {
     private val _contract: SectionContract?
     internal val contract: SectionContract?
@@ -155,7 +162,7 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         val jumpHeader = if (header == null) 0 else 1
         val numItemsToRemove = itemCount - jumpHeader
         itemManager?.removeRange(positionInAdapter + jumpHeader, numItemsToRemove)
-        contract?.notifySectionItemsRemoved(this, positionInAdapter + jumpHeader, numItemsToRemove)
+        contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + jumpHeader, numItemsToRemove)
         children.forEach { it.reset() }
         totalItemsChanged(-numItemsToRemove)
         collapsed = true
@@ -186,10 +193,10 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
 
         itemManager?.removeRange(positionInAdapter, itemCount)
         if (header == null) {
-            contract?.notifySectionItemsRemoved(this, positionInAdapter, itemCount)
+            contract?.notifySectionItemsRemoved(this, 0, positionInAdapter, itemCount)
         } else {
             contract?.notifySectionHeaderRemoved(this)
-            contract?.notifySectionItemsRemoved(this, positionInAdapter + 1, itemCount)
+            contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + 1, itemCount)
         }
     }
 
@@ -462,15 +469,15 @@ internal class GraphImpl() : Graph, SectionContract {
         contract?.notifySectionHeaderRemoved(section)
     }
 
-    override fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        contract?.notifySectionItemsInserted(section, adapterPositionStart, itemCount)
+    override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+        contract?.notifySectionItemsInserted(section, positionStart, adapterPositionStart, itemCount)
     }
 
-    override fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        contract?.notifySectionItemsRemoved(section, adapterPositionStart, itemCount)
+    override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+        contract?.notifySectionItemsRemoved(section, positionStart, adapterPositionStart, itemCount)
     }
 
-    override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section, toAdapterPosition: Int) {
-        contract?.notifySectionItemsMoved(fromSection, fromAdapterPosition, toSection, toAdapterPosition)
+    override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int) {
+        contract?.notifySectionItemsMoved(fromSection, fromPosition, fromAdapterPosition, toSection, toPosition, toAdapterPosition)
     }
 }

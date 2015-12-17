@@ -7,10 +7,15 @@ private const val ADD = 1 shl 1
 private const val REMOVE = 1 shl 2
 private const val MOVE = 1 shl 3
 
-private val reusedPair = Pair(0, 0)
-private val reusedEvent = EventData(0, 0)
+private val reusedEvent = EventSectionData(0, 0, 0, 0, 0)
 
-internal data class EventData(var action: Int, var section: Int) {
+internal data class EventSectionData(var action: Int, var section: Int, var position1: Int, var otherSection: Int, var position2: Int) {
+    val start: Int get() = position1
+    val fromSection: Int get() = section
+    val from: Int get() = position1
+    val toSection: Int get() = otherSection
+    val to: Int get() = position2
+
     companion object {
         const val HEADER = com.tonicartos.superslim.internal.HEADER
         const val ADD = com.tonicartos.superslim.internal.ADD
@@ -26,7 +31,11 @@ internal data class EventData(var action: Int, var section: Int) {
     }
 
     override fun toString(): String {
-        return "section: $section, cmd: ${stringify(action)}"
+        if (action and MOVE == 0) {
+            return "EventData(cmd = ${stringify(action)}, section = $section, start = $start)"
+        } else {
+            return "EventData(cmd = ${stringify(action)}, fromSection = $fromSection, from = $from, toSection = $toSection, to = $to)"
+        }
     }
 }
 
@@ -46,48 +55,48 @@ internal data class EventData(var action: Int, var section: Int) {
 internal class ItemChangeHelper {
     private val ops = arrayListOf<Op>()
 
-    fun queueSectionHeaderAdded(section: Int, positionStart: Int) {
-        SimpleOp.acquire(ADD or HEADER, section, positionStart, 1).insertInto(ops)
+    fun queueSectionHeaderAdded(section: Int, start: Int, startAp: Int) {
+        SimpleOp.acquire(ADD or HEADER, section, start, startAp, 1).insertInto(ops)
     }
 
-    fun queueSectionHeaderRemoved(section: Int, positionStart: Int) {
-        SimpleOp.acquire(REMOVE or HEADER, section, positionStart, 1).insertInto(ops)
+    fun queueSectionHeaderRemoved(section: Int, start: Int, startAp: Int) {
+        SimpleOp.acquire(REMOVE or HEADER, section, start, startAp, 1).insertInto(ops)
     }
 
-    fun queueSectionItemsAdded(section: Int, positionStart: Int, itemCount: Int) {
-        SimpleOp.acquire(ADD, section, positionStart, itemCount).insertInto(ops)
+    fun queueSectionItemsAdded(section: Int, start: Int, startAp: Int, itemCount: Int) {
+        SimpleOp.acquire(ADD, section, start, startAp, itemCount).insertInto(ops)
     }
 
-    fun queueSectionItemsRemoved(section: Int, positionStart: Int, itemCount: Int) {
-        SimpleOp.acquire(REMOVE, section, positionStart, itemCount).insertInto(ops)
+    fun queueSectionItemsRemoved(section: Int, start: Int, startAp: Int, itemCount: Int) {
+        SimpleOp.acquire(REMOVE, section, start, startAp, itemCount).insertInto(ops)
     }
 
-    fun queueSectionItemsMoved(fromSection: Int, from: Int, toSection: Int, to: Int) {
-        MoveOp.acquire(fromSection, from, toSection, to).insertInto(ops)
+    fun queueSectionItemsMoved(fromSection: Int, from: Int, fromAp: Int, toSection: Int, to: Int, toAp: Int) {
+        MoveOp.acquire(fromSection, from, fromAp, toSection, to, toAp).insertInto(ops)
     }
 
-    fun pullMoveEventData(from: Int, to: Int): Pair<Int, Int> {
+    fun pullMoveEventData(from: Int, to: Int): EventSectionData {
         for ((i, op) in ops.withIndex()) {
-            if (op is MoveOp && op.from == from && op.to == to) {
-                val result = reusedPair.copy(op.fromSection, op.toSection)
+            if (op is MoveOp && op.fromAp == from && op.toAp == to) {
+                val result = reusedEvent.copy(MOVE, op.fromSection, op.from, op.toSection, op.to)
                 ops.removeAt(i).release()
                 return result
             }
         }
         // Should have found a match.
-        throw NoMatchedOpException("Could not find a matching op for cmd: MOVE, from: $from, to: $to")
+        throw NoMatchedOpException("Could not find a matching op for cmd = MOVE, from = $from, to = $to")
     }
 
     fun pullAddEventData(positionStart: Int, itemCount: Int) = pullEventData(ADD, positionStart, itemCount)
     fun pullRemoveEventData(positionStart: Int, itemCount: Int) = pullEventData(REMOVE, positionStart, itemCount)
 
-    private fun pullEventData(opCode: Int, positionStart: Int, itemCount: Int): EventData {
+    private fun pullEventData(opCode: Int, positionStart: Int, itemCount: Int): EventSectionData {
         for ((i, op) in ops.withIndex()) {
-            if (op is SimpleOp && (op.cmd and opCode > 0) && op.positionStart == positionStart && op.itemCount >= itemCount) {
-                op.positionStart += itemCount
+            if (op is SimpleOp && (op.cmd and opCode > 0) && op.startAp == positionStart && op.itemCount >= itemCount) {
+                op.startAp += itemCount
                 op.itemCount -= itemCount
 
-                val result = reusedEvent.copy(op.cmd, op.section)
+                val result = reusedEvent.copy(op.cmd, op.section, op.start)
                 if (op.itemCount == 0) {
                     ops.removeAt(i).release()
                 }
@@ -95,7 +104,7 @@ internal class ItemChangeHelper {
             }
         }
         // Should have found a match
-        throw NoMatchedOpException("Could not find a matching op for cmd: ${EventData.stringify(opCode)}, positionStart: $positionStart, itemCount: $itemCount")
+        throw NoMatchedOpException("Could not find a matching op for cmd = ${EventSectionData.stringify(opCode)}, positionStart = $positionStart, itemCount = $itemCount")
     }
 }
 
@@ -117,18 +126,19 @@ private abstract class Op {
     abstract fun release()
 }
 
-private class SimpleOp(private var _cmd: Int, var section: Int, var positionStart: Int, var itemCount: Int) : Op() {
+private class SimpleOp(private var _cmd: Int, var section: Int, var start: Int, var startAp: Int, var itemCount: Int) : Op() {
     companion object {
         private val pool = arrayListOf<SimpleOp>()
 
-        fun acquire(cmd: Int, section: Int, positionStart: Int, itemCount: Int) =
+        fun acquire(cmd: Int, section: Int, start: Int, startAp: Int, itemCount: Int) =
                 if (pool.isEmpty()) {
-                    SimpleOp(cmd, section, positionStart, itemCount)
+                    SimpleOp(cmd, section, start, startAp, itemCount)
                 } else {
                     pool.removeAt(0).apply {
                         this._cmd = cmd
                         this.section = section
-                        this.positionStart = positionStart
+                        this.start = start
+                        this.startAp = startAp
                         this.itemCount = itemCount
                     }
                 }
@@ -159,19 +169,21 @@ private class SimpleOp(private var _cmd: Int, var section: Int, var positionStar
     }
 }
 
-private class MoveOp private constructor(var fromSection: Int, var from: Int, var toSection: Int, var to: Int) : Op() {
+private class MoveOp private constructor(var fromSection: Int, var from: Int, var fromAp: Int, var toSection: Int, var to: Int, var toAp: Int) : Op() {
     companion object {
         private val pool = arrayListOf<MoveOp>()
 
-        fun acquire(fromSection: Int, from: Int, toSection: Int, to: Int) =
+        fun acquire(fromSection: Int, from: Int, fromAp: Int, toSection: Int, to: Int, toAp: Int) =
                 if (pool.isEmpty()) {
-                    MoveOp(fromSection, from, toSection, to)
+                    MoveOp(fromSection, from, fromAp, toSection, to, toAp)
                 } else {
                     pool.removeAt(0).apply {
                         this.fromSection = fromSection
                         this.from = from
+                        this.fromAp = fromAp
                         this.toSection = toSection
                         this.to = to
+                        this.toAp = toAp
                     }
                 }
 
@@ -200,40 +212,48 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
     }
 
     fun applyAdd(add: SimpleOp): Int {
-        var offset = 0
-        if (to < add.positionStart) {
-            offset -= 1
+        val toOffsetForAdd = if (toAp < add.startAp) -1 else 0
+        val fromOffsetForAdd = if (fromAp < add.startAp) 1 else 0
+
+        val toOffsetForMove = if (add.startAp <= toAp) add.itemCount else 0
+        val fromOffsetForMove = if (add.startAp <= fromAp) add.itemCount else 0
+
+        toAp += toOffsetForMove
+        fromAp += fromOffsetForMove
+        add.startAp += toOffsetForAdd + fromOffsetForAdd
+
+        if (add.section == toSection) {
+            add.start += toOffsetForAdd
+            to += toOffsetForMove
         }
-        if (from < add.positionStart) {
-            offset += 1
+        if (add.section == fromSection) {
+            add.start += fromOffsetForAdd
+            from += fromOffsetForMove
         }
-        if (add.positionStart <= from) {
-            from += add.itemCount
-        }
-        if (add.positionStart <= to) {
-            to += add.itemCount
-        }
-        add.positionStart += offset
 
         return 0
     }
 
     fun applyRemove(remove: SimpleOp, ops: ArrayList<Op>, positionInOps: Int): Int {
-        val moveIsBackwards = from < to
+        val toSameSection = remove.section == toSection
+        val fromSameSection = remove.section == fromSection
+
+        val moveIsBackwards = fromAp < toAp
         val reverted = if (moveIsBackwards) {
-            remove.positionStart == from && remove.itemCount == to - from
+            remove.startAp == fromAp && remove.itemCount == toAp - fromAp
         } else {
-            remove.positionStart == to + 1 && remove.itemCount == from - to
+            remove.startAp == toAp + 1 && remove.itemCount == fromAp - toAp
         }
 
-        if (to < remove.positionStart) {
-            remove.positionStart -= 1 // Move op currently only moves one item at a time.
-        } else if (to < remove.positionStart + remove.itemCount) {
+        if (toAp < remove.startAp) {
+            remove.startAp -= 1 // Move op currently only moves one item at a time.
+            if (toSameSection) remove.start -= 1
+        } else if (toAp < remove.startAp + remove.itemCount) {
             // Move is removed, so replace move with a targeted remove action and pump it into ops.
             remove.itemCount -= 1
 
             ops.removeAt(positionInOps).release()
-            SimpleOp.acquire(REMOVE, fromSection, from, 1).insertInto(ops)
+            SimpleOp.acquire(REMOVE, fromSection, from, fromAp, 1).insertInto(ops)
 
             // Send remove back one step of insertion as we removed this op.
             return -1
@@ -241,13 +261,14 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
 
 
         // Adjust remove op for undoing effect of move
-        if (from <= remove.positionStart) {
-            remove.positionStart += 1
-        } else if (from < remove.positionStart + remove.itemCount) {
+        if (fromAp <= remove.startAp) {
+            remove.startAp += 1
+            if (fromSameSection) remove.start += 1
+        } else if (fromAp < remove.startAp + remove.itemCount) {
             // Move is in middle of remove so it needs to be split.
-            val remaining = remove.positionStart + remove.itemCount - from
-            SimpleOp.acquire(REMOVE, remove.section, from + 1, remaining).insertInto(ops)
-            remove.itemCount = from - remove.positionStart
+            val remaining = remove.startAp + remove.itemCount - fromAp
+            SimpleOp.acquire(REMOVE, remove.section, if (fromSameSection) from + 1 else from, fromAp + 1, remaining).insertInto(ops)
+            remove.itemCount = fromAp - remove.startAp
         }
 
         if (reverted) {
@@ -256,25 +277,29 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
             return -1
         }
 
-        // Unlike source logic in AdapterHelper, we don't need to handle extraRm here because it was inserted into
+        // Unlike source logic in AdapterHelper, we don't need toAp handle extraRm here because it was inserted intoAp
         // ops already.
         if (moveIsBackwards) {
-            if (from > remove.positionStart) {
-                from -= remove.itemCount
+            if (fromAp > remove.startAp) {
+                fromAp -= remove.itemCount
+                if (fromSameSection) from -= remove.itemCount
             }
-            if (to > remove.positionStart) {
-                to -= remove.itemCount
+            if (toAp > remove.startAp) {
+                toAp -= remove.itemCount
+                if (toSameSection) to -= remove.itemCount
             }
         } else {
-            if (from >= remove.positionStart) {
-                from -= remove.itemCount
+            if (fromAp >= remove.startAp) {
+                fromAp -= remove.itemCount
+                if (fromSameSection) from -= remove.itemCount
             }
-            if (to >= remove.positionStart) {
-                to -= remove.itemCount
+            if (toAp >= remove.startAp) {
+                toAp -= remove.itemCount
+                if (toSameSection) to -= remove.itemCount
             }
         }
 
-        if (from == to) {
+        if (fromAp == toAp) {
             ops.removeAt(positionInOps).release()
             return -1
         }

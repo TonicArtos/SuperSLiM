@@ -51,6 +51,9 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     companion object {
         const val VERTICAL = RecyclerView.VERTICAL
         const val HORIZONTAL = RecyclerView.HORIZONTAL
+
+        private const val ENABLE_NOTIFICATION_LOGGING = false
+        private const val ENABLE_ITEM_CHANGE_LOGGING = false
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
@@ -271,23 +274,39 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * Section changes from adapter
      *************************/
 
+    /**
+     * Notify that a section has been added. The returned id is immediately valid.
+     *
+     * @param[parent] Id of parent section.
+     * @param[position] Position in parent section.
+     * @param[config] Section configuration.
+     */
     fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
-        if (BuildConfig.DEBUG) Log.d("SSlm-DCs", "notifySectionAdded - parent: $parent, position: $position, config: $config")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(parent: $parent, position: $position, config: $config)")
         // Always copy the config as soon as it enters this domain.
         return graph!!.sectionAdded(parent, position, config.copy())
     }
 
-    fun notifySectionRemoved(section: Int, parent: Int, position: Int) {
-        if (BuildConfig.DEBUG) Log.d("SSlm-DCs", "notifySectionAdded - section: $section, parent: $parent, position: $position")
-        graph!!.queueSectionRemoved(section, parent, position)
+    /**
+     * Notify that a section is to be removed. The removal happens after all layout passes, whereupon the section id
+     * becomes invalid.
+     */
+    fun notifySectionRemoved(section: Int, parent: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(section: $section, parent: $parent)")
+        graph!!.queueSectionRemoved(section, parent)
     }
 
     //    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
     //        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
     //    }
 
+    /**
+     * Notify that a section has been changed. This indicates a configuration change for the section. The effect is
+     * applied in the post-layout, which means items should animate between the two states, pre-update, and port-update.
+     * It may be necessary to notify changes for at least one item in the section.
+     */
     fun notifySectionUpdated(section: Int, config: SectionConfig) {
-        if (BuildConfig.DEBUG) Log.d("SSlm-DCs", "notifySectionAdded - section: $section, config: $config")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(section: $section, config: $config)")
         // Always copy the config as soon as it enters this domain.
         graph!!.queueSectionUpdated(section, config.copy())
     }
@@ -296,29 +315,29 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * Section item changes from adapter
      *************************/
 
-    fun notifySectionHeaderAdded(section: Int, position: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "notifySectionHeaderAdded - section: $section, position: $position")
-        itemChangeHelper.queueSectionHeaderAdded(section, position)
+    fun notifySectionHeaderAdded(section: Int, adapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionHeaderAdded(section: $section, position: $adapterPosition)")
+        itemChangeHelper.queueSectionHeaderAdded(section, 0, adapterPosition)
     }
 
-    fun notifySectionHeaderRemoved(section: Int, position: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "notifySectionHeaderRemoved - section: $section, position: $position")
-        itemChangeHelper.queueSectionHeaderRemoved(section, position)
+    fun notifySectionHeaderRemoved(section: Int, adapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionHeaderRemoved(section: $section, position: $adapterPosition)")
+        itemChangeHelper.queueSectionHeaderRemoved(section, 0, adapterPosition)
     }
 
-    fun notifySectionItemsAdded(section: Int, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "notifySectionItemsAdded - section: $section, positionStart: $positionStart, itemCount: $itemCount")
-        itemChangeHelper.queueSectionItemsAdded(section, positionStart, itemCount)
+    fun notifySectionItemsAdded(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsAdded(section: $section, positionStart: $start, itemCount: $itemCount)")
+        itemChangeHelper.queueSectionItemsAdded(section, start, startAdapterPosition, itemCount)
     }
 
-    fun notifySectionItemsRemoved(section: Int, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "notifySectionItemsRemoved - section: $section, positionStart: $positionStart, itemCount: $itemCount")
-        itemChangeHelper.queueSectionItemsRemoved(section, positionStart, itemCount)
+    fun notifySectionItemsRemoved(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsRemoved(section: $section, positionStart: $start, itemCount: $itemCount)")
+        itemChangeHelper.queueSectionItemsRemoved(section, start, startAdapterPosition, itemCount)
     }
 
-    fun notifySectionItemsMoved(fromSection: Int, from: Int, toSection: Int, to: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "notifySectionItemsMoved - fromSection: $fromSection, from: $from, toSection: $toSection, to: $to")
-        itemChangeHelper.queueSectionItemsMoved(fromSection, from, toSection, to)
+    fun notifySectionItemsMoved(fromSection: Int, from: Int, fromAdapterPosition: Int, toSection: Int, to: Int, toAdapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsMoved(fromSection: $fromSection, from: $from, toSection: $toSection, to: $to)")
+        itemChangeHelper.queueSectionItemsMoved(fromSection, from, fromAdapterPosition, toSection, to, toAdapterPosition)
     }
 
     /*************************
@@ -326,21 +345,21 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "onItemsAdded - position: $positionStart, itemCount: $itemCount")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsAdded(position: $positionStart, itemCount: $itemCount)")
         val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
         graph!!.addItems(event, positionStart, itemCount)
     }
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "onItemsRemoved - position: $positionStart, itemCount: $itemCount")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
         val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
         graph!!.removeItems(event, positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DCs", "onItemsMoved - from: $from, to: $to, itemCount: $itemCount")
-        var (fromSection, toSection) = itemChangeHelper.pullMoveEventData(from, to)
-        graph!!.moveItems(fromSection, from, toSection, to)
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsMoved(from: $from, to: $to, itemCount: $itemCount)")
+        var event = itemChangeHelper.pullMoveEventData(from, to)
+        graph!!.moveItems(event, from, to)
     }
 
     /*************************

@@ -138,24 +138,22 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 internal interface SectionContract {
     fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
-    //fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int)
     fun notifySectionUpdated(section: Section)
 
     fun notifySectionHeaderInserted(section: Section)
     fun notifySectionHeaderRemoved(section: Section)
 
-    fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section,
-                                toAdapterPosition: Int)
+    fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
+    fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
+    fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int)
 }
 
 private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layoutManager: SuperSlimLayoutManager) : SectionContract {
     final override fun notifySectionInserted(
-            section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInAdapter, section.configuration)
+            section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInParent, section.configuration)
 
     final override fun notifySectionRemoved(section: Section) {
-        layoutManager.notifySectionRemoved(section.id, section.parent!!.id, section.positionInParent)
+        layoutManager.notifySectionRemoved(section.id, section.parent!!.id)
     }
 
     //final override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
@@ -177,17 +175,16 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layout
         layoutManager.notifySectionHeaderRemoved(section.id, section.positionInAdapter)
     }
 
-    final override fun notifySectionItemsInserted(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        layoutManager.notifySectionItemsAdded(section.id, adapterPositionStart, itemCount)
+    final override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+        layoutManager.notifySectionItemsAdded(section.id, positionStart, adapterPositionStart, itemCount)
     }
 
-    final override fun notifySectionItemsRemoved(section: Section, adapterPositionStart: Int, itemCount: Int) {
-        layoutManager.notifySectionItemsRemoved(section.id, adapterPositionStart, itemCount)
+    final override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+        layoutManager.notifySectionItemsRemoved(section.id, positionStart, adapterPositionStart, itemCount)
     }
 
-    final override fun notifySectionItemsMoved(fromSection: Section, fromAdapterPosition: Int, toSection: Section,
-                                               toAdapterPosition: Int) {
-        layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromAdapterPosition, toSection.parent!!.id, toAdapterPosition)
+    final override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int) {
+        layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromPosition, fromAdapterPosition, toSection.parent!!.id, toPosition, toAdapterPosition)
     }
 }
 
