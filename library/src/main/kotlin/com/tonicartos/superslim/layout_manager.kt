@@ -80,12 +80,12 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
     override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        // TODO:
+        // TODO: Scroll vertically
         return super.scrollVerticallyBy(dy, recycler, state)
     }
 
     override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler?, state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: Scroll horizontally
         return super.scrollHorizontallyBy(dx, recycler, state)
     }
 
@@ -94,32 +94,32 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      ****************************************************/
 
     override fun computeVerticalScrollExtent(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeVerticalScrollExtent(state)
     }
 
     override fun computeVerticalScrollRange(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeVerticalScrollRange(state)
     }
 
     override fun computeVerticalScrollOffset(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeVerticalScrollOffset(state)
     }
 
     override fun computeHorizontalScrollExtent(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeHorizontalScrollExtent(state)
     }
 
     override fun computeHorizontalScrollRange(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeHorizontalScrollRange(state)
     }
 
     override fun computeHorizontalScrollOffset(state: RecyclerView.State?): Int {
-        // TODO:
+        // TODO: compute scroll
         return super.computeHorizontalScrollOffset(state)
     }
 
