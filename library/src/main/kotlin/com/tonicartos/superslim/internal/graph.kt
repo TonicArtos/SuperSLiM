@@ -277,65 +277,62 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     internal fun addHeader() {
         baseConfig.hasHeader = true
         subsections.forEach { it.adapterPosition += 1 }
-        parent?.itemCountsChangedInChild(adapterPosition, totalItems, 1)
+        parent?.itemCountsChangedInSubsection(this, 1)
         totalItems += 1
     }
 
     internal fun removeHeader() {
         baseConfig.hasHeader = false
         subsections.forEach { it.adapterPosition -= 1 }
-        parent?.itemCountsChangedInChild(adapterPosition, totalItems, -1)
+        parent?.itemCountsChangedInSubsection(this, -1)
         totalItems -= 1
     }
 
-    // TODO: handle proper insertion
     internal fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
-        subsections.forEach {
-            if (it.adapterPosition >= adapterPositionStart) {
-                it.adapterPosition += itemCount
-            }
+        applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
+            it.adapterPosition += itemCount
         }
+
         numChildren += itemCount
         totalItems += itemCount
-        parent?.itemCountsChangedInChild(adapterPosition, totalItems, itemCount)
+        parent?.itemCountsChangedInSubsection(this, itemCount)
     }
 
-    private fun itemCountsChangedInChild(childAdapterPosition: Int, childTotalItems: Int, changedCount: Int) {
-        // Find child and adjust adapter position for sections after it.
-        var foundChild = false
-        subsections.forEach {
-            if (foundChild) {
-                it.adapterPosition += changedCount
-            } else if (it.adapterPosition == childAdapterPosition && it.totalItems == childTotalItems) {
-                foundChild = true
+    internal fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+        var totalNonChildrenRemoved = 0
+        applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
+            if (it.adapterPosition < adapterPositionStart + itemCount) {
+                if (it.totalItems > itemCount - totalNonChildrenRemoved) throw IllegalStateException("Removal of items in parent cannot partially remove subsection items.")
+                totalNonChildrenRemoved += it.totalItems
+                it.allItemsWereRemoved()
             }
+            it.adapterPosition -= Math.min(itemCount, it.adapterPosition - adapterPositionStart)
         }
-        totalItems += changedCount
-        parent?.itemCountsChangedInChild(adapterPosition, totalItems, changedCount)
+
+        parent?.itemCountsChangedInSubsection(this, -itemCount)
+        totalItems -= itemCount
     }
 
     /**
-     * Remove items might actually include subsections. With isn't exactly correct behaviour, but convenient.
-     *
-     * TODO: Add support for additional positioning from child position start.
+     * An ancestor has removed all items in this section.
      */
-    internal fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
-        val toRemove = arrayListOf<Int>()
+    private fun allItemsWereRemoved() {
+        totalItems = 0
+        hasHeader = false
+        numChildren = subsections.size
+        subsections.forEach { it.allItemsWereRemoved() }
+    }
 
-        var totalNonChildrenRemoved = 0
-        subsections.forEachIndexed { i, it ->
-            if (it.adapterPosition >= adapterPositionStart) {
-                it.adapterPosition -= itemCount
-                if (it.adapterPosition < adapterPosition) {
-                    totalNonChildrenRemoved += it.totalItems
-                    toRemove.add(i)
-                }
+    private fun itemCountsChangedInSubsection(child: SectionState, changedCount: Int) {
+        // Find child and adjust adapter position for sections after it.
+        val index = subsections.indexOfFirst { it == child }
+        if (index + 1 < subsections.size) {
+            for (i in (subsections.size - 1) downTo (index + 1)) {
+                subsections[i].adapterPosition += changedCount
             }
         }
-        toRemove.forEach { subsections.removeAt(0) }
-        parent?.itemCountsChangedInChild(adapterPosition, totalItems, -itemCount)
-        totalItems -= itemCount
-        numChildren -= toRemove.size + (itemCount - totalNonChildrenRemoved)
+        totalItems += changedCount
+        parent?.itemCountsChangedInSubsection(this, changedCount)
     }
 
     /*************************
