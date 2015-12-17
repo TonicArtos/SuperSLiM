@@ -1,5 +1,7 @@
 package com.tonicartos.superslim.internal
 
+import android.support.annotation.VisibleForTesting
+
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.SparseArray
@@ -342,7 +344,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     //TODO: Fix bug here, caused when inserting after a section with 0 items, this will insert before.
     //TODO: Fix is to use subsection child position for insertions.
-    fun insertSection(position: Int, newSection: SectionState) {
+
+    internal fun insertSection(position: Int, newSection: SectionState) {
         // Keep subsections in order.
         var insertPoint = 0
         subsections.forEachIndexed { i, it ->
@@ -359,7 +362,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         totalItems += newSection.totalItems
     }
 
-    fun removeSection(section: SectionState) {
+    internal fun removeSection(section: SectionState) {
         subsections.remove(section)
         totalItems -= section.totalItems
         numChildren -= 1
@@ -372,6 +375,55 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         totalItems = data.itemCount
         subsections.clear()
         subsections.addAll(data.subsections)
+    }
+
+    private operator fun String.times(n: Int): String {
+        val s = StringBuilder("")
+        for (i in 1..n) {
+            s.append(this)
+        }
+        return s.toString()
+    }
+
+    fun toString(indent: Int): String = "\t" * indent + "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, subgraph = ${subsections.fold("") { s, it -> "$s\n${it.toString(indent + 1)}" }})"
+    override fun toString(): String = toString(0)
+
+    /****************************************************
+     * Test access to private members. Proguard will remove these in release.
+     *
+     * TODO: Configure proguard to remove these things in release.
+     ****************************************************/
+    interface TestAccess {
+        val totalItems: Int
+        val subsections: ArrayList<SectionState>
+        val adapterPosition: Int
+        fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int)
+        fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int)
+        fun addHeader()
+        fun removeHeader()
+        fun removeSection(section: SectionState)
+        fun insertSection(position: Int, newSection: SectionState)
+    }
+
+    /**
+     * Testing access to internal and private members of the instance. This will be removed in release by proguard.
+     *
+     * TODO: Proguard rule.
+     */
+    @VisibleForTesting
+    val testAccess = object : TestAccess {
+        override val totalItems: Int get() = this@SectionState.totalItems
+        override val subsections: ArrayList<SectionState> get() = this@SectionState.subsections
+        override val adapterPosition: Int get() = this@SectionState.adapterPosition
+
+        override fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.addItems(childPositionStart, adapterPositionStart, itemCount)
+        override fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.removeItems(childPositionStart, adapterPositionStart, itemCount)
+
+        override fun addHeader() = this@SectionState.addHeader()
+        override fun removeHeader() = this@SectionState.removeHeader()
+
+        override fun insertSection(position: Int, newSection: SectionState) = this@SectionState.insertSection(position, newSection)
+        override fun removeSection(section: SectionState) = this@SectionState.removeSection(section)
     }
 }
 

@@ -73,6 +73,8 @@ private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by roo
         this.width = width
         return this
     }
+
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit)"
 }
 
 internal class RecyclerWrapper : RecyclerHelper {

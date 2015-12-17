@@ -1,5 +1,6 @@
 package com.tonicartos.superslim
 
+import android.support.annotation.VisibleForTesting
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
@@ -148,5 +149,17 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
 
         internal const val DEFAULT_GUTTER = GUTTER_AUTO
         internal const val DEFAULT_HEADER_STYLE = HEADER_INLINE
+    }
+
+    /****************************************************
+     * Test access
+     ****************************************************/
+    interface TestAccess {
+        fun makeSection(): SectionState
+    }
+
+    @VisibleForTesting
+    val testAccess = object : TestAccess {
+        override fun makeSection(): SectionState = this@SectionConfig.makeSection()
     }
 }
