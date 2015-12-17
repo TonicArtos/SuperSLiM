@@ -327,7 +327,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         // Find child and adjust adapter position for sections after it.
         val index = subsections.indexOfFirst { it == child }
         if (index + 1 < subsections.size) {
-            for (i in (subsections.size - 1) downTo (index + 1)) {
+            for (i in (index + 1)..(subsections.size - 1)) {
                 subsections[i].adapterPosition += changedCount
             }
         }
