@@ -341,7 +341,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *************************/
 
     internal fun insertSection(position: Int, newSection: SectionState) {
-        var hiddenItems = adapterPosition
         var insertPoint = subsections.size
         var firstTime = true
         applyToSubsectionsAfterChildPosition(position) { i, it ->
