@@ -342,17 +342,15 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Section management
      *************************/
 
-    //TODO: Fix bug here, caused when inserting after a section with 0 items, this will insert before.
-    //TODO: Fix is to use subsection child position for insertions.
-
     internal fun insertSection(position: Int, newSection: SectionState) {
-        // Keep subsections in order.
+        var hiddenItems = adapterPosition
         var insertPoint = 0
-        subsections.forEachIndexed { i, it ->
-            if (it.adapterPosition < position) {
-                insertPoint += 1
-            } else {
-                it.adapterPosition += newSection.totalItems
+        var firstTime = true
+        applyToSubsectionsAfterChildPosition(position) { i, it ->
+            it.adapterPosition += newSection.totalItems
+            if (firstTime) {
+                insertPoint = i
+                firstTime = false
             }
         }
         subsections.add(insertPoint, newSection)
@@ -383,6 +381,21 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             s.append(this)
         }
         return s.toString()
+    }
+
+    private inline fun applyToSubsectionsAfterChildPosition(childPositionStart: Int, f: (Int, SectionState) -> Unit) {
+        var hiddenItems = adapterPosition
+        var applying = false
+        subsections.forEachIndexed { i, it ->
+            if (applying) {
+                f(i, it)
+            } else if (it.adapterPosition - hiddenItems + i >= childPositionStart) {
+                f(i, it)
+                applying = true
+            } else {
+                hiddenItems += it.totalItems
+            }
+        }
     }
 
     fun toString(indent: Int): String = "\t" * indent + "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, subgraph = ${subsections.fold("") { s, it -> "$s\n${it.toString(indent + 1)}" }})"
