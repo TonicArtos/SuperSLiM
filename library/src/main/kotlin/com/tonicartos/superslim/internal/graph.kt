@@ -311,6 +311,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         parent?.itemCountsChangedInSubsection(this, -itemCount)
         totalItems -= itemCount
+        numChildren -= itemCount - totalNonChildrenRemoved
     }
 
     /**
