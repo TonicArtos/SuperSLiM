@@ -355,12 +355,26 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         newSection.parent = this
         numChildren += 1
         totalItems += newSection.totalItems
+        parent?.itemCountsChangedInSubsection(this, newSection.totalItems)
     }
 
     internal fun removeSection(section: SectionState) {
-        subsections.remove(section)
+        var indexOfSection: Int = -1
+        var afterSection = false
+        subsections.forEachIndexed { i, it ->
+            if (afterSection) {
+                it.adapterPosition -= section.totalItems
+            } else if (it === section) {
+                indexOfSection = i
+                afterSection = true
+            }
+        }
+        if (indexOfSection == -1) return
+
+        subsections.removeAt(indexOfSection)
         totalItems -= section.totalItems
         numChildren -= 1
+        parent?.itemCountsChangedInSubsection(this, -section.totalItems)
     }
 
     internal fun load(data: SectionData) {
