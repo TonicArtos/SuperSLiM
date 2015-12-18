@@ -60,6 +60,10 @@ private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by roo
         root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom, marginLeft, marginTop, marginRight, marginBottom)
     }
 
+    override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
+        root.measure(view, usedWidth + root.layoutWidth - width, usedHeight + offset.y)
+    }
+
     override fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.x + left, offset.y + top, offset.x + right)
     override fun release() {
         root.releaseSubsectionHelper(this)
