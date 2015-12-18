@@ -47,7 +47,8 @@ private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by roo
     private var width: Int = 0
     override val layoutWidth: Int
         get() = width
-
+    override val layoutLimit: Int
+        get() = root.layoutLimit - offset.y
 
     constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int) : this(root) {
         offset.x = x
