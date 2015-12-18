@@ -83,21 +83,21 @@ private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by roo
 }
 
 internal class RecyclerWrapper : RecyclerHelper {
-    var recycler: RecyclerView.Recycler? = null
+    lateinit var recycler: RecyclerView.Recycler
 
     fun wrap(recycler: RecyclerView.Recycler): RecyclerWrapper {
         this.recycler = recycler
         return this
     }
 
-    override fun getView(position: Int): View = recycler!!.getViewForPosition(position)
+    override fun getView(position: Int): View = recycler.getViewForPosition(position)
 
     override val scrap: List<RecyclerView.ViewHolder>
-        get() = recycler!!.scrapList
+        get() = recycler.scrapList
 }
 
 internal class StateWrapper : StateHelper {
-    var state: RecyclerView.State? = null
+    lateinit var state: RecyclerView.State
 
     fun wrap(state: RecyclerView.State): StateWrapper {
         this.state = state
@@ -105,17 +105,17 @@ internal class StateWrapper : StateHelper {
     }
 
     override val hasTargetScrollPosition: Boolean
-        get() = state!!.hasTargetScrollPosition()
+        get() = state.hasTargetScrollPosition()
 
     override val targetScrollPosition: Int
-        get() = state!!.targetScrollPosition
+        get() = state.targetScrollPosition
 
     override val willRunPredictiveAnimations: Boolean
-        get() = state!!.willRunPredictiveAnimations()
+        get() = state.willRunPredictiveAnimations()
 
     override val isPreLayout: Boolean
-        get() = state!!.isPreLayout
+        get() = state.isPreLayout
 
     override val itemCount: Int
-        get() = state!!.itemCount
+        get() = state.itemCount
 }
