@@ -296,19 +296,52 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     internal fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
-        var totalNonChildrenRemoved = 0
+        var currentAdapterStart = adapterPositionStart
+        var itemsRemaining = itemCount
+        var itemsThatAreChildren = 0
+
+        var itemsRemoved = 0
+
         applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
-            if (it.adapterPosition < adapterPositionStart + itemCount) {
-                if (it.totalItems > itemCount - totalNonChildrenRemoved) throw IllegalStateException("Removal of items in parent cannot partially remove subsection items.")
-                totalNonChildrenRemoved += it.totalItems
-                it.allItemsWereRemoved()
-            }
-            it.adapterPosition -= Math.min(itemCount, it.adapterPosition - adapterPositionStart)
+            if (itemsRemaining == 0) return@applyToSubsectionsAfterChildPosition
+            var (skipped, removed) = it.removeItems(currentAdapterStart, itemsRemaining)
+            it.adapterPosition -= skipped + itemsRemoved
+            itemsThatAreChildren += skipped
+            currentAdapterStart += removed + skipped
+            itemsRemaining -= removed + skipped
+
         }
 
         parent?.itemCountsChangedInSubsection(this, -itemCount)
         totalItems -= itemCount
-        numChildren -= itemCount - totalNonChildrenRemoved
+        numChildren -= itemsThatAreChildren + itemsRemaining
+    }
+
+    private fun removeItems(adapterPositionStart: Int, itemCount: Int): Pair<Int, Int> {
+        val itemsBeforeSection = Math.min(itemCount, Math.max(0, adapterPosition - adapterPositionStart))
+        val itemsAfterSection = Math.max(0, itemCount + adapterPositionStart - totalItems - adapterPosition)
+
+        var currentAdapterStart = Math.max(adapterPosition, adapterPositionStart)
+        var itemsRemaining = itemCount - itemsBeforeSection - itemsAfterSection
+        var itemsThatAreChildren = 0
+        var itemsRemoved = 0
+
+        if (itemsRemaining == 0) return itemsBeforeSection to 0
+
+        for (subsection in subsections) {
+            var (skipped, removed) = subsection.removeItems(currentAdapterStart, itemsRemaining)
+            subsection.adapterPosition -= skipped + itemsRemoved
+            itemsThatAreChildren += skipped
+            currentAdapterStart += removed + skipped
+            itemsRemaining -= removed + skipped
+            itemsRemoved += removed
+            if (itemsRemaining == 0) break
+        }
+
+        totalItems -= itemsRemoved + itemsThatAreChildren
+        numChildren -= itemsThatAreChildren + itemsRemaining
+
+        return itemsBeforeSection to itemsRemoved
     }
 
     /**
@@ -494,7 +527,6 @@ private class SectionChild(var section: SectionState, helper: LayoutHelper) : Ch
 
     override val bottom: Int
         get() = Child.INVALID
-
 
     override fun layout(left: Int, top: Int, right: Int, bottom: Int) {
         _left = left
