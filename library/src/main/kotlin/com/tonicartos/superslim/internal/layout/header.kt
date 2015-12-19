@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.internal.layout
 
+import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -58,6 +59,7 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
         section.layoutContent(helper, left, y, helper.layoutWidth - right)
 
         y += section.height
+        Log.d("", "y = $y, section height = ${section.height}")
         section.height = y
     }
 

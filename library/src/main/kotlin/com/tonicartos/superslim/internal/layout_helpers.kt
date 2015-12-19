@@ -24,6 +24,8 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         layoutLimitExtension += ignoredHeight
     }
 
+    override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n".replace("\n", "\n\t")
+
     private var helperPool = LayoutHelperPool()
 
     private class LayoutHelperPool {
@@ -79,7 +81,7 @@ private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by roo
         return this
     }
 
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit)"
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace("\n", "\n\t")
 }
 
 internal class RecyclerWrapper : RecyclerHelper {
@@ -118,4 +120,6 @@ internal class StateWrapper : StateHelper {
 
     override val itemCount: Int
         get() = state.itemCount
+
+    override fun toString(): String = "State(itemCount = $itemCount, isPreLayout = $isPreLayout, willRunPredictiveAnimations = $willRunPredictiveAnimations)"
 }

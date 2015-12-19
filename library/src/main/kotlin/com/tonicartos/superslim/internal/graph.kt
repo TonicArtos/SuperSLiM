@@ -46,6 +46,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionUpdates()
         }
 
+        Log.d("layout", "helper = $helper\nsection = $root\n\n")
         root.layout(helper, 0, 0, helper.layoutWidth)
 
         if (helper.isPreLayout) {
@@ -382,14 +383,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         subsections.addAll(data.subsections)
     }
 
-    private operator fun String.times(n: Int): String {
-        val s = StringBuilder("")
-        for (i in 1..n) {
-            s.append(this)
-        }
-        return s.toString()
-    }
-
     private inline fun applyToSubsectionsAfterChildPosition(childPositionStart: Int, f: (Int, SectionState) -> Unit) {
         var hiddenItems = adapterPosition
         var applying = false
@@ -405,8 +398,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    fun toString(indent: Int): String = "\t" * indent + "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, subgraph = ${subsections.fold("") { s, it -> "$s\n${it.toString(indent + 1)}" }})"
-    override fun toString(): String = toString(0)
+    override fun toString(): String = "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, subgraph = ${subsections.fold("") { s, it -> "$s\n$it" }})".replace("\n", "\n\t")
 
     /****************************************************
      * Test access to private members. Proguard will remove these in release.

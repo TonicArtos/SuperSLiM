@@ -11,6 +11,8 @@ internal class RtlConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayou
 
     override fun getLeft(child: View): Int = layoutWidth - base.getRight(child)
     override fun getRight(child: View): Int = layoutWidth - base.getLeft(child)
+
+    override fun toString(): String = "RtlConfigHelper(base = $base)"
 }
 
 internal class StackFromEndConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayoutHelper by base {
@@ -19,6 +21,8 @@ internal class StackFromEndConfigHelper(val base: ReadWriteLayoutHelper) : ReadW
 
     override fun getTop(child: View): Int = layoutLimit - base.getBottom(child)
     override fun getBottom(child: View): Int = layoutLimit - base.getTop(child)
+
+    override fun toString(): String = "StackFromEndConfigHelper(base = $base)"
 }
 
 internal class ReverseLayoutConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayoutHelper by base {
@@ -29,6 +33,8 @@ internal class ReverseLayoutConfigHelper(val base: ReadWriteLayoutHelper) : Read
     override fun getTop(child: View): Int = layoutLimit - base.getBottom(child)
     override fun getRight(child: View): Int = layoutWidth - base.getLeft(child)
     override fun getBottom(child: View): Int = layoutLimit - base.getTop(child)
+
+    override fun toString(): String = "ReverseLayoutConfigHelper(base = $base)"
 }
 
 //internal class VerticalConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayoutHelper by base {}
@@ -44,5 +50,7 @@ internal class HorizontalConfigHelper(val base: ReadWriteLayoutHelper) : ReadWri
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) = base.measure(view, usedHeight, usedWidth)
     override fun getMeasuredWidth(child: View): Int = base.getMeasuredHeight(child)
     override fun getMeasuredHeight(child: View): Int = base.getMeasuredWidth(child)
+
+    override fun toString(): String = "HorizontalConfigHelper(base = $base)"
 }
 
