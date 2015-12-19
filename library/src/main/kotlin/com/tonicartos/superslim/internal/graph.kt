@@ -223,11 +223,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal var hasHeader: Boolean
-        get() = baseConfig.hasHeader
-        set(value) {
-            baseConfig.hasHeader = value
-        }
+    internal var hasHeader: Boolean = false
 
     internal fun getHeader(helper: LayoutHelper): ChildInternal? =
             if (hasHeader) {
@@ -275,14 +271,14 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *************************/
 
     internal fun addHeader() {
-        baseConfig.hasHeader = true
+        hasHeader = true
         subsections.forEach { it.adapterPosition += 1 }
         parent?.itemCountsChangedInSubsection(this, 1)
         totalItems += 1
     }
 
     internal fun removeHeader() {
-        baseConfig.hasHeader = false
+        hasHeader = false
         subsections.forEach { it.adapterPosition -= 1 }
         parent?.itemCountsChangedInSubsection(this, -1)
         totalItems -= 1

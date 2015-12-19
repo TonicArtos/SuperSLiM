@@ -110,7 +110,6 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
     var header: Item?
         get() = _header
         set(value) {
-            configuration.hasHeader = value != null
             if (value == null) {
                 removeHeader()
                 return

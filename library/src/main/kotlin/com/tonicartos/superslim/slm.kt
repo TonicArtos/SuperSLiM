@@ -75,8 +75,6 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
             _gutterEnd = if (value < 0) GUTTER_AUTO else value
         }
 
-    var hasHeader = false
-
     init {
         this.gutterStart = gutterStart
         this.gutterEnd = gutterEnd
@@ -102,9 +100,7 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
      * Copy the configuration. Section configs are always copied when they are passed to the layout manager.
      */
     fun copy(): SectionConfig {
-        val copy = onCopy()
-        copy.hasHeader = hasHeader
-        return copy
+        return onCopy()
     }
 
     abstract protected fun onCopy(): SectionConfig
