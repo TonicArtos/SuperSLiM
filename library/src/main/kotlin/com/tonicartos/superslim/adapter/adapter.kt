@@ -59,7 +59,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
         out.hasHeader = false
         out.itemCount = graph.root.itemCount
         out.childCount = graph.root.childCount
-        out.subsectionsById = graph.root.getSubsections().map { it.id }
+        out.subsectionsById = graph.root.subsections.map { it.id }
     }
 
 
@@ -78,7 +78,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
         data.second.hasHeader = section.header != null
         data.second.itemCount = section.itemCount
         data.second.childCount = section.childCount
-        data.second.subsectionsById = section.getSubsections().map { it.id }
+        data.second.subsectionsById = section.subsections.map { it.id }
     }
 
     /****************************************************
@@ -95,7 +95,6 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
         config.headerStyle = SectionConfig.HEADER_EMBEDDED
         section.header = header
         section.configuration = config
-        section.configuration.hasHeader = header != null
         registerSection(id, section)
         return section
     }
@@ -110,7 +109,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
         section.registration = Registration(id, this)
         if (cascade) {
             // If there are any descendants
-            section.getSubsections().forEach { subsection ->
+            section.subsections.forEach { subsection ->
                 @Suppress("UNCHECKED_CAST")
                 var reusableRegistration = subsection.registration as? Registration<ID>
                 if (reusableRegistration == null) {
@@ -129,7 +128,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
                 registration = null
             }
             if (cascade) {
-                getSubsections().forEach { it.registration?.deregister(stripIds, cascade) }
+                subsections.forEach { it.registration?.deregister(stripIds, cascade) }
             }
         }
     }

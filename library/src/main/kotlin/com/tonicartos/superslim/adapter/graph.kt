@@ -353,27 +353,28 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
      * Returns a list containing all items matching the given [predicate].
      */
     inline fun filterItems(predicate: (Item) -> Boolean): List<Item> {
-        return getItems().filterTo(ArrayList<Item>(), predicate)
+        return items.filterTo(ArrayList<Item>(), predicate)
     }
 
     /**
      * A list containing all items in the section.
      */
     @Suppress("WARNINGS")
-    inline fun getItems() = children.filterTo(ArrayList<Node>(), { it -> it is Item }).map { it as Item }
+    val items: List<Item>
+        get() = children.filterTo(ArrayList<Node>(), { it -> it is Item }).map { it as Item }
 
     /**
      * Returns a list containing all sections matching the given [predicate].
      */
     inline fun filterSubsections(predicate: (Section) -> Boolean): List<Section> {
-        return getSubsections().filterTo(ArrayList<Section>(), predicate)
+        return subsections.filterTo(ArrayList<Section>(), predicate)
     }
 
     /**
      * A list of all subsections.
      */
-    @Suppress("WARNINGS")
-    inline fun getSubsections() = children.filterTo(ArrayList<Node>(), { it -> it is Section }).map { it as Section }
+    val subsections: List<Section>
+        get() = children.filterTo(ArrayList<Node>(), { it -> it is Section }).map { it as Section }
 
     /**
      * Returns a list containing all elements matching the given [predicate].
