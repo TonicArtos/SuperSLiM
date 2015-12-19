@@ -234,20 +234,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             }
 
     fun getChildAt(helper: LayoutHelper, position: Int): Child {
-        // Translate child position into adapter position.
-        // Adjust initial position by section's adapter position. Hide header
-        var finalAdapterPosition = position + adapterPosition + if (hasHeader) 1 else 0
-        // Walk over subsections incrementing position when subsections are passed.
-        for (s in subsections) {
-            if (s.adapterPosition < finalAdapterPosition) {
-                finalAdapterPosition += s.totalItems - 1
-            } else if (s.adapterPosition == finalAdapterPosition) {
-                return SectionChild.wrap(s, helper)
-            } else {
+        var hiddenItems = adapterPosition + if (hasHeader) 1 else 0
+        var lastSectionPosition = 0
+        for ((i, it) in subsections.withIndex()) {
+            if (it.adapterPosition - hiddenItems + i > position) {
                 break
+            } else if (it.adapterPosition - hiddenItems + i == position) {
+                return SectionChild.wrap(it, helper)
+            } else {
+                hiddenItems += it.totalItems
+                lastSectionPosition = i
             }
         }
-        return ItemChild.wrap(helper.getView(finalAdapterPosition), helper)
+
+        return ItemChild.wrap(helper.getView(hiddenItems + position - lastSectionPosition), helper)
     }
 
     final fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
