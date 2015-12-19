@@ -45,7 +45,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         }
 
         section.height = y
-        section.tailPosition = currentPos
+        section.tailPosition = currentPos - 1
 
         layoutDisappearingViews(y, helper, section)
     }
