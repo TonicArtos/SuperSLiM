@@ -101,6 +101,9 @@ internal class ItemChangeHelper {
                     ops.removeAt(i).release()
                 }
                 return result
+            } else if (op is SimpleOp && (op.cmd and opCode > 0) && op.startAp + op.itemCount == positionStart + itemCount && op.startAp < positionStart) {
+                op.itemCount -= itemCount
+                return reusedEvent.copy(op.cmd, op.section, op.start + (positionStart - op.startAp))
             }
         }
         // Should have found a match
