@@ -372,6 +372,10 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override val supportsPredictiveItemAnimations: Boolean
         get() = pendingSavedState == null
 
+    override fun supportsPredictiveItemAnimations(): Boolean {
+        return supportsPredictiveItemAnimations
+    }
+
     override fun assertNotInLayoutOrScroll(message: String?) {
         if (pendingSavedState == null) {
             super.assertNotInLayoutOrScroll(message)
