@@ -302,22 +302,24 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         var itemsRemoved = 0
 
-        applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
-            if (itemsRemaining == 0) return@applyToSubsectionsAfterChildPosition
+        for (it in subsections) {
             var (skipped, removed) = it.removeItems(currentAdapterStart, itemsRemaining)
             it.adapterPosition -= skipped + itemsRemoved
+            itemsRemoved += removed
             itemsThatAreChildren += skipped
             currentAdapterStart += removed + skipped
             itemsRemaining -= removed + skipped
-
         }
 
+        itemsThatAreChildren += itemsRemaining
         parent?.itemCountsChangedInSubsection(this, -itemCount)
         totalItems -= itemCount
-        numChildren -= itemsThatAreChildren + itemsRemaining
+        numChildren -= itemsThatAreChildren
+        hasHeader = adapterPositionStart != adapterPosition
     }
 
     private fun removeItems(adapterPositionStart: Int, itemCount: Int): Pair<Int, Int> {
+        if (itemCount == 0) return 0 to 0
         val itemsBeforeSection = Math.min(itemCount, Math.max(0, adapterPosition - adapterPositionStart))
         val itemsAfterSection = Math.max(0, itemCount + adapterPositionStart - totalItems - adapterPosition)
 
@@ -325,6 +327,13 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         var itemsRemaining = itemCount - itemsBeforeSection - itemsAfterSection
         var itemsThatAreChildren = 0
         var itemsRemoved = 0
+
+        if (currentAdapterStart == adapterPosition) {
+            itemsRemoved += 1
+            itemsRemaining -= 1
+            currentAdapterStart += 1
+            hasHeader = false
+        }
 
         if (itemsRemaining == 0) return itemsBeforeSection to 0
 
@@ -338,8 +347,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             if (itemsRemaining == 0) break
         }
 
+        itemsThatAreChildren += itemsRemaining
         totalItems -= itemsRemoved + itemsThatAreChildren
-        numChildren -= itemsThatAreChildren + itemsRemaining
+        numChildren -= itemsThatAreChildren
+        itemsRemoved += itemsThatAreChildren
 
         return itemsBeforeSection to itemsRemoved
     }
