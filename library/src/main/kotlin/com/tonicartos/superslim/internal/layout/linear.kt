@@ -57,7 +57,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
         var y = yStart
         for (currentPosition in section.tailPosition..section.numChildren) {
-            if (helper.scrap[0] !in section) {
+            if (helper.scrap.isEmpty() || helper.scrap.first() !in section) {
                 // No more scrap to process for this section.
                 break
             }
