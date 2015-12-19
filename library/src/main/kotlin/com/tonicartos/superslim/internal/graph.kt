@@ -451,7 +451,7 @@ private class SectionChild(var section: SectionState, helper: LayoutHelper) : Ch
             return if (pool.isEmpty()) {
                 SectionChild(section, helper)
             } else {
-                pool[0].reInit(section, helper)
+                pool.removeAt(0).reInit(section, helper)
             }
         }
     }
