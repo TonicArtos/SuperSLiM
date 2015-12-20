@@ -86,11 +86,10 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         registration?.deregister()
     }
 
-    private var _configuration: SectionConfig = LinearSectionConfig()
-    var configuration: SectionConfig
-        get() = _configuration
+    var configuration: SectionConfig = LinearSectionConfig()
+        get() = field
         set(value) {
-            _configuration = value
+            field = value
             contract?.notifySectionUpdated(this)
         }
 

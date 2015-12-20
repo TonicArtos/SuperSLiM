@@ -6,12 +6,10 @@ interface ColumnsSectionConfigurationMixin {
 }
 
 class ColumnsConfiguration : ColumnsSectionConfigurationMixin {
-    internal var _numColumns: Int = 0
-
-    override var numColumns: Int
-        get() = _numColumns
+    override var numColumns = 0
+        get() = field
         set(value) {
-            _numColumns = value
+            field = value
             columnWidth = -1
         }
 

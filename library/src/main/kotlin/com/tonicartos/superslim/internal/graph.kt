@@ -198,15 +198,14 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      */
     private val subsections: ArrayList<SectionState>
 
-    private var _adapterPosition: Int = 0
     /**
      * Position of this section in the adapter.
      */
-    private var adapterPosition: Int
-        get() = _adapterPosition
+    private var adapterPosition = 0
+        get() = field
         set(value) {
-            subsections.forEach { it.adapterPosition += value - _adapterPosition }
-            _adapterPosition = value
+            subsections.forEach { it.adapterPosition += value - field }
+            field = value
         }
 
     init {

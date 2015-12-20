@@ -175,36 +175,33 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * Configuration
      *************************/
 
-    private var _orientation = VERTICAL
-    var orientation: Int
-        get() = _orientation
+    var orientation: Int = VERTICAL
+        get() = field
         set(@Orientation value) {
             if (value != HORIZONTAL && value != VERTICAL) throw IllegalArgumentException("invalid orientation: {$value}")
             assertNotInLayoutOrScroll(null)
             if (orientation == value) return
-            _orientation = value
+            field = value
             configChanged = true
             requestLayout()
         }
 
-    private var _reverseLayout = false
-    var reverseLayout: Boolean
-        get() = _reverseLayout
+    var reverseLayout = false
+        get() = field
         set(value) {
             assertNotInLayoutOrScroll(null)
-            if (_reverseLayout == value) return
-            _reverseLayout = value
+            if (field == value) return
+            field = value
             configChanged = true
             requestLayout()
         }
 
-    private var _stackFromEnd: Boolean = false
-    var stackFromEnd: Boolean
-        get() = _stackFromEnd
+    var stackFromEnd = false
+        get() = field
         set(value) {
             assertNotInLayoutOrScroll(null)
-            if (_stackFromEnd == value) return
-            _stackFromEnd = value
+            if (field == value) return
+            field = value
             configChanged = true
             requestLayout()
         }

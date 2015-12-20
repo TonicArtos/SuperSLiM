@@ -62,17 +62,15 @@ interface Child {
  */
 abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                              @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) {
-    private var _gutterStart: Int = 0
-    var gutterStart: Int
-        get() = _gutterStart
+    var gutterStart = 0
+        get() = field
         set(value) {
-            _gutterStart = if (value < 0) GUTTER_AUTO else value
+            field = if (value < 0) GUTTER_AUTO else value
         }
-    private var _gutterEnd: Int = 0
-    var gutterEnd: Int
-        get() = _gutterEnd
+    var gutterEnd = 0
+        get() = field
         set(value) {
-            _gutterEnd = if (value < 0) GUTTER_AUTO else value
+            field = if (value < 0) GUTTER_AUTO else value
         }
 
     init {
