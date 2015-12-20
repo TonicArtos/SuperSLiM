@@ -162,7 +162,9 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         val numItemsToRemove = itemCount - jumpHeader
         itemManager?.removeRange(positionInAdapter + jumpHeader, numItemsToRemove)
         contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + jumpHeader, numItemsToRemove)
-        children.forEach { it.reset() }
+        for (it in children) {
+            it.reset()
+        }
         totalItemsChanged(-numItemsToRemove)
         collapsed = true
     }
@@ -172,7 +174,9 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
      *************************/
 
     override internal fun insertItemsToAdapter() {
-        id = contract?.notifySectionInserted(this) ?: -1
+        if (id == -1) {
+            id = contract?.notifySectionInserted(this) ?: -1
+        }
 
         header?.let {
             itemManager?.insert(positionInAdapter, it)
@@ -189,6 +193,7 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
 
     override internal fun removeItemsFromAdapter() {
         contract?.notifySectionRemoved(this)
+        id = -1
 
         itemManager?.removeRange(positionInAdapter, itemCount)
         if (header == null) {
