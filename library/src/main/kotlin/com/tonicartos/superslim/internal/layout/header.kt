@@ -44,13 +44,15 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState) {
         // if the current position is the header
         var y = 0
-        if (section.hasHeader && section.headPosition == 0) {
-            val child = section.getHeader(helper)!!
-            child.addToRecyclerView()
-            child.measure()
-            child.layout(0, 0, child.measuredWidth, child.measuredHeight)
-            y += child.height
-            child.done()
+        if (section.headPosition == 0) {
+            val header = helper.getHeader(section)
+            if (header != null) {
+                header.addToRecyclerView()
+                header.measure()
+                header.layout(0, 0, header.measuredWidth, header.measuredHeight)
+                y += header.height
+                header.done()
+            }
         }
 
         val left = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
