@@ -4,12 +4,6 @@ import android.support.annotation.VisibleForTesting
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
-interface SectionLayoutManager<T : SectionState> {
-    fun onLayout(helper: LayoutHelper, section: T)
-    fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
-    fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
-}
-
 interface Child {
     companion object {
         const val INVALID = -1
@@ -27,24 +21,25 @@ interface Child {
 
     val measuredWidth: Int
     val measuredHeight: Int
+    /**
+     * Measure child. This should be done after [addToRecyclerView] as some views like ViewPager expect to be attached
+     * before measurement.
+     */
     fun measure(usedWidth: Int = 0, usedHeight: Int = 0)
 
     val left: Int
     val top: Int
     val right: Int
     val bottom: Int
-    fun layout(left: Int = 0, top: Int = 0) = layout(left, top, 0, 0)
+    /**
+     * Layout the child. A backing view will have the dimensions specified. A subsection will have bounds defined by
+     * left, top, and right, however will ignore bottom and may fill any remaining space to the bottom of the viewable
+     * area.
+     */
     fun layout(left: Int, top: Int, right: Int, bottom: Int)
 
     val width: Int
     val height: Int
-
-    /**
-     * The animation state for the child in this layout pass. An appearing child is one that will start offscreen and animate
-     * onscreen. A disappearing child is the opposite. A normal child does neither. Valid values are per the
-     * [AnimationState] annotation.
-     */
-    @AnimationState var animationState: Int
 
     /**
      * Adds child to the recycler view. Handles disappearing or appearing state per value set in [animationState].

@@ -1,68 +1,112 @@
 package com.tonicartos.superslim
 
-import android.support.v7.widget.RecyclerView
 import android.view.View
+import com.tonicartos.superslim.internal.BaseLayoutHelper
+import com.tonicartos.superslim.internal.RootLayoutHelper
+import com.tonicartos.superslim.internal.SectionState
 
-interface ReadLayoutHelper {
-    fun getLeft(child: View): Int
-    fun getTop(child: View): Int
-    fun getRight(child: View): Int
-    fun getBottom(child: View): Int
-    fun getMeasuredWidth(child: View): Int
-    fun getMeasuredHeight(child: View): Int
-
-    /**
-     * Width of the layout area.
-     */
-    val layoutWidth: Int
-
-    /**
-     * Y limit that constrains the layout. This is used to know when to stop laying out items, and is nominally the
-     * maximum height of the visible layout area.
-     *
-     * **Warning**: This value can change, and as such, should not be stored.
-     */
-    val layoutLimit: Int
+interface SectionLayoutManager<T : SectionState> {
+    fun onLayout(helper: LayoutHelper, section: T)
+    fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
+    fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
 }
 
-interface WriteLayoutHelper {
-    fun measure(view: View, usedWidth: Int = 0, usedHeight: Int = 0)
-    fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0, marginRight: Int = 0, marginBottom: Int = 0)
-}
+class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
+    internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int) : this(root) {
+        offset.x = x
+        offset.y = y
+        this.width = width
+    }
 
-interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper
+    /*************************
+     * Init stuff
+     *************************/
 
-interface RecyclerHelper {
-    fun getView(position: Int): View
-    val scrap: List<RecyclerView.ViewHolder>
-}
+    private var offset = Offset()
+    private var width: Int = 0
 
-interface StateHelper {
-    val isPreLayout: Boolean
-    val willRunPredictiveAnimations: Boolean
-    val itemCount: Int
-    val hasTargetScrollPosition: Boolean
-    val targetScrollPosition: Int
-}
+    internal fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.x + left, offset.y + top, offset.x + right)
+    internal fun release() {
+        root.releaseSubsectionHelper(this)
+    }
 
-interface ManagerHelper {
-    fun addView(child: View)
-    fun addView(child: View, index: Int)
-    fun addDisappearingView(child: View)
-    fun addDisappearingView(child: View, index: Int)
+    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int): LayoutHelper {
+        this.root = root
+        offset.x = x
+        offset.y = y
+        this.width = width
+        return this
+    }
 
-    val supportsPredictiveItemAnimations: Boolean
-}
+    /*************************
+     * layout stuff
+     *************************/
 
-/**
- * Interface for querying and modifying the assigned section layout.
- */
-interface LayoutHelper : ManagerHelper, StateHelper, RecyclerHelper, ReadWriteLayoutHelper {
-    /**
-     * Create a new layout helper for a subsection of this helper's section.
-     */
-    fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper
+    override val layoutWidth: Int
+        get() = width
+    override val layoutLimit: Int
+        get() = root.layoutLimit - offset.y
 
-    fun release()
-    fun addIgnoredHeight(ignoredHeight: Int)
+    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
+        root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom, marginLeft, marginTop, marginRight, marginBottom)
+    }
+
+    override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
+        root.measure(view, usedWidth + root.layoutWidth - width, usedHeight + offset.y)
+    }
+
+    var filledArea: Int = 0
+
+    private val willCheckForDisappearedItems = !isPreLayout && willRunPredictiveAnimations && supportsPredictiveItemAnimations
+
+    internal fun getHeader(section: SectionState): Child? {
+        if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
+            return section.getDisappearingHeader(this)
+        } else {
+            return section.getHeader(this)
+        }
+    }
+
+    fun getChild(currentPosition: Int, section: SectionState): Child? {
+        if (currentPosition < section.numChildren) {
+            if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
+                return section.getDisappearingChildAt(this, currentPosition)
+            } else {
+                return section.getChildAt(this, currentPosition)
+            }
+        }
+        return null
+    }
+
+    fun moreToLayout(currentPosition: Int, section: SectionState): Boolean {
+        if (currentPosition < section.numChildren) {
+            if (filledArea >= layoutLimit) {
+                return willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut
+            }
+            return true
+        }
+        return false
+    }
+
+    private val SectionState.hasDisappearedItemsToLayOut: Boolean get() {
+        for (scrap in scrap) {
+            if (scrap in this) {
+                return true
+            }
+        }
+        return false
+    }
+
+    internal fun scrapHasPosition(position: Int): Boolean {
+        for (scrap in scrap) {
+            if (scrap.layoutPosition == position) {
+                return true
+            }
+        }
+        return false
+    }
+
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace("\n", "\n\t")
+
+    private data class Offset(var x: Int = 0, var y: Int = 0)
 }

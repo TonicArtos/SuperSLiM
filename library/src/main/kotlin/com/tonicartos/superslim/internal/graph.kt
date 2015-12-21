@@ -40,7 +40,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      * Layout
      *************************/
 
-    fun layout(helper: LayoutHelper) {
+    fun layout(helper: RootLayoutHelper) {
         if (!helper.isPreLayout) {
             //doSectionMoves()
             doSectionUpdates()
@@ -225,14 +225,21 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal var hasHeader: Boolean = false
 
-    internal fun getHeader(helper: LayoutHelper): ChildInternal? =
+    internal fun getHeader(helper: LayoutHelper): Child? =
             if (hasHeader) {
                 ItemChild.wrap(helper.getView(adapterPosition), helper)
             } else {
                 null
             }
 
-    fun getChildAt(helper: LayoutHelper, position: Int): Child {
+    internal fun getDisappearingHeader(helper: LayoutHelper): Child? =
+            if (hasHeader && helper.scrapHasPosition(adapterPosition)) {
+                DisappearingItemChild.wrap(helper.getView(adapterPosition), helper)
+            } else {
+                null
+            }
+
+    internal fun getChildAt(helper: LayoutHelper, position: Int): Child {
         var hiddenItems = adapterPosition + if (hasHeader) 1 else 0
         var lastSectionPosition = 0
         for ((i, it) in subsections.withIndex()) {
@@ -249,13 +256,46 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         return ItemChild.wrap(helper.getView(hiddenItems + position - lastSectionPosition), helper)
     }
 
-    final fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+    /**
+     * Get a disappearing child. This is a special child which is used to correctly position disappearing views. Any
+     * views not in the scrap list are virtual and are not fetched from the recycler. Instead a dummy item is returned
+     * which behaves as a view with layout params(width = match_parent, height = 0).
+     */
+    internal fun getDisappearingChildAt(helper: LayoutHelper, position: Int): Child {
+        var hiddenItems = adapterPosition + if (hasHeader) 1 else 0
+        var lastSectionPosition = 0
+        for ((i, it) in subsections.withIndex()) {
+            if (it.adapterPosition - hiddenItems + i > position) {
+                break
+            } else if (it.adapterPosition - hiddenItems + i == position) {
+                return SectionChild.wrap(it, helper)
+            } else {
+                hiddenItems += it.totalItems
+                lastSectionPosition = i
+            }
+        }
+
+        val viewPosition = hiddenItems + position - lastSectionPosition
+        if (helper.scrapHasPosition(viewPosition)) {
+            return DisappearingItemChild.wrap(helper.getView(viewPosition), helper)
+        } else {
+            return DummyChild.wrap(helper)
+        }
+    }
+
+    fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
         HeaderLayoutManager.onLayout(subsectionHelper, this)
         subsectionHelper.release()
     }
 
-    final internal fun layoutContent(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+    internal fun layout(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
+        doLayout(subsectionHelper)
+        subsectionHelper.release()
+    }
+
+    internal fun layoutContent(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
         doLayout(subsectionHelper)
         subsectionHelper.release()
@@ -263,8 +303,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     protected abstract fun doLayout(helper: LayoutHelper)
 
-    infix operator fun contains(
-            viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.adapterPosition >= adapterPosition && viewHolder.adapterPosition < adapterPosition + totalItems
+    internal infix operator fun contains(
+            viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.layoutPosition >= adapterPosition && viewHolder.layoutPosition < adapterPosition + totalItems
 
     /*************************
      * Item management
@@ -482,11 +522,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 }
 
-internal abstract class ChildInternal(var helper: LayoutHelper) : Child {
-    @AnimationState override var animationState: Int = Child.ANIM_NONE
-}
+internal abstract class ChildInternal(var helper: LayoutHelper) : Child {}
 
-private class SectionChild(var section: SectionState, helper: LayoutHelper) : ChildInternal(helper) {
+private open class SectionChild(var section: SectionState, helper: LayoutHelper) : ChildInternal(helper) {
     companion object {
         val pool = arrayListOf<SectionChild>()
 
@@ -523,15 +561,15 @@ private class SectionChild(var section: SectionState, helper: LayoutHelper) : Ch
         _measuredWidth = helper.layoutWidth - usedWidth
     }
 
-    private var _left = 0
+    protected var _left = 0
     override val left: Int
         get() = _left
 
-    private var _top = 0
+    protected var _top = 0
     override val top: Int
         get() = _top
 
-    private var _right = 0
+    protected var _right = 0
     override val right: Int
         get() = _right
 
@@ -554,7 +592,7 @@ private class SectionChild(var section: SectionState, helper: LayoutHelper) : Ch
     }
 }
 
-private class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(helper) {
+private open class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(helper) {
     companion object {
         val pool = arrayListOf<ItemChild>()
 
@@ -609,11 +647,98 @@ private class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(he
         get() = helper.getMeasuredHeight(view)
 
     override fun addToRecyclerView(i: Int) {
-        val helper = this.helper
-        val view = this.view
-        when (animationState) {
-            Child.ANIM_APPEARING, Child.ANIM_NONE -> helper.addView(view, i)
-            Child.ANIM_DISAPPEARING               -> helper.addDisappearingView(view, i)
+        helper.addView(view, i)
+    }
+}
+
+private class DisappearingItemChild(view: View, helper: LayoutHelper) : ItemChild(view, helper) {
+    companion object {
+        val pool = arrayListOf<DisappearingItemChild>()
+
+        fun wrap(view: View, helper: LayoutHelper): DisappearingItemChild {
+            return if (pool.isEmpty()) {
+                DisappearingItemChild(view, helper)
+            } else {
+                pool.removeAt(0).reInit(view, helper)
+            }
         }
+    }
+
+    private fun reInit(view: View, helper: LayoutHelper): DisappearingItemChild {
+        this.view = view
+        this.helper = helper
+        return this
+    }
+
+    override fun done() {
+        pool.add(this)
+    }
+
+    override fun addToRecyclerView(i: Int) {
+        helper.addDisappearingView(view, i)
+    }
+}
+
+/**
+ * A child which fakes measurement and layout, and never adds to the recycler view.
+ */
+private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
+    companion object {
+        val pool = arrayListOf<DummyChild>()
+
+        fun wrap(helper: LayoutHelper): DummyChild {
+            return if (pool.isEmpty()) {
+                DummyChild(helper)
+            } else {
+                pool.removeAt(0).reInit(helper)
+            }
+        }
+    }
+
+    private fun reInit(helper: LayoutHelper): DummyChild {
+        this.helper = helper
+        return this
+    }
+
+    override fun done() {
+        pool.add(this)
+    }
+
+    override val isRemoved: Boolean get() = false
+    private var _measuredWidth = 0
+    override val measuredWidth: Int get() = _measuredWidth
+    override val measuredHeight: Int get() = 0
+
+    override fun measure(usedWidth: Int, usedHeight: Int) {
+        _width = helper.layoutWidth - usedWidth
+    }
+
+    private var _left = 0
+    private var _top = 0
+    private var _right = 0
+    private var _bottom = 0
+
+    override val left: Int get() = _left
+    override val top: Int get() = _top
+    override val right: Int get() = _right
+    override val bottom: Int get() = _bottom
+
+    override fun layout(left: Int, top: Int, right: Int, bottom: Int) {
+        _left = left
+        _top = top
+        _right = right
+        _bottom = bottom
+
+        _width = right - left
+        _height = bottom - top
+    }
+
+    private var _width = 0
+    private var _height = 0
+
+    override val width: Int get() = _width
+    override val height: Int get() = _height
+
+    override fun addToRecyclerView(i: Int) {
     }
 }

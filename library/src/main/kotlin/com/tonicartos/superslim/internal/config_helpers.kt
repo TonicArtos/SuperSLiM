@@ -1,7 +1,6 @@
 package com.tonicartos.superslim.internal
 
 import android.view.View
-import com.tonicartos.superslim.ReadWriteLayoutHelper
 
 //internal class LtrConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayoutHelper by base {}
 

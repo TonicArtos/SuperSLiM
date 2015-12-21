@@ -5,20 +5,19 @@ import android.view.View
 import com.tonicartos.superslim.*
 
 internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWriteLayoutHelper,
-                                val recycler: RecyclerHelper, val state: StateHelper) : LayoutHelper,
+                                val recycler: RecyclerHelper, val state: StateHelper) : BaseLayoutHelper,
                                                                                         ManagerHelper by manager, ReadWriteLayoutHelper by config,
                                                                                         RecyclerHelper by recycler, StateHelper by state {
+    private var helperPool = LayoutHelperPool()
+
+    fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = helperPool.acquire(this, left, top, right - left)
+    fun releaseSubsectionHelper(helper: LayoutHelper) {
+        helperPool.release(helper)
+    }
+
     private var layoutLimitExtension: Int = 0
     override val layoutLimit: Int
         get() = config.layoutLimit + layoutLimitExtension
-
-    override fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = helperPool.acquire(this, left, top, right - left)
-    fun releaseSubsectionHelper(helper: LayoutHelper) {
-        helperPool.release(helper as? SubsectionHelper ?: return)
-    }
-
-    override fun release() {
-    }
 
     override fun addIgnoredHeight(ignoredHeight: Int) {
         layoutLimitExtension += ignoredHeight
@@ -26,64 +25,25 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
 
     override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n".replace("\n", "\n\t")
 
-    private var helperPool = LayoutHelperPool()
-
     private class LayoutHelperPool {
-        private val pool = arrayListOf<SubsectionHelper>()
+        private val pool = arrayListOf<LayoutHelper>()
 
         fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int) =
                 if (pool.isEmpty()) {
-                    SubsectionHelper(root, x, y, width)
+                    LayoutHelper(root, x, y, width)
                 } else {
                     pool.removeAt(0).reInit(root, x, y, width)
                 }
 
-        fun release(helper: SubsectionHelper) {
+        fun release(helper: LayoutHelper) {
             pool.add(helper)
         }
     }
 }
 
-private class SubsectionHelper(var root: RootLayoutHelper) : LayoutHelper by root {
-    private var offset = Offset()
-    private var width: Int = 0
-    override val layoutWidth: Int
-        get() = width
-    override val layoutLimit: Int
-        get() = root.layoutLimit - offset.y
-
-    constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int) : this(root) {
-        offset.x = x
-        offset.y = y
-        this.width = width
-    }
-
-    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
-        root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom, marginLeft, marginTop, marginRight, marginBottom)
-    }
-
-    override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
-        root.measure(view, usedWidth + root.layoutWidth - width, usedHeight + offset.y)
-    }
-
-    override fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.x + left, offset.y + top, offset.x + right)
-    override fun release() {
-        root.releaseSubsectionHelper(this)
-    }
-
-    data class Offset(var x: Int = 0, var y: Int = 0)
-
-    fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int): SubsectionHelper {
-        this.root = root
-        offset.x = x
-        offset.y = y
-        this.width = width
-        return this
-    }
-
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace("\n", "\n\t")
-}
-
+/**
+ * Encapsulates the recycler into the layout helper chain.
+ */
 internal class RecyclerWrapper : RecyclerHelper {
     lateinit var recycler: RecyclerView.Recycler
 
@@ -98,6 +58,9 @@ internal class RecyclerWrapper : RecyclerHelper {
         get() = recycler.scrapList
 }
 
+/**
+ * Encapsulates the recycler view state into the layout helper chain.
+ */
 internal class StateWrapper : StateHelper {
     lateinit var state: RecyclerView.State
 
@@ -123,3 +86,65 @@ internal class StateWrapper : StateHelper {
 
     override fun toString(): String = "State(itemCount = $itemCount, isPreLayout = $isPreLayout, willRunPredictiveAnimations = $willRunPredictiveAnimations)"
 }
+
+/****************************************************
+ * This is the set of interfaces which collectively
+ * express the hierarchy of delegates which make up
+ * the bulk of [LayoutHelper]'s functionality.
+ ****************************************************/
+
+internal interface BaseLayoutHelper : ManagerHelper, StateHelper, RecyclerHelper, ReadWriteLayoutHelper {
+    fun addIgnoredHeight(ignoredHeight: Int)
+}
+
+internal interface ManagerHelper {
+    fun addView(child: View)
+    fun addView(child: View, index: Int)
+    fun addDisappearingView(child: View)
+    fun addDisappearingView(child: View, index: Int)
+
+    val supportsPredictiveItemAnimations: Boolean
+}
+
+internal interface StateHelper {
+    val isPreLayout: Boolean
+    val willRunPredictiveAnimations: Boolean
+    val itemCount: Int
+    val hasTargetScrollPosition: Boolean
+    val targetScrollPosition: Int
+}
+
+internal interface RecyclerHelper {
+    fun getView(position: Int): View
+    val scrap: List<RecyclerView.ViewHolder>
+}
+
+internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper
+
+internal interface ReadLayoutHelper {
+    fun getLeft(child: View): Int
+    fun getTop(child: View): Int
+    fun getRight(child: View): Int
+    fun getBottom(child: View): Int
+    fun getMeasuredWidth(child: View): Int
+    fun getMeasuredHeight(child: View): Int
+
+    /**
+     * Width of the layout area.
+     */
+    val layoutWidth: Int
+
+    /**
+     * Y limit that constrains the layout. This is used to know when to stop laying out items, and is nominally the
+     * maximum height of the visible layout area.
+     *
+     * **Warning**: This value can change, and as such, should not be stored.
+     */
+    val layoutLimit: Int
+}
+
+internal interface WriteLayoutHelper {
+    fun measure(view: View, usedWidth: Int = 0, usedHeight: Int = 0)
+    fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0, marginRight: Int = 0, marginBottom: Int = 0)
+}
+
