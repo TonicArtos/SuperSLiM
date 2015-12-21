@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.internal.layout
 
-import com.tonicartos.superslim.Child
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -25,11 +24,11 @@ internal class LinearSectionState(val configuration: LinearSectionConfig, oldSta
 
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onLayout(helper: LayoutHelper, section: LinearSectionState) {
-        var currentPos = section.headPosition
-
+        var currentPosition = section.headPosition
         var y = 0
-        while (y < helper.layoutLimit && currentPos < section.numChildren) {
-            val child = section.getChildAt(helper, currentPos)
+
+        while (helper.moreToLayout(currentPosition, section)) {
+            val child = helper.getChild(currentPosition, section) ?: break
             child.addToRecyclerView()
             child.measure()
             child.layout(0, y, child.measuredWidth, y + child.measuredHeight)
@@ -39,43 +38,13 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 helper.addIgnoredHeight(child.height)
             }
             y += childHeight
-            currentPos += 1
+            helper.filledArea += childHeight
+            currentPosition += 1
 
             child.done()
         }
-
         section.height = y
-        section.tailPosition = currentPos - 1
-
-        layoutDisappearingViews(y, helper, section)
-    }
-
-    private fun layoutDisappearingViews(yStart: Int, helper: LayoutHelper, section: LinearSectionState) {
-        if (section.tailPosition == section.numChildren || helper.isPreLayout || !helper.willRunPredictiveAnimations || !helper.supportsPredictiveItemAnimations) {
-            return
-        }
-
-        var y = yStart
-        for (currentPosition in section.tailPosition..section.numChildren) {
-            if (helper.scrap.isEmpty() || helper.scrap.first() !in section) {
-                // No more scrap to process for this section.
-                break
-            }
-
-            // Add disappearing children. These will disappear from scrap as they are added, and eventually we will
-            // break out of this section when the helper no longer has scrap for this section.
-            val child = section.getChildAt(helper, currentPosition)
-            child.animationState = Child.ANIM_DISAPPEARING
-            child.addToRecyclerView()
-            child.measure()
-            child.layout(0, y, child.measuredWidth, y + child.measuredHeight)
-
-            y += child.height
-
-            child.done()
-        }
-
-        section.height = y
+        section.tailPosition = currentPosition - 1
     }
 
     /**
