@@ -600,7 +600,7 @@ private open class ItemChild(var view: View, helper: LayoutHelper) : ChildIntern
             return if (pool.isEmpty()) {
                 ItemChild(view, helper)
             } else {
-                pool[0].reInit(view, helper)
+                pool.removeAt(0).reInit(view, helper)
             }
         }
     }
