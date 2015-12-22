@@ -374,7 +374,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         if (adapterPosition >= adapterPositionStart + itemCount) return 0 to 0 //After removed items
 
         val itemsBeforeSection = Math.min(itemCount, Math.max(0, adapterPosition - adapterPositionStart))
-        val itemsAfterSection = Math.max(0, itemCount + adapterPositionStart - totalItems - adapterPosition)
+        val itemsAfterSection = Math.max(0, (adapterPositionStart + itemCount) - (adapterPosition + totalItems))
 
         var currentAdapterStart = Math.max(adapterPosition, adapterPositionStart)
         var itemsRemaining = itemCount - itemsBeforeSection - itemsAfterSection
