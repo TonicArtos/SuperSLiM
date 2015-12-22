@@ -50,6 +50,9 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
                 header.addToRecyclerView()
                 header.measure()
                 header.layout(0, 0, header.measuredWidth, header.measuredHeight)
+                if (helper.isPreLayout && header.isRemoved) {
+                    helper.addIgnoredHeight(header.height)
+                }
                 y += header.height
                 header.done()
             }
