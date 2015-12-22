@@ -118,7 +118,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add header operation.")
             section.addHeader()
         } else {
-            section.addItems(eventSectionData.start, positionStart, itemCount)
+            section.addItems(eventSectionData.start, itemCount)
         }
     }
 
@@ -129,14 +129,14 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for remove header operation.")
             section.removeHeader()
         } else {
-            section.removeItems(eventSectionData.start, positionStart, itemCount)
+            section.removeItems(positionStart, itemCount)
         }
     }
 
     fun moveItems(eventSectionData: EventSectionData, from: Int, to: Int) {
         if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "moveItem(eventData = $eventSectionData, from = $from, to = $to)")
-        sectionIndex[eventSectionData.fromSection].removeItems(eventSectionData.from, from, 1)
-        sectionIndex[eventSectionData.toSection].addItems(eventSectionData.to, to, 1)
+        sectionIndex[eventSectionData.fromSection].removeItems(from, 1)
+        sectionIndex[eventSectionData.toSection].addItems(eventSectionData.to, 1)
     }
 }
 
@@ -324,7 +324,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         totalItems -= 1
     }
 
-    internal fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+    internal fun addItems(childPositionStart: Int, itemCount: Int) {
         applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
             it.adapterPosition += itemCount
         }
@@ -334,7 +334,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         parent?.itemCountsChangedInSubsection(this, itemCount)
     }
 
-    internal fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+    internal fun removeItems(adapterPositionStart: Int, itemCount: Int) {
         var currentAdapterStart = adapterPositionStart
         var itemsRemaining = itemCount
         var itemsThatAreChildren = 0
@@ -519,8 +519,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         override val subsections: ArrayList<SectionState> get() = this@SectionState.subsections
         override val adapterPosition: Int get() = this@SectionState.adapterPosition
 
-        override fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.addItems(childPositionStart, adapterPositionStart, itemCount)
-        override fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.removeItems(childPositionStart, adapterPositionStart, itemCount)
+        override fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.addItems(childPositionStart, itemCount)
+        override fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.removeItems(adapterPositionStart, itemCount)
 
         override fun addHeader() = this@SectionState.addHeader()
         override fun removeHeader() = this@SectionState.removeHeader()
