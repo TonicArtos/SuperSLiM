@@ -411,16 +411,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         return itemsBeforeSection to itemsRemoved
     }
 
-    /**
-     * An ancestor has removed all items in this section.
-     */
-    private fun allItemsWereRemoved() {
-        totalItems = 0
-        hasHeader = false
-        numChildren = subsections.size
-        subsections.forEach { it.allItemsWereRemoved() }
-    }
-
     private fun itemCountsChangedInSubsection(child: SectionState, changedCount: Int) {
         // Find child and adjust adapter position for sections after it.
         val index = subsections.indexOfFirst { it == child }
