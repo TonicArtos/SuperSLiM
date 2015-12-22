@@ -388,7 +388,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             hasHeader = false
         }
 
-        if (itemsRemaining == 0) return itemsBeforeSection to 0
+        if (itemsRemaining == 0) {
+            totalItems -= itemsRemoved
+            return itemsBeforeSection to itemsRemoved
+        }
 
         for (subsection in subsections) {
             var (skipped, removed) = subsection.removeItems(currentAdapterStart, itemsRemaining)
