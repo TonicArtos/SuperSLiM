@@ -42,7 +42,7 @@ interface Child {
     val height: Int
 
     /**
-     * Adds child to the recycler view. Handles disappearing or appearing state per value set in [animationState].
+     * Adds child to the recycler view.
      */
     fun addToRecyclerView() = addToRecyclerView(-1)
 
