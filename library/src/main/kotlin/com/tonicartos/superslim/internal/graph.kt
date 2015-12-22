@@ -354,7 +354,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         for (it in subsections) {
-            var (skipped, removed) = it.removeItems(currentAdapterStart, itemsRemaining)
+            var (skipped, removed) = it.removeSubsectionItems(currentAdapterStart, itemsRemaining)
             it.adapterPosition -= skipped + itemsRemoved
             itemsRemoved += removed
             itemsThatAreChildren += skipped
@@ -368,7 +368,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         numChildren -= itemsThatAreChildren
     }
 
-    private fun removeItems(adapterPositionStart: Int, itemCount: Int): Pair<Int, Int> {
+    private fun removeSubsectionItems(adapterPositionStart: Int, itemCount: Int): Pair<Int, Int> {
         if (itemCount == 0) return 0 to 0
         if (adapterPosition + totalItems <= adapterPositionStart) return 0 to 0 // Before removed items
         if (adapterPosition >= adapterPositionStart + itemCount) return 0 to 0 //After removed items
@@ -394,7 +394,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         for (subsection in subsections) {
-            var (skipped, removed) = subsection.removeItems(currentAdapterStart, itemsRemaining)
+            var (skipped, removed) = subsection.removeSubsectionItems(currentAdapterStart, itemsRemaining)
             subsection.adapterPosition -= skipped + itemsRemoved
             itemsThatAreChildren += skipped
             currentAdapterStart += removed + skipped
