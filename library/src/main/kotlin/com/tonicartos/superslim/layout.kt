@@ -35,6 +35,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         offset.x = x
         offset.y = y
         this.width = width
+        filledArea = 0
         return this
     }
 
