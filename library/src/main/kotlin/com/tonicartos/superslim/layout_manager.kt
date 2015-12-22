@@ -34,7 +34,7 @@ class SectionData {
  *
  */
 class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWriteLayoutHelper {
-    @JvmOverloads constructor(context: Context, @Orientation orientation: Int = VERTICAL, reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
+    @JvmOverloads constructor(@Suppress("UNUSED_PARAMETER") context: Context, @Orientation orientation: Int = VERTICAL, reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
         this.orientation = orientation
         this.reverseLayout = reverseLayout
         this.stackFromEnd = stackFromEnd
