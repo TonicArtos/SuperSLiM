@@ -2,8 +2,8 @@
 
 This is the version 5 development branch.
 
-[Project Plan](https://trello.com/b/g3Wctuey)
-[Support me on Patreon](https://www.patreon.com/Tonic)
+[Project Plan](https://trello.com/b/g3Wctuey)  
+[Support me on Patreon](https://www.patreon.com/Tonic)  
 [Blog](https://branchmerge.blogspot.com)
 
 ## What is Version 5
