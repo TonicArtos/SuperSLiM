@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LayoutManager</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="layoutmanager">LayoutManager</h1>
+
+<p><div class="toc">
+<ul>
+<li><a href="#layoutmanager">LayoutManager</a></li>
+<li><a href="#concepts">Concepts</a><ul>
+<li><a href="#general">General</a></li>
+<li><a href="#superslim">SuperSLiM</a></li>
+</ul>
+</li>
+<li><a href="#layout-transformation">Layout transformation</a><ul>
+<li><a href="#configuration-transformations">Configuration transformations</a></li>
+<li><a href="#nesting">Nesting</a></li>
+</ul>
+</li>
+<li><a href="#tracking-graph-changes">Tracking graph changes</a><ul>
+<li><a href="#section-graph-events">Section graph events</a></li>
+</ul>
+</li>
+<li><a href="#layout-manager-code-paths">Layout manager code paths</a></li>
+<li><a href="#adapter">Adapter</a></li>
+<li><a href="#section-graph">Section graph</a><ul>
+<li><a href="#section">Section</a></li>
+</ul>
+</li>
+<li><a href="#internal-section-graph">Internal section graph</a><ul>
+<li><a href="#section-1">Section</a></li>
+</ul>
+</li>
+<li><a href="#section-layout-manager">Section layout manager</a><ul>
+<li><a href="#laying-out-children">Laying out children</a></li>
+<li><a href="#pre-layout-child-handling">Pre-layout child handling</a></li>
+<li><a href="#child-abstraction">Child abstraction</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</p>
+
+
+
+<h1 id="concepts">Concepts</h1>
+
+
+
+<h2 id="general">General</h2>
+
+<dl>
+<dt>Change animation</dt>
+<dd>The recycler view’s animation for changes in the data set. The initial conditions are set by the pre-layout pass, and the final state of each view change animation is given by the real-layout pass.</dd>
+
+<dt>Pre-layout</dt>
+<dd><code>RecyclerView.State.isPreLayout() == true</code></dd>
+
+<dd>The role of the pre-layout pass is to set up the initial conditions of the change animation. The pre-layout pass lays-out regular on-screen views, on-screen disappearing views, and off-screen appearing views.</dd>
+
+<dt>Real-layout</dt>
+<dd><code>RecyclerView.State.isPreLayout() == false</code></dd>
+
+<dd>The second layout pass which gives the final position of views after any animations have run. The real-layout pass lays-out regular on-screen views, on-screen appearing views, and off-screen disappearing views.</dd>
+
+<dt>Added views</dt>
+<dd>Added views are available for laying out in the real-layout pass.</dd>
+
+<dt>Removed views</dt>
+<dd>Removed views are returned from the scrap list in the pre-layout pass to help with correctly laying out the initial position of views affected by the change animation, especially appearing views. Removed views should not be added to the child list, they are only a positional aid.</dd>
+
+<dt>Disappearing view</dt>
+<dd>A view that is on-screen before being animated off-screen.</dd>
+
+<dd>A disappearing view is laid out on-screen in the pre-layout pass, and is laid out off-screen in the real-layout.</dd>
+
+<dd>In the post-layout pass the recycler view must be told the view is disappearing by calling <code>addDisappearingView()</code> on the layout manager.</dd>
+
+<dd>Disappearing views are a result of either; the view being moved, or views being added before it, thus pushing it off-screen.</dd>
+
+<dt>Appearing view</dt>
+<dd>A view that is off-screen before being animated onto the screen.</dd>
+
+<dd>An appearing view is laid out off-screen in the pre-layout pass, and is laid out on-screen in the real-layout.</dd>
+
+<dd>An appearing view can be discovered by detecting views that will be removed after pre-layout, laying them out, but not accounting for the removed views in determining the visual limit of the layout pass; i.e., for a linear layout removed views count for zero height when being laid out, this is to the effect that 100 pixels of removed views results in at least 100 pixels of space being available for appearing views.</dd>
+
+<dt>Scrap views</dt>
+<dd>Views attached to the recycler view which are marked for removal or reuse.</dd>
+
+<dd>When layout starts SuperSLiM removes and scraps all child views of the recycler view. When SLMs get views they may be reused from the scrap list or populated from the adapter. Scrap views are automatically removed from the scrap list when they are added back to the recycler view.</dd>
+
+<dd>Scrap views remaining after the regular post-layout pass are views that were on-screen in the pre-layout pass. These scrap views are now either removed and should be ignored, or are disappearing views and are to be laid out off-screen.</dd>
+
+<dt>Item decorator</dt>
+<dd>Item decorators can inset child views and add extra content without complicating layout passes. Handling decorators correctly requires using helper methods with the child view as an argument rather than interacting with the child view directly.</dd>
+
+<dt>Item changes</dt>
+<dd>Changes to the data set are notified to the recycler view through a listener interface. The changes are propagated through to the layout manager by calls to <code>onItemsAdded()</code>, <code>onItemsUpdated()</code>, <code>onItemsChanged()</code>, <code>onItemsMoved()</code>, and <code>onItemsRemoved()</code>. The affected position and ranges are passed in these calls. If the change is outside of the currently laid out area the calls are made before the pre-layout pass.</dd>
+
+<dt>Scroll event</dt>
+<dd>A call to one to the scroll methods <code>scrollVerticallyBy()</code> or <code>scrollHorizontallyBy()</code>. Scroll distance is given in pixels and the result indicates overscroll.</dd>
+
+<dt>Anchor position</dt>
+<dd>Logically, the current position that the user has scrolled to. For touch scrolling, this is the adapter position of the view that is logically and visually closest to the reference edge. Alternatively, for focus based scrolling, which is assistive or keyboard driven, this is the position of the focused view.</dd>
+
+<dd>The anchor position is updated after each scroll or focus event, or is directly modified by calls to <em>scroll to</em> or <em>smooth scroll to</em> a position.</dd>
+
+<dd>The current position is retained through configuration changes and used to re-layout the content with that position as an anchor.</dd>
+
+<dt>Anchor position offset</dt>
+<dd>The distance from the reference edge that the view indicated by the anchor position is located. Use of this value allows for the logical recreation of the scrolled view after configuration changes.</dd>
+
+<dd>This offset is updated each time the anchor position is updated.</dd>
+
+<dt>Over scroll</dt>
+<dd>When a layout pass displays less content than should have been. The visual effect is where the scrolled content is displayed with its bottom edge not aligned with the bottom padding edge or view edge, but further up the view instead.  This is caused when items from the anchor position to the last item are laid out, but there is still space below the content and there are items before the anchor position. The solution is to detect this situation after a layout pass, adjust all the laid out views down to the correct position, and then fill in the revealed space.</dd>
+</dl>
+
+<h2 id="superslim">SuperSLiM</h2>
+
+<dl>
+<dt>Scroll layout</dt>
+<dd>Scrolling in SuperSLiM is handled by moving all content on the screen and then laying out revealed content on the leading edge as a special scroll layout pass.</dd>
+
+<dt>Scroll pre-trim</dt>
+<dd>Before the scroll trim is performed, a scroll pre-trim pass is made on sections intersecting the trailing edge. Any special positioning of views after the scroll event can be made here. The base <code>SectionLayoutManager</code> implementation uses this to correctly reposition stickied headers on the up edge.</dd>
+
+<dt>Scroll trim</dt>
+<dd>After a scroll layout, any content wholly outside the trailing edge is trimmed.</dd>
+
+<dt>Trim notification</dt>
+<dd>When a view is trimmed due to a scroll, a notification is passed down the section hierarchy so that section layout managers can update any cached data about a section.</dd>
+
+<dt>Section coordinate space</dt>
+<dd>Each section has its own virtual space. Values in this space are transformed up the section graph to the root coordinate space used by the layout manager and the recycler view.</dd>
+
+<dt>Config transformation</dt>
+<dd>The layout manager is configured by the locale and user set values. A config transformation is applied to coordinates coming into and out of the recycler view. In this manner, it is easy to support different layout directions without custom logic in each section layout manager implementation.</dd>
+
+<dt>Start edge</dt>
+<dd>The ‘<em>left edge</em>’ of the layout managed area. For a RTL locale, this is actually the right edge.</dd>
+
+<dt>End edge</dt>
+<dd>The ‘<em>right edge</em>’ of the layout managed area. For a RTL locale, this is actually the left edge.</dd>
+
+<dt>Reverse layout</dt>
+<dd>Layout is typically performed from top left to bottom right, translated for locale differences. When reversed, the layout is performed from the bottom right to the top right.</dd>
+
+<dt>Orientation</dt>
+<dd>The orientation can be horizontal or vertical.</dd>
+
+<dt>Stack from end</dt>
+<dd>Views are laid out from the bottom to the top. The bottom edge is the reference edge for determining current position. Headers still appear at the top of the section.</dd>
+
+<dt>Headers at end</dt>
+<dd>Headers are positioned after the section content. This makes for a reversal of the sticky logic. Instead of sticking to the logical top of the section, they will stick to the logical bottom of the section.</dd>
+
+<dd>Handled inside <code>BaseSectionLayoutManager</code>.</dd>
+
+<dt>Configuration transformer</dt>
+<dd>A function that transforms one coordinate system into another; i.e., turning the LTR, TTB coordinate system used by section layout managers, into the coordinate system used by a RTL recycler view - a configuration derived from the users locale.</dd>
+
+<dt>Semi-real coordinate</dt>
+<dd>A coordinate that has been transformed into a virtual coordinate by a configuration transformation, but is also not nested within another virtual coordinate space. In this manner the top edge of this space can be called the semi-real top, though it could actually be the left edge of a horizontally scrolling recycler view.</dd>
+</dl>
+
+
+
+<h1 id="layout-transformation">Layout transformation</h1>
+
+<p>Section layout managers work in their own virtual coordinate space that is transformed into the window coordinates. As such, section layout managers behave as though they are always operating in a vertical scrolling, top-to-bottom, left-to-right coordinate space. The width of the section space is defined by the parent section, and may have an invisible offset as defined by the parent. </p>
+
+<p><strong>Writes</strong></p>
+
+
+
+<div class="sequence-diagram"><svg style="overflow: hidden; position: relative; left: -0.5px; top: -0.333496px;" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="1382" version="1.1" height="420"><desc>Created with Raphaël 2.1.2</desc><defs><path id="raphael-marker-block" d="M5,0 0,2.5 5,5z" stroke-linecap="round"></path><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj50"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj55"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj58"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj63"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj69"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj74"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj77"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker></defs><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="20" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="30" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="365" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="375" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="382.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><path stroke-width="2" d="M47,55L47,365" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="20" x="223"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="30" x="233"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="257" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="365" x="223"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="375" x="233"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="382.5" x="257" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><path stroke-width="2" d="M257,55L257,365" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="123" y="20" x="531.5"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="103" y="30" x="541.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="593" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper parent</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="123" y="365" x="531.5"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="103" y="375" x="541.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="382.5" x="593" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper parent</tspan></text><path stroke-width="2" d="M593,55L593,365" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="20" x="859"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="30" x="869"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="929" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="365" x="859"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="375" x="869"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="382.5" x="929" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><path stroke-width="2" d="M929,55L929,365" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="20" x="1234"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="30" x="1244"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="1293" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="365" x="1234"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="375" x="1244"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="382.5" x="1293" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><path stroke-width="2" d="M1293,55L1293,365" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="190" y="72.5" x="57"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="80" x="152" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layoutChild(view, values)</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj50)" stroke-width="2" d="M47,90C47,90,220.1217986345291,90,251.9904109808267,90" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="296" y="110" x="282"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="117.5" x="430" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply inverse subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M257,105L277,105" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M277,105L277,135" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj55)" stroke-dasharray="0" stroke-width="2" d="M277,135C277,135,267.9191131591797,135,261.9952533841133,135" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="190" y="142.5" x="330"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="150" x="425" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layoutChild(view, values)</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj58)" stroke-width="2" d="M257,160C257,160,546.2683079242706,160,588.005995908461,160" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="296" y="180" x="618"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="187.5" x="766" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply inverse subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M593,175L613,175" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M613,175L613,205" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj63)" stroke-dasharray="0" stroke-width="2" d="M613,205C613,205,603.9191131591797,205,597.9952533841133,205" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="25" width="301" y="215" x="442.5"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="291" y="220" x="447.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="227.5" x="593" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recurse layoutChild up graph ancestry</tspan></text><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="190" y="257.5" x="666"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="265" x="761" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layoutChild(view, values)</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj69)" stroke-width="2" d="M593,275C593,275,882.2683079242706,275,924.005995908461,275" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="324" y="295" x="954"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="302.5" x="1116" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply inverse configuration transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M929,290L949,290" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M949,290L949,320" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj74)" stroke-dasharray="0" stroke-width="2" d="M949,320C949,320,939.9191131591797,320,933.9952533841133,320" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="190" y="327.5" x="1016"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="335" x="1111" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layoutChild(view, values)</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj77)" stroke-width="2" d="M929,345C929,345,1244.2733573913574,345,1287.992904998362,345" stroke="#000000" fill="none" style=""></path></svg></div>
+
+<p><strong>Reads</strong></p>
+
+
+
+<div class="sequence-diagram"><svg style="overflow: hidden; position: relative; left: -0.5px; top: -0.583496px;" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="1083" version="1.1" height="560"><desc>Created with Raphaël 2.1.2</desc><defs><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj132"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj135"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj141"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj144"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj147"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj152"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj155"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj160"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj163"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj168"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj171"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker></defs><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="20" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="30" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="505" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="515" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="522.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><path stroke-width="2" d="M47,55L47,505" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="20" x="104"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="30" x="114"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="138" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="505" x="104"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="515" x="114"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="522.5" x="138" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><path stroke-width="2" d="M138,55L138,505" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="123" y="20" x="352.5"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="103" y="30" x="362.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="414" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper parent</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="123" y="505" x="352.5"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="103" y="515" x="362.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="522.5" x="414" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper parent</tspan></text><path stroke-width="2" d="M414,55L414,505" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="20" x="620"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="30" x="630"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="690" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="505" x="620"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="515" x="630"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="522.5" x="690" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><path stroke-width="2" d="M690,55L690,505" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="20" x="935"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="30" x="945"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="994" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="505" x="935"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="515" x="945"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="522.5" x="994" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><path stroke-width="2" d="M994,55L994,505" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="72.5" x="63.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="80" x="92.5" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj132)" stroke-width="2" d="M47,90C47,90,113.93878048658371,90,132.99410715830163,90" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="107.5" x="247"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="115" x="276" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj135)" stroke-width="2" d="M138,125C138,125,371.6907169818878,125,409.003639078117,125" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="25" width="274" y="145" x="277"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="264" y="150" x="282"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="157.5" x="414" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recurse request up graph ancestry</tspan></text><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="187.5" x="523"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="195" x="552" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj141)" stroke-width="2" d="M414,205C414,205,647.6907169818878,205,685.003639078117,205" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="222.5" x="813"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="230" x="842" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj144)" stroke-width="2" d="M690,240C690,240,949.5885038375854,240,989.0084377699532,240" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="43" y="257.5" x="820.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="265" x="842" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj147)" stroke-width="2" d="M994,275C994,275,734.4114961624146,275,694.9915622300468,275" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="264" y="295" x="715"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="302.5" x="847" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply configuration transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M690,290L710,290" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M710,290L710,320" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj152)" stroke-dasharray="0" stroke-width="2" d="M710,320C710,320,700.9191131591797,320,694.9952533841133,320" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="43" y="327.5" x="530.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="335" x="552" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj155)" stroke-width="2" d="M690,345C690,345,456.3092830181122,345,418.996360921883,345" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="236" y="365" x="439"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="372.5" x="557" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M414,360L434,360" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M434,360L434,390" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj160)" stroke-dasharray="0" stroke-width="2" d="M434,390C434,390,424.9191131591797,390,418.9952533841133,390" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="43" y="397.5" x="254.5"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="405" x="276" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj163)" stroke-width="2" d="M414,415C414,415,180.30928301811218,415,142.99636092188302,415" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="236" y="435" x="163"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="442.5" x="281" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M138,430L158,430" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M158,430L158,460" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj168)" stroke-dasharray="0" stroke-width="2" d="M158,460C158,460,148.9191131591797,460,142.9952533841133,460" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="43" y="467.5" x="71"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="475" x="92.5" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj171)" stroke-width="2" d="M138,485C138,485,71.06121951341629,485,52.00589284169837,485" stroke="#000000" fill="none" style=""></path></svg></div>
+
+<p>The above diagrams give the logical effect of the behaviour of the helper. However, transformations can be combined together and be expressed </p>
+
+<p><strong>Writes</strong></p>
+
+
+
+<div class="sequence-diagram"><svg style="overflow: hidden; position: relative; left: -0.5px; top: -0.833496px;" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="947" version="1.1" height="305"><desc>Created with Raphaël 2.1.2</desc><defs><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj211"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj216"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj219"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj224"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj227"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker></defs><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="20" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="30" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="250" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="260" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="267.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><path stroke-width="2" d="M47,55L47,250" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="20" x="124"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="30" x="134"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="158" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="250" x="124"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="260" x="134"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="267.5" x="158" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><path stroke-width="2" d="M158,55L158,250" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="20" x="424"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="30" x="434"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="494" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="250" x="424"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="260" x="434"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="267.5" x="494" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><path stroke-width="2" d="M494,55L494,250" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="20" x="799"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="30" x="809"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="858" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="250" x="799"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="260" x="809"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="267.5" x="858" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><path stroke-width="2" d="M858,55L858,250" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="91" y="72.5" x="57"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="80" x="102.5" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">write values</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj211)" stroke-width="2" d="M47,90C47,90,131.3689770102501,90,152.99676652703783,90" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="296" y="110" x="183"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="117.5" x="331" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply inverse subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M158,105L178,105" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M178,105L178,135" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj216)" stroke-dasharray="0" stroke-width="2" d="M178,135C178,135,168.9191131591797,135,162.9952533841133,135" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="298" y="142.5" x="177"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="150" x="326" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">write values in layout managers coords</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj219)" stroke-width="2" d="M158,160C158,160,447.26830792427063,160,489.00599590846105,160" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="324" y="180" x="519"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="187.5" x="681" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply inverse configuration transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M494,175L514,175" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M514,175L514,205" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj224)" stroke-dasharray="0" stroke-width="2" d="M514,205C514,205,504.9191131591797,205,498.9952533841133,205" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="276" y="212.5" x="538"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="220" x="676" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">write values in recycler views coords</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj227)" stroke-width="2" d="M494,230C494,230,809.2733573913574,230,852.9929049983621,230" stroke="#000000" fill="none" style=""></path></svg></div>
+
+<p><strong>Reads</strong></p>
+
+
+
+<div class="sequence-diagram"><svg style="overflow: hidden; position: relative; left: -0.5px; top: -0.0834961px;" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" width="948" version="1.1" height="410"><desc>Created with Raphaël 2.1.2</desc><defs><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj270"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj273"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj276"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj279"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj284"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj287"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj292"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker><marker refY="2.5" refX="2.5" orient="auto" markerWidth="5" markerHeight="5" id="raphael-marker-endblock55-obj295"><use stroke="none" fill="#000" stroke-width="1.0000" transform="rotate(180 2.5 2.5) scale(1,1)" xlink:href="#raphael-marker-block"></use></marker></defs><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="20" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="30" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="74" y="355" x="10"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="54" y="365" x="20"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="372.5" x="47" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">section</tspan></text><path stroke-width="2" d="M47,55L47,355" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="20" x="245"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="30" x="255"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="279" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="68" y="355" x="245"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="48" y="365" x="255"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="372.5" x="279" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">helper</tspan></text><path stroke-width="2" d="M279,55L279,355" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="20" x="485"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="30" x="495"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="555" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="140" y="355" x="485"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="120" y="365" x="495"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="372.5" x="555" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">layout manager</tspan></text><path stroke-width="2" d="M555,55L555,355" stroke="#000000" fill="none" style=""></path><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="20" x="800"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="30" x="810"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="37.5" x="859" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><rect stroke-width="2" style="" stroke="#000000" fill="none" ry="0" rx="0" height="35" width="118" y="355" x="800"></rect><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="98" y="365" x="810"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="372.5" x="859" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">recycler view</tspan></text><path stroke-width="2" d="M859,55L859,355" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="72.5" x="134"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="80" x="163" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj270)" stroke-width="2" d="M47,90C47,90,240.2175998687744,90,273.99294203333557,90" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="107.5" x="388"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="115" x="417" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj273)" stroke-width="2" d="M279,125C279,125,512.6907169818878,125,550.003639078117,125" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="58" y="142.5" x="678"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="150" x="707" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">request</tspan></text><path stroke-dasharray="0" marker-end="url(#raphael-marker-endblock55-obj276)" stroke-width="2" d="M555,160C555,160,814.5885038375854,160,854.0084377699532,160" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="228" y="177.5" x="593"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="185" x="707" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result in recycler views coords</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj279)" stroke-width="2" d="M859,195C859,195,599.4114961624146,195,559.9915622300468,195" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="264" y="215" x="580"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="222.5" x="712" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply configuration transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M555,210L575,210" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M575,210L575,240" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj284)" stroke-dasharray="0" stroke-width="2" d="M575,240C575,240,565.9191131591797,240,559.9952533841133,240" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="250" y="247.5" x="292"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="255" x="417" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result in layout managers coords</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj287)" stroke-width="2" d="M555,265C555,265,321.3092830181122,265,283.996360921883,265" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="236" y="285" x="304"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="292.5" x="422" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">apply subspace transformation</tspan></text><path stroke-dasharray="0" stroke-width="2" d="M279,280L299,280" stroke="#000000" fill="none" style=""></path><path stroke-dasharray="0" stroke-width="2" d="M299,280L299,310" stroke="#000000" fill="none" style=""></path><path marker-end="url(#raphael-marker-endblock55-obj292)" stroke-dasharray="0" stroke-width="2" d="M299,310C299,310,289.9191131591797,310,283.9952533841133,310" stroke="#000000" fill="none" style=""></path><rect style="" stroke="none" fill="#ffffff" ry="0" rx="0" height="15" width="212" y="317.5" x="57"></rect><text fill="#000000" stroke="none" font-size="16px" font-family="Andale Mono, monospace" text-anchor="middle" y="325" x="163" style="text-anchor: middle; font-family: Andale Mono,monospace; font-size: 16px;"><tspan dy="3.5">result in subsections coords</tspan></text><path stroke-dasharray="6,2" marker-end="url(#raphael-marker-endblock55-obj295)" stroke-width="2" d="M279,335C279,335,85.78240013122559,335,52.00705796666443,335" stroke="#000000" fill="none" style=""></path></svg></div>
+
+
+
+<h2 id="configuration-transformations">Configuration transformations</h2>
+
+<p>The <code>LayoutHelper</code> has a number of <code>ConfigTransformation</code> s.</p>
+
+<blockquote>
+  <p>w = width of recycler view, h = height of recycler view. <br>
+  <em>All of the config transformations are involutory, so can be applied to transform the coordinate space in either direction.</em></p>
+</blockquote>
+
+<dl>
+<dt>LTR</dt>
+<dd>A no-op transformation. <br>
+<script id="MathJax-Element-1" type="math/tex; mode=display">\text{ltr}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}l\\t\\r\\b\end{pmatrix}</script></dd>
+
+<dt>RTL</dt>
+<dd>Mirrors the horizontal values. <br>
+<script id="MathJax-Element-2" type="math/tex; mode=display">\text{rtl}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}w-r\\t\\w-l\\b\end{pmatrix}</script></dd>
+
+<dt>Stack from end</dt>
+<dd>Mirrors the vertical values. <br>
+<script id="MathJax-Element-3" type="math/tex; mode=display">\text{sfe}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}l\\h-b\\r\\h-t\end{pmatrix}</script></dd>
+
+<dt>Reverse</dt>
+<dd>Mirrors both the horizontal and vertical values. <br>
+<script id="MathJax-Element-4" type="math/tex; mode=display">\text{rev}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}w - r\\h-b\\w-l\\h-t\end{pmatrix}</script></dd>
+
+<dt>Vertical orientation</dt>
+<dd>A no-op transformation. <br>
+<script id="MathJax-Element-5" type="math/tex; mode=display">\text{ver}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}l\\t\\r\\b\end{pmatrix}</script></dd>
+
+<dt>Horizontal orientation</dt>
+<dd>Swaps the top and left values, and the bottom and right values. Effectively mirroring along a line drawn from the NW corner to the SE corner. <br>
+<script id="MathJax-Element-6" type="math/tex; mode=display">\text{hor}\begin{pmatrix}l\\t\\r\\b\end{pmatrix} = \begin{pmatrix}t\\l\\b\\r\end{pmatrix}</script></dd>
+
+<dd>
+<p>It is important to note that for horizontal scrolling configurations, width and height measurement calls are transposed.</p>
+</dd>
+</dl>
+
+
+
+<h2 id="nesting">Nesting</h2>
+
+<p>Subsections have their virtual space inset inside the parent section. When creating the subsection layout the parent SLM gives the available width, and the point of the top left corner. The derivative values for the subsections total x and y offsets within the root coordinate system are calculated and calls from the subsection helper can be made directly to the root interface.</p>
+
+
+
+<h1 id="tracking-graph-changes">Tracking graph changes</h1>
+
+<p><del>Recycler view maintains its own state for tracking what items are available for layout or not. When items changes are notified, the layout manager gets informed through the data change callbacks - <em>onItems*()</em>. These events happen at a time determined by the recycler view, either before layout or after pre-layout. Superslim layout manager also receives events for changes to the section graph direct from the adapter. The events from the adapter are stored pending the events from the recycler view. Once matching events, one from each source, are received, they are reconciled and the appropriate change is made to the internal section graph.</del></p>
+
+<p>To keep the internal section graph consistent with the recycler view model, the layout manager has to reconcile recycler views reordered item change notifications with changes that happened before that to the adapter section graph. To do this, the layout manager receives item change callbacks from the recycler view, and updates an internal section graph accordingly. When needed, the layout manager can refer to the section graph in the adapter to fetch additional data about the event; e.g., is the item being added, in the callback, a member of a new or already existing section?</p>
+
+<p>To track sections, an internal id is used separate from the user given section id.</p>
+
+
+
+<h2 id="section-graph-events">Section graph events</h2>
+
+<p>Section level events need additional section data passed to the layout manager. This needs to be paired with the appropriate callback from recycler view before updating the internal graph.</p>
+
+<dl>
+<dt>Add section</dt>
+<dd>Add section -&gt; add items to item manager -&gt; notify items added</dd>
+
+<dt>Remove section</dt>
+<dd>Remove section -&gt; remove items from item manager -&gt; notify items removed</dd>
+
+<dt>Move section</dt>
+<dd>Move section -&gt; move items in item manager -&gt; notify items moved one by one</dd>
+
+<dt>Update section</dt>
+<dd>Change section configuration -&gt; update items in item manager -&gt; notify items updated</dd>
+</dl>
+
+<p>Item level events are simple and don’t involve extra data.</p>
+
+<dl>
+<dt>Add item or header</dt>
+<dd>Add item or header -&gt; add item to item manager -&gt; notify item added</dd>
+
+<dt>Remove item or header</dt>
+<dd>Remove item or header -&gt; remove item in item manager -&gt; notify item removed</dd>
+
+<dt>Move item</dt>
+<dd>Move item -&gt; move item in item manager -&gt; notify item moved</dd>
+
+<dt>Update item</dt>
+<dd>Update item -&gt; update item in item manager -&gt; notify item updated</dd>
+</dl>
+
+
+
+<h1 id="layout-manager-code-paths">Layout manager code paths</h1>
+
+<p>onLayoutChild <br>
+scrollViewBy</p>
+
+
+
+<h1 id="adapter">Adapter</h1>
+
+<p>sectionLookup: map of T to section <br>
+internalLookup: map of integer to section <br>
+root: section</p>
+
+
+
+<h1 id="section-graph">Section graph</h1>
+
+
+
+<h2 id="section">Section</h2>
+
+<dl>
+<dt>userId: T</dt>
+<dt>hasHeader: boolean</dt>
+<dt>totalChildren: integer</dt>
+<dd>constraint: totalChildren &gt;= subsections.size()</dd>
+</dl>
+
+<p>subsections: list of sections</p>
+
+
+
+<h1 id="internal-section-graph">Internal section graph</h1>
+
+
+
+<h2 id="section-1">Section</h2>
+
+<dl>
+<dt>adapterPosition: integer</dt>
+<dd>Position of section in adapter. If the section is not empty, this is also the adapter position of the first item in the section.</dd>
+
+<dt>hasHeader: boolean</dt>
+<dt>totalChildren: integer</dt>
+<dd><strong>constraint:</strong> totalChildren &gt;= subsections.size() + 1 if hasHeader is true</dd>
+</dl>
+
+<p>subsections: list of sections</p>
+
+
+
+<h1 id="section-layout-manager">Section layout manager</h1>
+
+
+
+<h2 id="laying-out-children">Laying out children</h2>
+
+<p>The difference between items and subsections is hidden from the SLM. Children can be measured as per the usual layout manager pattern, however subsections always fill the available width and have an undefined height, items behave as normal. To layout and add the child, the SLM defines the bounds and position of the child and the abstraction handles the rest. Laying out a subsection cascades into a layout call for that section and SLM with the given layout area.</p>
+
+
+
+<h2 id="pre-layout-child-handling">Pre-layout child handling</h2>
+
+<p>A child object abstracts the difference between subsections and items. The layout helper </p>
+
+
+
+<pre class="prettyprint"><code class=" hljs erlang">child = get<span class="hljs-variable">Child</span>(i)
+<span class="hljs-function"><span class="hljs-title">measure</span><span class="hljs-params">(child)</span>
+<span class="hljs-title">layoutAndAdd</span><span class="hljs-params">(child, left, top, right, bottom)</span>
+<span class="hljs-title">child</span>.<span class="hljs-title">done</span><span class="hljs-params">()</span></span></code></pre>
+
+
+
+<h2 id="child-abstraction">Child abstraction</h2>
+
+
+
+<pre class="prettyprint"><code class="language-Kotlin hljs fsharp"><span class="hljs-keyword">interface</span> Child {
+    <span class="hljs-keyword">val</span> measuredWidth
+    <span class="hljs-keyword">val</span> measuredHeight
+    <span class="hljs-keyword">val</span> left
+    <span class="hljs-keyword">val</span> top
+    <span class="hljs-keyword">val</span> right
+    <span class="hljs-keyword">val</span> bottom
+}</code></pre></div></body>
+</html>
