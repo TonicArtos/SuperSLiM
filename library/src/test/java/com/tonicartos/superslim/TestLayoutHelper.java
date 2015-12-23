@@ -1,6 +1,10 @@
 package com.tonicartos.superslim;
 
+import com.tonicartos.superslim.internal.ManagerHelper;
+import com.tonicartos.superslim.internal.ReadWriteLayoutHelper;
+import com.tonicartos.superslim.internal.RecyclerHelper;
 import com.tonicartos.superslim.internal.RootLayoutHelper;
+import com.tonicartos.superslim.internal.StateHelper;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -83,7 +87,7 @@ public class TestLayoutHelper {
         verify(baseHelper).layout(view,
                 VIEW_LEFT + HELPER_LEFT, VIEW_TOP + HELPER_TOP, VIEW_RIGHT + HELPER_LEFT, VIEW_BOTTOM + HELPER_TOP,
                 VIEW_M_LEFT, VIEW_M_TOP, VIEW_M_RIGHT, VIEW_M_BOTTOM);
-        helper.release();
+        root.releaseSubsectionHelper(helper);
     }
 
     @Test
@@ -92,7 +96,7 @@ public class TestLayoutHelper {
         // Check width was calculated and returned correctly.
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
-        helper.release();
+        root.releaseSubsectionHelper(helper);
     }
 
     @Test
@@ -101,7 +105,7 @@ public class TestLayoutHelper {
 
         helper.addIgnoredHeight(50);
         assertThat(helper.getLayoutLimit(), equalTo(RECYCLER_HEIGHT + 50 - HELPER_TOP));
-        helper.release();
+        root.releaseSubsectionHelper(helper);
     }
 
     @Test
@@ -112,18 +116,18 @@ public class TestLayoutHelper {
         // Check subsection helper offset is correctly applied to used space.
         verify(baseHelper).measure(view, RECYCLER_WIDTH - helper.getLayoutWidth() + USED_WIDTH,
                 HELPER_TOP + USED_HEIGHT);
-        helper.release();
+        root.releaseSubsectionHelper(helper);
     }
 
     @Test
     public void testSubsectionCaptureAndRelease() {
         LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
-        helper.release();
+        root.releaseSubsectionHelper(helper);
         LayoutHelper other = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
         assertThat(helper, sameInstance(other));
         LayoutHelper another = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
         assertThat(helper, not(sameInstance(another)));
-        other.release();
-        another.release();
+        root.releaseSubsectionHelper(other);
+        root.releaseSubsectionHelper(another);
     }
 }

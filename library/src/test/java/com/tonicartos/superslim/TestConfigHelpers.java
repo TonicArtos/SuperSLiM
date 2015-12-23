@@ -1,6 +1,7 @@
 package com.tonicartos.superslim;
 
 import com.tonicartos.superslim.internal.HorizontalConfigHelper;
+import com.tonicartos.superslim.internal.ReadWriteLayoutHelper;
 import com.tonicartos.superslim.internal.ReverseLayoutConfigHelper;
 import com.tonicartos.superslim.internal.RtlConfigHelper;
 import com.tonicartos.superslim.internal.StackFromEndConfigHelper;
