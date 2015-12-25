@@ -608,9 +608,11 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onRestoreInstanceState(Parcelable state) {
-        mRequestPosition = ((SavedState) state).anchorPosition;
-        mRequestPositionOffset = ((SavedState) state).anchorOffset;
-        requestLayout();
+        if (state instanceof SavedState) {
+            mRequestPosition = ((SavedState) state).anchorPosition;
+            mRequestPositionOffset = ((SavedState) state).anchorOffset;
+            requestLayout();
+        }
     }
 
     /**
