@@ -670,7 +670,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
             return -1;
         }
 
-        int mid = min + (max - min) / 2;
+        int mid = (min + max) / 2;
 
         View candidate = getChildAt(mid);
         LayoutParams params = (LayoutParams) candidate.getLayoutParams();
