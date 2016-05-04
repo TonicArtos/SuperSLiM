@@ -40,6 +40,7 @@ public class ContentFragment extends Fragment {
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
             mAdapter.swapCursor(data);
+//            recyclerView.scrollToPosition(50);
         }
 
         @Override
@@ -49,6 +50,8 @@ public class ContentFragment extends Fragment {
     };
 
     private Section removedSection = null;
+
+    private RecyclerView recyclerView;
 
     public ContentFragment() {
     }
@@ -63,12 +66,13 @@ public class ContentFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
         getLoaderManager().restartLoader(LOADER, null, mLoaderCallbacks);
 
         setHasOptionsMenu(true);
 
         mAdapter = new Adapter();
-        ((RecyclerView) view.findViewById(R.id.recycler_view)).setAdapter(mAdapter);
+        recyclerView.setAdapter(mAdapter);
     }
 
     @Override

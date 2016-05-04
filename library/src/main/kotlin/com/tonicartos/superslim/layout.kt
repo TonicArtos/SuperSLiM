@@ -7,8 +7,10 @@ import com.tonicartos.superslim.internal.SectionState
 
 interface SectionLayoutManager<T : SectionState> {
     fun onLayout(helper: LayoutHelper, section: T)
-    fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
-    fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: T): Int
+    fun onFillTop(dy: Int, helper: LayoutHelper, section: T): Int
+    fun onFillBottom(dy: Int, helper: LayoutHelper, section: T): Int
+    fun onTrimTop(helper: LayoutHelper, section: T)
+    fun onTrimBottom(helper: LayoutHelper, section: T)
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
@@ -25,7 +27,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
     private var offset = Offset()
     private var width: Int = 0
 
-    internal fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.x + left, offset.y + top, offset.x + right)
+    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right)
     internal fun release() {
         root.releaseSubsectionHelper(this)
     }

@@ -18,6 +18,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             debuggable true
         }
+        debug {
+            buildConfigField("boolean", "UNIT_TEST", "true")
+        }
         unitTest {
             buildConfigField("boolean", "UNIT_TEST", "true")
             debuggable true
@@ -41,6 +44,8 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile "com.nhaarman:mockito-kotlin:0.4.0"
+
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile "com.android.support:appcompat-v7:$supportlib_version"

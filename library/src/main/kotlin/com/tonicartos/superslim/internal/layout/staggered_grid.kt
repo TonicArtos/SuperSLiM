@@ -25,6 +25,22 @@ class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldSta
 
         StaggeredGridSlm.onLayout(helper, this)
     }
+
+    override fun doFillTop(dy: Int, helper: LayoutHelper): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doFillBottom(dy: Int, helper: LayoutHelper): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doTrimTop(helper: LayoutHelper) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doTrimBottom(helper: LayoutHelper) {
+        throw UnsupportedOperationException()
+    }
 }
 
 private object StaggeredGridSlm : SectionLayoutManager<StaggeredGridSection> {
@@ -32,11 +48,19 @@ private object StaggeredGridSlm : SectionLayoutManager<StaggeredGridSection> {
         throw UnsupportedOperationException()
     }
 
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: StaggeredGridSection): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: StaggeredGridSection): Int {
         throw UnsupportedOperationException()
     }
 
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: StaggeredGridSection): Int {
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: StaggeredGridSection): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimTop(helper: LayoutHelper, section: StaggeredGridSection) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimBottom(helper: LayoutHelper, section: StaggeredGridSection) {
         throw UnsupportedOperationException()
     }
 }

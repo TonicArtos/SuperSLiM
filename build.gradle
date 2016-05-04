@@ -2,11 +2,11 @@
 
 buildscript {
     ext {
-        kotlin_version = '1.0.0-beta-3594'
-        build_tools_version = '23.0.2'
-        supportlib_version = '23.1.1'
-        rxbinding_version = '0.3.0'
-        anko_version = '0.7.3'
+        kotlin_version = '1.0.1-2'
+        build_tools_version = '23.0.3'
+        supportlib_version = '23.3.0'
+        rxbinding_version = '0.4.0'
+        anko_version = '0.8.3'
         compile_sdk = 23
         target_sdk = 23
     }
@@ -17,7 +17,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong

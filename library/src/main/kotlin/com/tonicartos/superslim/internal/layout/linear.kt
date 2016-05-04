@@ -1,8 +1,7 @@
 package com.tonicartos.superslim.internal.layout
 
-import com.tonicartos.superslim.LayoutHelper
-import com.tonicartos.superslim.SectionConfig
-import com.tonicartos.superslim.SectionLayoutManager
+import android.util.Log
+import com.tonicartos.superslim.*
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
@@ -16,15 +15,17 @@ class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutte
     }
 }
 
-internal class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState) {
-    override fun doLayout(helper: LayoutHelper) {
-        LinearSlm.onLayout(helper, this)
-    }
+internal open class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState) {
+    override fun doLayout(helper: LayoutHelper) = LinearSlm.onLayout(helper, this)
+    override fun doFillTop(dy: Int, helper: LayoutHelper) = LinearSlm.onFillTop(dy, helper, this)
+    override fun doFillBottom(dy: Int, helper: LayoutHelper) = LinearSlm.onFillTop(dy, helper, this)
+    override fun doTrimTop(helper: LayoutHelper) = LinearSlm.onTrimTop(helper, this)
+    override fun doTrimBottom(helper: LayoutHelper) = LinearSlm.onTrimBottom(helper, this)
 }
 
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onLayout(helper: LayoutHelper, section: LinearSectionState) {
-        var currentPosition = section.headPosition
+        var currentPosition = section.layout.headPosition
         var y = 0
 
         while (helper.moreToLayout(currentPosition, section)) {
@@ -43,44 +44,56 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
             child.done()
         }
-        section.height = y
-        section.tailPosition = currentPosition - 1
+        section.layout.height = y
+        section.layout.tailPosition = currentPosition - 1
     }
 
     /**
      * Fill revealed area where content has been scrolled down the screen by dy.
      */
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
-        var y = dy
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
+        Log.d("LinearSLM", "section = $section")
+        var y = section.layout.overdraw
 
-        var currentPos = section.headPosition - 1
-        while (y >= 0 && currentPos >= 0) {
+        var currentPos = section.layout.headPosition
+
+        if (currentPos < section.numChildren) {
+            // Cascade fill top to current position if valid.
+            section.getNonFinalChildAt(helper, currentPos)?.let {
+                it.measure()
+                y = -it.fillTop(dy, 0, it.measuredWidth)
+            }
+        }
+
+        // Move on to remaining positions.
+        while (y > dy && currentPos > 0) {
+            currentPos -= 1
             val child = section.getChildAt(helper, currentPos)
             child.addToRecyclerView(0)
             child.measure()
             val childWidth = child.measuredWidth
             val childHeight = child.measuredHeight
-            child.layout(0, y - childHeight, childWidth, y)
+            child.fillTop(dy, 0, y - childHeight, childWidth, y)
 
-            y -= childHeight
-            currentPos -= 1
+            y -= child.height
 
             child.done()
         }
 
-        section.headPosition = currentPos
-        section.height += dy - y
+        section.layout.headPosition = currentPos
+        section.layout.height -= y
+        section.layout.overdraw = y - dy
 
-        return dy - y
+        return -y
     }
 
     /**
      * Fill revealed area where content has been scrolled up the screen by dy.
      */
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
-        var y = section.height - dy
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
+        var y = section.layout.height - dy
 
-        var currentPos = section.tailPosition + 1
+        var currentPos = section.layout.tailPosition + 1
         while (y < helper.layoutLimit && currentPos < section.numChildren) {
             val child = section.getChildAt(helper, currentPos)
             child.addToRecyclerView(0)
@@ -94,9 +107,15 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             child.done()
         }
 
-        section.tailPosition = currentPos
-        section.height = y
+        section.layout.tailPosition = currentPos
+        section.layout.height = y
 
-        return y - (section.height - dy)
+        return y - (section.layout.height - dy)
+    }
+
+    override fun onTrimTop(helper: LayoutHelper, section: LinearSectionState) {
+    }
+
+    override fun onTrimBottom(helper: LayoutHelper, section: LinearSectionState) {
     }
 }

@@ -79,7 +79,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLayout() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
 
         helper.layout(view, VIEW_LEFT, VIEW_TOP, VIEW_RIGHT, VIEW_BOTTOM,
                 VIEW_M_LEFT, VIEW_M_TOP, VIEW_M_RIGHT, VIEW_M_BOTTOM);
@@ -92,7 +92,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLayoutProperties() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
         // Check width was calculated and returned correctly.
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
@@ -101,7 +101,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLimitExtension() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
 
         helper.addIgnoredHeight(50);
         assertThat(helper.getLayoutLimit(), equalTo(RECYCLER_HEIGHT + 50 - HELPER_TOP));
@@ -110,7 +110,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testMeasure() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
 
         helper.measure(view, USED_WIDTH, USED_HEIGHT);
         // Check subsection helper offset is correctly applied to used space.
@@ -121,11 +121,11 @@ public class TestLayoutHelper {
 
     @Test
     public void testSubsectionCaptureAndRelease() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
         root.releaseSubsectionHelper(helper);
-        LayoutHelper other = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper other = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
         assertThat(helper, sameInstance(other));
-        LayoutHelper another = root.acquireSubsectionHelper(HELPER_LEFT, HELPER_TOP, HELPER_RIGHT);
+        LayoutHelper another = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
         assertThat(helper, not(sameInstance(another)));
         root.releaseSubsectionHelper(other);
         root.releaseSubsectionHelper(another);

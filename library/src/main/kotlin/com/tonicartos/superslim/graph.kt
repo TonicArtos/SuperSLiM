@@ -38,6 +38,9 @@ interface Child {
      */
     fun layout(left: Int, top: Int, right: Int, bottom: Int)
 
+    fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
+    fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
+
     val width: Int
     val height: Int
 
@@ -51,6 +54,9 @@ interface Child {
      */
     fun addToRecyclerView(i: Int)
 }
+
+inline fun Child.fillTop(dy: Int, left: Int, right: Int): Int = fillTop(dy, left, 0, right, 0)
+inline fun Child.fillBottom(dy: Int, left: Int, right: Int): Int = fillBottom(dy, left, 0, right, 0)
 
 /**
  * Configuration of a section.

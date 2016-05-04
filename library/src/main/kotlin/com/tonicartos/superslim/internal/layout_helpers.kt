@@ -10,7 +10,7 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
                                                                                         RecyclerHelper by recycler, StateHelper by state {
     private var helperPool = LayoutHelperPool()
 
-    fun acquireSubsectionHelper(left: Int, top: Int, right: Int): LayoutHelper = helperPool.acquire(this, left, top, right - left)
+    fun acquireSubsectionHelper(y: Int, left: Int, right: Int): LayoutHelper = helperPool.acquire(this, left, y, right - left)
     fun releaseSubsectionHelper(helper: LayoutHelper) {
         helperPool.release(helper)
     }
@@ -119,7 +119,18 @@ internal interface RecyclerHelper {
     val scrap: List<RecyclerView.ViewHolder>
 }
 
-internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper
+internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
+    val basePaddingLeft: Int
+    val basePaddingTop: Int
+    val basePaddingRight: Int
+    val basePaddingBottom: Int
+
+    fun detachFirstView(): View
+    fun detachLastView(): View
+    fun attachViewToStart(view: View)
+    fun attachViewToEnd(view: View)
+    fun attachViewToPosition(view: View, position: Int)
+}
 
 internal interface ReadLayoutHelper {
     fun getLeft(child: View): Int
@@ -146,5 +157,8 @@ internal interface ReadLayoutHelper {
 internal interface WriteLayoutHelper {
     fun measure(view: View, usedWidth: Int = 0, usedHeight: Int = 0)
     fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0, marginRight: Int = 0, marginBottom: Int = 0)
+
+    fun offsetChildrenVertical(dy: Int)
+    fun offsetChildrenHorizontal(dx: Int)
 }
 

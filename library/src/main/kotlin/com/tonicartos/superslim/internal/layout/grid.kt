@@ -25,6 +25,22 @@ private class GridSectionState(var configuration: GridSectionConfig, oldState: S
 
         GridSlm.onLayout(helper, this)
     }
+
+    override fun doFillTop(dy: Int, helper: LayoutHelper): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doFillBottom(dy: Int, helper: LayoutHelper): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doTrimTop(helper: LayoutHelper) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun doTrimBottom(helper: LayoutHelper) {
+        throw UnsupportedOperationException()
+    }
 }
 
 private object GridSlm : SectionLayoutManager<GridSectionState> {
@@ -32,11 +48,19 @@ private object GridSlm : SectionLayoutManager<GridSectionState> {
         throw UnsupportedOperationException()
     }
 
-    override fun fillTopScrolledArea(dy: Int, helper: LayoutHelper, section: GridSectionState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: GridSectionState): Int {
         throw UnsupportedOperationException()
     }
 
-    override fun fillBottomScrolledArea(dy: Int, helper: LayoutHelper, section: GridSectionState): Int {
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: GridSectionState): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimTop(helper: LayoutHelper, section: GridSectionState) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimBottom(helper: LayoutHelper, section: GridSectionState) {
         throw UnsupportedOperationException()
     }
 }

@@ -1,7 +1,5 @@
 package com.tonicartos.superslim.internal
 
-import android.support.annotation.VisibleForTesting
-
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.SparseArray
@@ -11,6 +9,11 @@ import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import java.util.*
 
 internal class GraphManager(adapter: AdapterContract<*>) {
+    private companion object {
+        private const val ENABLE_ITEM_CHANGE_LOGGING = false
+    }
+
+
     val root: SectionState
     private val sectionIndex = SectionManager()
 
@@ -36,9 +39,24 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         }
     }
 
+    internal fun scrollToPocrollition(adapterPosition: Int) {
+        var position = root.constrainToItemRange(adapterPosition)
+        root.setLayoutPositionFromAdapter(position)
+    }
+
     /*************************
      * Layout
      *************************/
+    internal var requestedPosition = 0
+        get() {
+            //            hasRequestedPosition = false
+            return field
+        }
+        set(value) {
+            field = value
+            hasRequestedPosition = true
+        }
+    private var hasRequestedPosition = false
 
     fun layout(helper: RootLayoutHelper) {
         if (!helper.isPreLayout) {
@@ -46,13 +64,52 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionUpdates()
         }
 
-        Log.d("layout", "helper = $helper\nsection = $root\n\n")
+        if (hasRequestedPosition) root.setLayoutPositionFromAdapter(requestedPosition)
+        //        Log.d("layout", "helper = $helper\nsection = $root\n\n")
         root.layout(helper, 0, 0, helper.layoutWidth)
 
         if (helper.isPreLayout) {
             doSectionRemovals()
         }
     }
+
+    fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
+        Log.d("Graph", "scrollBy($d)")
+        if (d == 0) return 0
+        // If d is +ve, then scrolling to end. To apply the effect we offset children upwards (-ve).
+        return if (d > 0) scrollDown(d, helper) else scrollUp(d, helper)
+    }
+
+    private fun scrollDown(dy: Int, helper: RootLayoutHelper): Int {
+        val bottomEdge = fillBottom(dy, helper)
+        val scrolled = if (bottomEdge - dy < helper.layoutLimit - helper.basePaddingBottom) bottomEdge - helper.layoutLimit - helper.basePaddingBottom else dy
+        if (scrolled > 0) {
+            helper.offsetChildrenVertical(-scrolled)
+        }
+
+        trimTop(helper)
+
+        return scrolled
+    }
+
+    private fun scrollUp(dy: Int, helper: RootLayoutHelper): Int {
+        val filled = fillTop(dy, helper)
+        val scrolled = if (-filled < dy) -dy else filled
+        Log.d("scrollUp", "dy = $dy, scroll by = $scrolled")
+
+        if (scrolled > 0) {
+            helper.offsetChildrenVertical(scrolled)
+        }
+
+        trimBottom(helper)
+
+        return -scrolled
+    }
+
+    private fun fillTop(dy: Int, helper: RootLayoutHelper) = root.fillTop(dy, helper)
+    private fun fillBottom(dy: Int, helper: RootLayoutHelper) = root.fillBottom(dy, helper)
+    private fun trimTop(helper: RootLayoutHelper) = root.trimTop(helper, helper.basePaddingLeft, helper.basePaddingTop, helper.layoutWidth - helper.basePaddingRight)
+    private fun trimBottom(helper: RootLayoutHelper) = root.trimBottom(helper, helper.basePaddingLeft, helper.basePaddingTop, helper.layoutWidth - helper.basePaddingRight)
 
     /*************************
      * Scheduling section changes
@@ -112,7 +169,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      * Item events
      *************************/
     fun addItems(eventSectionData: EventSectionData, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "addItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events", "addItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
         val section = sectionIndex[eventSectionData.section]
         if (eventSectionData.action and EventSectionData.HEADER > 0) {
             if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add header operation.")
@@ -123,7 +180,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun removeItems(eventSectionData: EventSectionData, positionStart: Int, itemCount: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "removeItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events", "removeItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
         val section = sectionIndex[eventSectionData.section]
         if (eventSectionData.action and EventSectionData.HEADER > 0) {
             if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for remove header operation.")
@@ -134,7 +191,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun moveItems(eventSectionData: EventSectionData, from: Int, to: Int) {
-        if (BuildConfig.DEBUG) Log.d("Sslm-DC events", "moveItem(eventData = $eventSectionData, from = $from, to = $to)")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events", "moveItem(eventData = $eventSectionData, from = $from, to = $to)")
         sectionIndex[eventSectionData.fromSection].removeItems(from, 1)
         sectionIndex[eventSectionData.toSection].addItems(eventSectionData.to, 1)
     }
@@ -166,86 +223,213 @@ private class SectionManager {
  * Section data
  */
 abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionState? = null) {
-    /**
-     * The height of the section for this layout pass. Only valid after section is laid out, and never use outside the
-     * same layout pass.
-     */
-    var height: Int = 0
+    private companion object {
+        const val NUM_HEADER_CHILDREN: Int = 2
+        const val UNSET_OR_BEFORE_CHILDREN: Int = -1
+
+        const val ENABLE_LAYOUT_LOGGING = false
+    }
+
+
+    open class LayoutState {
+        /**
+         * Number of views.
+         */
+        var numViews = 0
+        /**
+         * The height of the section for this layout pass. Only valid after section is laid out, and never use outside the
+         * same layout pass.
+         */
+        open var height = 0
+
+        /**
+         * Position that is the head of the displayed section content. -1 is the unset default value.
+         */
+        var headPosition = -1
+            set(value) {
+                field = value
+            }
+        /**
+         * Position that is the tail of the displayed section content. -1 is the unset and default value.
+         */
+        var tailPosition = -1
+
+        var left = 0
+        var right = 0
+
+        /**
+         * Area drawn pass y0.
+         */
+        var overdraw = 0
+
+        /**
+         * Reset layout state.
+         */
+        internal open fun reset() {
+            height = 0
+            headPosition = -1
+            tailPosition = -1
+            left = 0
+            right = 0
+            overdraw = 0
+        }
+
+        internal fun copy(old: LayoutState) {
+            height = old.height
+            headPosition = old.headPosition
+            tailPosition = old.tailPosition
+        }
+
+        override fun toString(): String {
+            return "(headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $height, overdraw = $overdraw)"
+        }
+    }
+
+    internal class HeaderLayoutState(val layout: LayoutState) : LayoutState() {
+        /**
+         * The current state of the header. State values are header implementation dependent.
+         */
+        var state = 0
+
+        override var height: Int
+            get() = layout.height
+            set(value) {
+                layout.height = value
+            }
+
+        override fun reset() {
+            super.reset()
+            state = 0
+        }
+
+        override fun toString(): String {
+            return "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $height, overdraw = $overdraw)"
+        }
+    }
 
     /**
-     * Position that is the head of the displayed section content.
+     * Used to persist state between layout and scroll passes.
      */
-    var headPosition: Int = 0
+    val layout = LayoutState()
+
     /**
-     * Position that is the tail of the displayed section content.
+     * Tracks state for the header layout with invisibly wraps the section layout. It is best to treat the header layout
+     * as its own section with two children, the header, and the section. This makes tracking laid out positions easier.
      */
-    var tailPosition: Int = 0
+    internal val headerLayout = HeaderLayoutState(layout)
+
+    internal fun resetLayout() {
+        layout.reset()
+        headerLayout.reset()
+    }
+
+    /****************************************************
+     * Section
+     ****************************************************/
 
     /**
      * Total number of children. Children does not equate to items as some subsections may be empty.
      */
-    var numChildren: Int = 0
-        private set
+    var numChildren = 0
+        private set(value) {
+            field = value
+        }
 
     /**
      * Total number of items in the section, including the header and items in subsections.
      */
-    private var totalItems: Int = 0
+    internal var totalItems = 0
+        private set(value) {
+            if (totalItemsAreImmutable) return
+            parent?.itemCountsChangedInSubsection(this, value - field)
+            field = value
+        }
+
+    /**
+     * Ignore changes called in from subsections while true.
+     */
+    private var totalItemsAreImmutable = false
+
     internal var parent: SectionState? = null
 
     /**
      * Sorted list of subsections.
      */
-    private val subsections: ArrayList<SectionState>
+    internal val subsections: ArrayList<SectionState>
 
     /**
      * Position of this section in the adapter.
      */
-    private var adapterPosition = 0
+    internal var positionInAdapter = 0
         get() = field
         set(value) {
-            subsections.forEach { it.adapterPosition += value - field }
+            subsections.forEach { it.positionInAdapter += value - field }
             field = value
         }
 
     init {
         if (oldState != null) {
-            height = oldState.height
-            headPosition = oldState.headPosition
-            tailPosition = oldState.tailPosition
+            layout.copy(oldState.layout)
+            headerLayout.copy(oldState.headerLayout)
             totalItems = oldState.totalItems
             numChildren = oldState.numChildren
             subsections = oldState.subsections
-            adapterPosition = oldState.adapterPosition
+            positionInAdapter = oldState.positionInAdapter
             parent = oldState.parent
         } else {
             subsections = ArrayList()
         }
     }
 
+    /*************************
+     * Access items
+     *************************/
+
     internal var hasHeader: Boolean = false
 
     internal fun getHeader(helper: LayoutHelper): Child? =
             if (hasHeader) {
-                ItemChild.wrap(helper.getView(adapterPosition), helper)
+                ItemChild.wrap(helper.getView(positionInAdapter), helper)
             } else {
                 null
             }
 
     internal fun getDisappearingHeader(helper: LayoutHelper): Child? =
-            if (hasHeader && helper.scrapHasPosition(adapterPosition)) {
-                DisappearingItemChild.wrap(helper.getView(adapterPosition), helper)
+            if (hasHeader && helper.scrapHasPosition(positionInAdapter)) {
+                DisappearingItemChild.wrap(helper.getView(positionInAdapter), helper)
             } else {
                 null
             }
 
-    internal fun getChildAt(helper: LayoutHelper, position: Int): Child {
-        var hiddenItems = adapterPosition + if (hasHeader) 1 else 0
+    /**
+     * Gets a child at the specified position that might need more layout.
+     *
+     * @return Null if the child at the position is known to be fully laid out.
+     */
+    internal fun getNonFinalChildAt(helper: LayoutHelper, position: Int): Child? {
+        var hiddenItems = positionInAdapter + if (hasHeader) 1 else 0
         var lastSectionPosition = 0
         for ((i, it) in subsections.withIndex()) {
-            if (it.adapterPosition - hiddenItems + i > position) {
+            if (it.positionInAdapter - hiddenItems + i > position) {
                 break
-            } else if (it.adapterPosition - hiddenItems + i == position) {
+            } else if (it.positionInAdapter - hiddenItems + i == position) {
+                return SectionChild.wrap(it, helper)
+            } else {
+                hiddenItems += it.totalItems
+                lastSectionPosition = i
+            }
+        }
+
+        return null
+    }
+
+    internal fun getChildAt(helper: LayoutHelper, position: Int): Child {
+        var hiddenItems = positionInAdapter + if (hasHeader) 1 else 0
+        var lastSectionPosition = 0
+        for ((i, it) in subsections.withIndex()) {
+            if (it.positionInAdapter - hiddenItems + i > position) {
+                break
+            } else if (it.positionInAdapter - hiddenItems + i == position) {
                 return SectionChild.wrap(it, helper)
             } else {
                 hiddenItems += it.totalItems
@@ -262,12 +446,12 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * which behaves as a view with layout params(width = match_parent, height = 0).
      */
     internal fun getDisappearingChildAt(helper: LayoutHelper, position: Int): Child {
-        var hiddenItems = adapterPosition + if (hasHeader) 1 else 0
+        var hiddenItems = positionInAdapter + if (hasHeader) 1 else 0
         var lastSectionPosition = 0
         for ((i, it) in subsections.withIndex()) {
-            if (it.adapterPosition - hiddenItems + i > position) {
+            if (it.positionInAdapter - hiddenItems + i > position) {
                 break
-            } else if (it.adapterPosition - hiddenItems + i == position) {
+            } else if (it.positionInAdapter - hiddenItems + i == position) {
                 return SectionChild.wrap(it, helper)
             } else {
                 hiddenItems += it.totalItems
@@ -283,28 +467,211 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
+    /*************************
+     * Utility
+     *************************/
+
+    internal fun constrainToItemRange(position: Int): Int {
+        return Math.max(position, totalItems - 1)
+    }
+
+    /*************************
+     * Layout
+     *************************/
+
     fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
+        if (totalItems == 0) return
+
+        headerLayout.left = left
+        headerLayout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(top, headerLayout.left, headerLayout.right)
+        if (headerLayout.headPosition == -1) headerLayout.headPosition = 0
         HeaderLayoutManager.onLayout(subsectionHelper, this)
         subsectionHelper.release()
     }
 
     internal fun layout(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
-        val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
+        if (ENABLE_LAYOUT_LOGGING) Log.d("SectionState", "Layout $this")
+        if (totalItems == 0) return
+
+        layout.left = left
+        layout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(top, layout.left, layout.right)
+        if (layout.headPosition == -1) layout.headPosition = 0
         doLayout(subsectionHelper)
         subsectionHelper.release()
     }
 
     internal fun layoutContent(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val subsectionHelper = helper.acquireSubsectionHelper(left, top, right)
+        if (totalItems == 0) return
+
+        // Store layout positions for use during scrolling.
+        layout.left = left
+        layout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(top, layout.left, layout.right)
+        if (layout.headPosition == -1) layout.headPosition = 0
         doLayout(subsectionHelper)
         subsectionHelper.release()
     }
 
     protected abstract fun doLayout(helper: LayoutHelper)
 
+    /**
+     * Set the layout position of this section.
+     *
+     * @return False if the position is not within this section.
+     */
+    internal fun setLayoutPositionFromAdapter(requestedAdapterPosition: Int): Boolean {
+        // Check requested position is in this section.
+        if (requestedAdapterPosition < positionInAdapter || positionInAdapter + totalItems <= requestedAdapterPosition) return false
+
+        // Check if position is header.
+        if (hasHeader && requestedAdapterPosition == positionInAdapter) {
+            layout.headPosition = 0
+            headerLayout.headPosition = 0
+            return true
+        }
+
+        /*
+         * Position is within content. It may be in a subsection or an item of this section. Calculating the child
+         * position is a little difficult as it must account for interleaved child items and subsections.
+         */
+        var offset = positionInAdapter + if (hasHeader) 1 else 0
+        var childrenAccountedFor = 0 + if (hasHeader) 1 else 0
+        for ((i, section) in subsections.withIndex()) {
+            if (requestedAdapterPosition < section.positionInAdapter) {
+                // Position is before this subsection, so it must be a child item not a member of a subsection.
+                headerLayout.headPosition = 1
+                layout.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
+                return true
+            }
+
+            // Add items before this subsection (but after the last subsection) to children count.
+            childrenAccountedFor += section.positionInAdapter - offset
+
+            if (section.setLayoutPositionFromAdapter(requestedAdapterPosition)) {
+                // Requested position was within the subsection so store it as the layout position of this section.
+                headerLayout.headPosition = 1
+                layout.headPosition = childrenAccountedFor - if (hasHeader) 1 else 0
+                return true
+            }
+
+            // Update offset to be after the subsection content.
+            offset = section.positionInAdapter + section.totalItems
+            // Account for this subsection.
+            childrenAccountedFor += 1
+        }
+
+        // Position must be a child item after the last subsection.
+        headerLayout.headPosition = 1
+        layout.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
+        return true
+    }
+
     internal infix operator fun contains(
-            viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.layoutPosition >= adapterPosition && viewHolder.layoutPosition < adapterPosition + totalItems
+            viewHolder: RecyclerView.ViewHolder): Boolean = viewHolder.layoutPosition >= positionInAdapter && viewHolder.layoutPosition < positionInAdapter + totalItems
+
+    /*************************
+     * Scrolling
+     *************************/
+
+    /****************
+     * Root
+     ****************/
+    internal fun fillTop(dy: Int, helper: RootLayoutHelper): Int {
+        val subsectionHelper = helper.acquireSubsectionHelper(0, layout.left, layout.right)
+        if (layout.headPosition == UNSET_OR_BEFORE_CHILDREN) layout.headPosition = NUM_HEADER_CHILDREN
+        return doFillTop(dy, subsectionHelper).apply { subsectionHelper.release() }
+    }
+
+    internal fun fillBottom(dy: Int, helper: RootLayoutHelper): Int {
+        // The initial subsection helper is offset to the bottom of the already filled area.
+        val subsectionHelper = helper.acquireSubsectionHelper(layout.height, layout.left, layout.right)
+        return doFillBottom(dy, subsectionHelper).apply { subsectionHelper.release() }
+    }
+
+    internal fun trimTop(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        // TODO: Remember to adjust tail and head positions, and also to use -1 for when nothing is attached anymore.
+        doTrimTop(subsectionHelper)
+        subsectionHelper.release()
+    }
+
+    internal fun trimBottom(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        doTrimBottom(subsectionHelper)
+        subsectionHelper.release()
+    }
+
+    /***************
+     * Sections
+     ***************/
+    internal fun fillTop(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+        headerLayout.left = left
+        headerLayout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(0, headerLayout.left, headerLayout.right)
+        if (headerLayout.headPosition == UNSET_OR_BEFORE_CHILDREN) headerLayout.headPosition = NUM_HEADER_CHILDREN
+        return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this).apply { subsectionHelper.release() }
+    }
+
+    internal fun fillBottom(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+        headerLayout.left = left
+        headerLayout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(0, headerLayout.left, headerLayout.right)
+        return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this).apply { subsectionHelper.release() }
+    }
+
+    internal fun fillContentTop(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+        layout.left = left
+        layout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(0, layout.left, layout.right)
+        if (layout.headPosition == UNSET_OR_BEFORE_CHILDREN) layout.headPosition = numChildren
+        return doFillTop(dy, subsectionHelper).apply { subsectionHelper.release() }
+    }
+
+    internal fun fillContentBottom(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+        layout.left = left
+        layout.right = right
+
+        val subsectionHelper = helper.acquireSubsectionHelper(0, layout.left, layout.right)
+        return doFillBottom(dy, subsectionHelper).apply { subsectionHelper.release() }
+    }
+
+    protected abstract fun doFillTop(dy: Int, helper: LayoutHelper): Int
+    protected abstract fun doFillBottom(dy: Int, helper: LayoutHelper): Int
+
+    internal fun trimTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        HeaderLayoutManager.onTrimTop(subsectionHelper, this)
+        subsectionHelper.release()
+    }
+
+    internal fun trimBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        HeaderLayoutManager.onTrimBottom(subsectionHelper, this)
+        subsectionHelper.release()
+    }
+
+    internal fun trimContentTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        doTrimTop(subsectionHelper)
+        subsectionHelper.release()
+    }
+
+    internal fun trimContentBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right)
+        doTrimBottom(subsectionHelper)
+        subsectionHelper.release()
+    }
+
+    protected abstract fun doTrimTop(helper: LayoutHelper)
+    protected abstract fun doTrimBottom(helper: LayoutHelper)
 
     /*************************
      * Item management
@@ -312,79 +679,96 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun addHeader() {
         hasHeader = true
-        subsections.forEach { it.adapterPosition += 1 }
-        parent?.itemCountsChangedInSubsection(this, 1)
+        subsections.forEach { it.positionInAdapter += 1 }
         totalItems += 1
     }
 
     internal fun removeHeader() {
         hasHeader = false
-        subsections.forEach { it.adapterPosition -= 1 }
-        parent?.itemCountsChangedInSubsection(this, -1)
+        subsections.forEach { it.positionInAdapter -= 1 }
         totalItems -= 1
     }
 
-    internal fun addItems(childPositionStart: Int, itemCount: Int) {
+    internal fun addItems(position: Int, itemCount: Int) {
+        var childPositionStart = position
+        if (childPositionStart < 0) {
+            childPositionStart = numChildren
+        }
+
         applyToSubsectionsAfterChildPosition(childPositionStart) { i, it ->
-            it.adapterPosition += itemCount
+            it.positionInAdapter += itemCount
         }
 
         numChildren += itemCount
         totalItems += itemCount
-        parent?.itemCountsChangedInSubsection(this, itemCount)
     }
 
-    internal fun removeItems(adapterPositionStart: Int, itemCount: Int) {
-        var currentAdapterStart = adapterPositionStart
-        var itemsRemaining = itemCount
-        var itemsThatAreChildren = 0
-
-        var itemsRemoved = 0
-
-        if (currentAdapterStart == adapterPosition) {
-            itemsRemoved += 1
-            itemsRemaining -= 1
-            currentAdapterStart += 1
-            hasHeader = false
-        }
-
-        if (itemsRemaining == 0) {
-            totalItems -= itemsRemoved
-            return
-        }
-
-        for (it in subsections) {
-            var (skipped, removed) = it.removeSubsectionItems(currentAdapterStart, itemsRemaining)
-            it.adapterPosition -= skipped + itemsRemoved
-            itemsRemoved += removed
-            itemsThatAreChildren += skipped
-            currentAdapterStart += removed + skipped
-            itemsRemaining -= removed + skipped
-        }
-
-        itemsThatAreChildren += itemsRemaining
-        parent?.itemCountsChangedInSubsection(this, -itemCount)
-        totalItems -= itemCount
-        numChildren -= itemsThatAreChildren
+    internal fun removeItems(fromAdapterPosition: Int, count: Int) {
+        removeItemsInt(fromAdapterPosition, count)
     }
+//        var currentRemoveFrom = fromAdapterPosition
+//        var countInRange = count
+//
+//        // Constrain removal to range of items within the section.
+//        if (currentRemoveFrom < positionInAdapter) {
+//            val delta = positionInAdapter - currentRemoveFrom
+//            countInRange -= delta
+//            currentRemoveFrom += delta
+//        }
+//
+//        if (currentRemoveFrom + countInRange > positionInAdapter + totalItems) {
+//            val delta = (currentRemoveFrom + countInRange) - (positionInAdapter + totalItems)
+//            countInRange -= delta
+//        }
+//
+//        if (countInRange <= 0) return
+//
+//        var itemsRemaining = countInRange
+//        var itemsThatAreChildren = 0
+//
+//        var itemsRemoved = 0
+//
+//        if (hasHeader && currentRemoveFrom == positionInAdapter) {
+//            itemsRemoved += 1
+//            itemsRemaining -= 1
+//            currentRemoveFrom += 1
+//            hasHeader = false
+//        }
+//
+//        blockTotalItemChanges {
+//            for (it in subsections) {
+//                var (skipped, removed) = it.removeItemsInt(currentRemoveFrom, itemsRemaining)
+//                it.positionInAdapter -= skipped + itemsRemoved
+//                itemsRemoved += removed
+//                itemsThatAreChildren += skipped
+//                currentRemoveFrom += skipped
+//                itemsRemaining -= removed + skipped
+//            }
+//        }
+//
+//        itemsThatAreChildren += itemsRemaining
+//        totalItems -= countInRange
+//        numChildren -= itemsThatAreChildren
+//    }
 
-    private fun removeSubsectionItems(adapterPositionStart: Int, itemCount: Int): Pair<Int, Int> {
-        if (itemCount == 0) return 0 to 0
-        if (adapterPosition + totalItems <= adapterPositionStart) return 0 to 0 // Before removed items
-        if (adapterPosition >= adapterPositionStart + itemCount) return 0 to 0 //After removed items
+    private fun removeItemsInt(removeFromAdapterPosition: Int, count: Int): Pair<Int, Int> {
+        if (count == 0) return 0 to 0
+        if (positionInAdapter + totalItems <= removeFromAdapterPosition) return 0 to 0 // Before removed items
 
-        val itemsBeforeSection = Math.min(itemCount, Math.max(0, adapterPosition - adapterPositionStart))
-        val itemsAfterSection = Math.max(0, (adapterPositionStart + itemCount) - (adapterPosition + totalItems))
+        val itemsBeforeSection = Math.min(count, Math.max(0, positionInAdapter - removeFromAdapterPosition))
+        if (positionInAdapter >= removeFromAdapterPosition + count) return itemsBeforeSection to 0 //After removed items
 
-        var currentAdapterStart = Math.max(adapterPosition, adapterPositionStart)
-        var itemsRemaining = itemCount - itemsBeforeSection - itemsAfterSection
+        val itemsAfterSection = Math.max(0, (removeFromAdapterPosition + count) - (positionInAdapter + totalItems))
+
+        var currentRemoveFrom = Math.max(positionInAdapter, removeFromAdapterPosition)
+        var itemsRemaining = count - itemsBeforeSection - itemsAfterSection
         var itemsThatAreChildren = 0
         var itemsRemoved = 0
 
-        if (currentAdapterStart == adapterPosition) {
+        if (hasHeader && currentRemoveFrom == positionInAdapter) {
             itemsRemoved += 1
             itemsRemaining -= 1
-            currentAdapterStart += 1
+            currentRemoveFrom += 1
             hasHeader = false
         }
 
@@ -393,14 +777,18 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             return itemsBeforeSection to itemsRemoved
         }
 
-        for (subsection in subsections) {
-            var (skipped, removed) = subsection.removeSubsectionItems(currentAdapterStart, itemsRemaining)
-            subsection.adapterPosition -= skipped + itemsRemoved
-            itemsThatAreChildren += skipped
-            currentAdapterStart += removed + skipped
-            itemsRemaining -= removed + skipped
-            itemsRemoved += removed
-            if (itemsRemaining == 0) break
+        var removedInSection = 0
+        blockTotalItemChanges {
+            for (subsection in subsections) {
+                var (before, removed) = subsection.removeItemsInt(currentRemoveFrom, itemsRemaining)
+                removedInSection += before
+                subsection.positionInAdapter -= removedInSection
+                itemsThatAreChildren += before
+                currentRemoveFrom += before
+                itemsRemaining -= removed + before
+                itemsRemoved += removed
+                if (itemsRemaining == 0) break
+            }
         }
 
         itemsThatAreChildren += itemsRemaining
@@ -411,16 +799,22 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         return itemsBeforeSection to itemsRemoved
     }
 
-    private fun itemCountsChangedInSubsection(child: SectionState, changedCount: Int) {
+    private inline fun blockTotalItemChanges(f: () -> Unit) {
+        totalItemsAreImmutable = true
+        f()
+        totalItemsAreImmutable = false
+    }
+
+    internal fun itemCountsChangedInSubsection(child: SectionState, changedCount: Int) {
         // Find child and adjust adapter position for sections after it.
         val index = subsections.indexOfFirst { it == child }
         if (index + 1 < subsections.size) {
             for (i in (index + 1)..(subsections.size - 1)) {
-                subsections[i].adapterPosition += changedCount
+                subsections[i].positionInAdapter += changedCount
             }
         }
+
         totalItems += changedCount
-        parent?.itemCountsChangedInSubsection(this, changedCount)
     }
 
     /*************************
@@ -428,10 +822,15 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *************************/
 
     internal fun insertSection(position: Int, newSection: SectionState) {
+        var childInsertionPoint = position
+        if (childInsertionPoint < 0) {
+            childInsertionPoint = numChildren
+        }
+
         var insertPoint = subsections.size
         var firstTime = true
-        applyToSubsectionsAfterChildPosition(position) { i, it ->
-            it.adapterPosition += newSection.totalItems
+        applyToSubsectionsAfterChildPosition(childInsertionPoint) { i, it ->
+            it.positionInAdapter += newSection.totalItems
             if (firstTime) {
                 insertPoint = i
                 firstTime = false
@@ -440,9 +839,16 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         subsections.add(insertPoint, newSection)
 
         newSection.parent = this
+        var numItemsInPriorSiblings = 0
+        if (insertPoint > 0) {
+            for (i in 0..(insertPoint - 1)) {
+                numItemsInPriorSiblings += subsections[i].totalItems
+            }
+        }
+        val priorChildrenThatAreItems = childInsertionPoint - insertPoint
+        newSection.positionInAdapter = positionInAdapter + priorChildrenThatAreItems + numItemsInPriorSiblings
         numChildren += 1
         totalItems += newSection.totalItems
-        parent?.itemCountsChangedInSubsection(this, newSection.totalItems)
     }
 
     internal fun removeSection(section: SectionState) {
@@ -450,7 +856,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         var afterSection = false
         subsections.forEachIndexed { i, it ->
             if (afterSection) {
-                it.adapterPosition -= section.totalItems
+                it.positionInAdapter -= section.totalItems
             } else if (it === section) {
                 indexOfSection = i
                 afterSection = true
@@ -461,25 +867,24 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         subsections.removeAt(indexOfSection)
         totalItems -= section.totalItems
         numChildren -= 1
-        parent?.itemCountsChangedInSubsection(this, -section.totalItems)
     }
 
     internal fun load(data: SectionData) {
         numChildren = data.childCount
-        adapterPosition = data.adapterPosition
+        positionInAdapter = data.adapterPosition
         hasHeader = data.hasHeader
         totalItems = data.itemCount
         subsections.clear()
         subsections.addAll(data.subsections)
     }
 
-    private inline fun applyToSubsectionsAfterChildPosition(childPositionStart: Int, f: (Int, SectionState) -> Unit) {
-        var hiddenItems = adapterPosition
+    private inline fun applyToSubsectionsAfterChildPosition(childPositionStart: Int, crossinline f: (Int, SectionState) -> Unit) {
+        var hiddenItems = positionInAdapter
         var applying = false
         subsections.forEachIndexed { i, it ->
             if (applying) {
                 f(i, it)
-            } else if (it.adapterPosition - hiddenItems + i >= childPositionStart) {
+            } else if (it.positionInAdapter - hiddenItems + i >= childPositionStart) {
                 f(i, it)
                 applying = true
             } else {
@@ -488,49 +893,49 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    override fun toString(): String = "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size})".replace("\n", "\n\t")
+    override fun toString(): String = "(start = $positionInAdapter, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, layoutState = $layout, headerState = $headerLayout)".replace("\n", "\n\t")
     //    override fun toString(): String = "SectionState(start = $adapterPosition, hasHeader = $hasHeader, numChildren = $numChildren, totalItems = $totalItems, numSubsections = ${subsections.size}, subgraph = ${subsections.fold("") { s, it -> "$s\n$it" }})".replace("\n", "\n\t")
 
-    /****************************************************
-     * Test access to private members. Proguard will remove these in release.
-     *
-     * TODO: Configure proguard to remove these things in release.
-     ****************************************************/
-    interface TestAccess {
-        val totalItems: Int
-        val subsections: ArrayList<SectionState>
-        val adapterPosition: Int
-        fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int)
-        fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int)
-        fun addHeader()
-        fun removeHeader()
-        fun removeSection(section: SectionState)
-        fun insertSection(position: Int, newSection: SectionState)
-    }
-
-    /**
-     * Testing access to internal and private members of the instance. This will be removed in release by proguard.
-     *
-     * TODO: Proguard rule.
-     */
-    @VisibleForTesting
-    val testAccess = object : TestAccess {
-        override val totalItems: Int get() = this@SectionState.totalItems
-        override val subsections: ArrayList<SectionState> get() = this@SectionState.subsections
-        override val adapterPosition: Int get() = this@SectionState.adapterPosition
-
-        override fun addItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.addItems(childPositionStart, itemCount)
-        override fun removeItems(childPositionStart: Int, adapterPositionStart: Int, itemCount: Int) = this@SectionState.removeItems(adapterPositionStart, itemCount)
-
-        override fun addHeader() = this@SectionState.addHeader()
-        override fun removeHeader() = this@SectionState.removeHeader()
-
-        override fun insertSection(position: Int, newSection: SectionState) = this@SectionState.insertSection(position, newSection)
-        override fun removeSection(section: SectionState) = this@SectionState.removeSection(section)
-    }
+    //    /****************************************************
+    //     * Test access to private members. Proguard will remove these in release.
+    //     *
+    //     * TODO: Configure proguard to remove these things in release.
+    //     ****************************************************/
+    //    interface TestAccess {
+    //        val totalItems: Int
+    //        val subsections: ArrayList<SectionState>
+    //        val adapterPosition: Int
+    //        fun addItems(childPositionStart: Int, itemCount: Int)
+    //        fun removeItems(adapterPositionStart: Int, itemCount: Int)
+    //        fun addHeader()
+    //        fun removeHeader()
+    //        fun removeSection(section: SectionState)
+    //        fun insertSection(position: Int, newSection: SectionState)
+    //    }
+    //
+    //    /**
+    //     * Testing access to internal and private members of the instance. This will be removed in release by proguard.
+    //     *
+    //     * TODO: Proguard rule.
+    //     */
+    //    @VisibleForTesting
+    //    internal val testAccess = object : TestAccess {
+    //        override val totalItems: Int get() = this@SectionState.totalItems
+    //        override val subsections: ArrayList<SectionState> get() = this@SectionState.subsections
+    //        override val adapterPosition: Int get() = this@SectionState.positionInAdapter
+    //
+    //        override fun addItems(childPositionStart: Int, itemCount: Int) = this@SectionState.addItems(childPositionStart, itemCount)
+    //        override fun removeItems(adapterPositionStart: Int, itemCount: Int) = this@SectionState.removeItems(adapterPositionStart, itemCount)
+    //
+    //        override fun addHeader() = this@SectionState.addHeader()
+    //        override fun removeHeader() = this@SectionState.removeHeader()
+    //
+    //        override fun insertSection(position: Int, newSection: SectionState) = this@SectionState.insertSection(position, newSection)
+    //        override fun removeSection(section: SectionState) = this@SectionState.removeSection(section)
+    //    }
 }
 
-internal abstract class ChildInternal(var helper: LayoutHelper) : Child {}
+internal abstract class ChildInternal(var helper: LayoutHelper) : Child
 
 private open class SectionChild(var section: SectionState, helper: LayoutHelper) : ChildInternal(helper) {
     companion object {
@@ -591,10 +996,22 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
         section.layout(helper, left, top, right)
     }
 
+    override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        _left = left
+        _right = right
+        return section.fillTop(dy, helper, left, right)
+    }
+
+    override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        _left = left
+        _right = right
+        return section.fillBottom(dy, helper, left, right)
+    }
+
     override val width: Int
         get() = _right - _left
     override val height: Int
-        get() = section.height
+        get() = section.layout.height
 
     override fun addToRecyclerView(i: Int) {
     }
@@ -647,6 +1064,16 @@ private open class ItemChild(var view: View, helper: LayoutHelper) : ChildIntern
     override fun layout(left: Int, top: Int, right: Int, bottom: Int) {
         val m = view.rvLayoutParams
         helper.layout(view, left, top, right, bottom, m.leftMargin, m.topMargin, m.rightMargin, m.bottomMargin)
+    }
+
+    override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        layout(left, top, right, bottom)
+        return 0
+    }
+
+    override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        layout(left, top, right, bottom)
+        return 0
     }
 
     override val width: Int
@@ -739,6 +1166,16 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
 
         _width = right - left
         _height = bottom - top
+    }
+
+    override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        layout(left, top, right, bottom)
+        return 0
+    }
+
+    override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
+        layout(left, top, right, bottom)
+        return 0
     }
 
     private var _width = 0

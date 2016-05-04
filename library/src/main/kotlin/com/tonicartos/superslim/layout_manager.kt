@@ -14,8 +14,8 @@ internal interface AdapterContract<ID> {
     fun populateRoot(out: SectionData)
 
     fun getSections(): Map<ID, SectionConfig>
-    fun setSectionIds(idMap: Map<ID, Int>)
-    fun populateSection(data: Pair<ID, SectionData>)
+    fun setSectionIds(idMap: Map<*, Int>)
+    fun populateSection(data: Pair<*, SectionData>)
 
     fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager)
     fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager)
@@ -52,8 +52,9 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         const val VERTICAL = RecyclerView.VERTICAL
         const val HORIZONTAL = RecyclerView.HORIZONTAL
 
-        private const val ENABLE_NOTIFICATION_LOGGING = false
-        private const val ENABLE_ITEM_CHANGE_LOGGING = false
+        private const val ENABLE_NOTIFICATION_LOGGING = true
+        private const val ENABLE_ITEM_CHANGE_LOGGING = true
+        private const val ENABLE_LAYOUT_LOGGING = true
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
@@ -68,6 +69,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     private val stateHelper = StateWrapper()
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+        if (ENABLE_LAYOUT_LOGGING) {
+            if (state.isPreLayout) Log.d("SSlm", "Prelayout")
+            else if (!state.willRunPredictiveAnimations()) Log.d("Sslm", "layout")
+            else Log.d("Sslm", "Postlayout")
+        }
         detachAndScrapAttachedViews(recycler)
         graph!!.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
     }
@@ -80,14 +86,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
-    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        // TODO: Scroll vertically
-        return super.scrollVerticallyBy(dy, recycler, state)
-    }
+    //    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) = graph!!.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+    //
+    //    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) = graph!!.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
 
-    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler?, state: RecyclerView.State?): Int {
-        // TODO: Scroll horizontally
-        return super.scrollHorizontallyBy(dx, recycler, state)
+    override fun scrollToPosition(position: Int) {
+        graph!!.requestedPosition = position
+        requestLayout()
     }
 
     /****************************************************
@@ -232,12 +237,59 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override val layoutWidth: Int
         get() = width
 
+    override val basePaddingBottom: Int
+        get() = paddingBottom
+    override val basePaddingRight: Int
+        get() = paddingRight
+    override val basePaddingTop: Int
+        get() = paddingTop
+    override val basePaddingLeft: Int
+        get() = paddingLeft
+
     override fun getMeasuredHeight(child: View) = getDecoratedMeasuredHeight(child)
     override fun getMeasuredWidth(child: View) = getDecoratedMeasuredWidth(child)
     override fun getLeft(child: View) = getDecoratedLeft(child)
     override fun getTop(child: View) = getDecoratedTop(child)
     override fun getRight(child: View) = getDecoratedRight(child)
     override fun getBottom(child: View) = getDecoratedBottom(child)
+
+    override fun detachFirstView(): View {
+        val view = getChildAt(0)
+        detachViewAt(0)
+        return view
+    }
+
+    override fun detachLastView(): View {
+        val end = childCount - 1
+        val view = getChildAt(end)
+        detachViewAt(end)
+        return view
+    }
+
+    override fun attachViewToStart(view: View) {
+        attachView(view)
+    }
+
+    override fun attachViewToEnd(view: View) {
+        attachView(view, childCount - 1)
+    }
+
+    override fun attachViewToPosition(view: View, position: Int) {
+        val pos = when {
+            position >= childCount -> childCount - 1
+            position < 0 -> 0
+            else -> position
+        }
+        attachView(view, pos)
+    }
+
+    override fun offsetChildrenHorizontal(dx: Int) {
+        super.offsetChildrenHorizontal(dx)
+    }
+
+    override fun offsetChildrenVertical(dy: Int) {
+        super.offsetChildrenVertical(dy)
+    }
 
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
         measureChildWithMargins(view, usedWidth, usedHeight)
@@ -349,10 +401,15 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         graph!!.addItems(event, positionStart, itemCount)
     }
 
+    var bugCount = 0
+
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
         if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
-        val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
-        graph!!.removeItems(event, positionStart, itemCount)
+        try {
+            val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
+            graph!!.removeItems(event, positionStart, itemCount)
+        } catch (e: Exception) {
+        }
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {

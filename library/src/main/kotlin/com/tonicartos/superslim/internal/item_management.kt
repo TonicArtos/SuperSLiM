@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.internal
 
+import android.util.Log
 import java.util.*
 
 private const val HEADER = 1

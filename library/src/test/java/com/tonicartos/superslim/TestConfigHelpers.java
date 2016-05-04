@@ -9,6 +9,7 @@ import com.tonicartos.superslim.internal.StackFromEndConfigHelper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import android.view.View;
 
@@ -48,12 +49,12 @@ public class TestConfigHelpers {
 
     private View view;
 
-    private mockReadWriteHelper baseHelper;
+    private IncompleteMockReadWriteHelper baseHelper;
 
     @Before
     public void setup() {
         view = mock(View.class);
-        baseHelper = new mockReadWriteHelper();
+        baseHelper = mock(IncompleteMockReadWriteHelper.class, Mockito.CALLS_REAL_METHODS);
     }
 
     @Test
@@ -84,18 +85,16 @@ public class TestConfigHelpers {
 
     @Test
     public void testReverseLayoutConfig() {
-        mockReadWriteHelper mock = new mockReadWriteHelper();
-        View view = mock(View.class);
-        ReverseLayoutConfigHelper helper = new ReverseLayoutConfigHelper(mock);
+        ReverseLayoutConfigHelper helper = new ReverseLayoutConfigHelper(baseHelper);
         helper.layout(view, LEFT, TOP, RIGHT, BOTTOM, MARGIN_LEFT, MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM);
-        assertThat(mock.left, equalTo(LAYOUT_WIDTH - RIGHT));
-        assertThat(mock.top, equalTo(LAYOUT_HEIGHT - BOTTOM));
-        assertThat(mock.right, equalTo(LAYOUT_WIDTH - LEFT));
-        assertThat(mock.bottom, equalTo(LAYOUT_HEIGHT - TOP));
-        assertThat(mock.marginLeft, equalTo(MARGIN_RIGHT));
-        assertThat(mock.marginTop, equalTo(MARGIN_TOP));
-        assertThat(mock.marginRight, equalTo(MARGIN_LEFT));
-        assertThat(mock.marginBottom, equalTo(MARGIN_BOTTOM));
+        assertThat(baseHelper.left, equalTo(LAYOUT_WIDTH - RIGHT));
+        assertThat(baseHelper.top, equalTo(LAYOUT_HEIGHT - BOTTOM));
+        assertThat(baseHelper.right, equalTo(LAYOUT_WIDTH - LEFT));
+        assertThat(baseHelper.bottom, equalTo(LAYOUT_HEIGHT - TOP));
+        assertThat(baseHelper.marginLeft, equalTo(MARGIN_RIGHT));
+        assertThat(baseHelper.marginTop, equalTo(MARGIN_TOP));
+        assertThat(baseHelper.marginRight, equalTo(MARGIN_LEFT));
+        assertThat(baseHelper.marginBottom, equalTo(MARGIN_BOTTOM));
 
         assertThat(helper.getLeft(view), equalTo(LAYOUT_WIDTH - RIGHT));
         assertThat(helper.getTop(view), equalTo(LAYOUT_HEIGHT - BOTTOM));
@@ -106,8 +105,8 @@ public class TestConfigHelpers {
         assertThat(helper.getMeasuredHeight(view), equalTo(HEIGHT));
 
         helper.measure(view, USED_WIDTH, USED_HEIGHT);
-        assertThat(mock.usedWidth, equalTo(USED_WIDTH));
-        assertThat(mock.usedHeight, equalTo(USED_HEIGHT));
+        assertThat(baseHelper.usedWidth, equalTo(USED_WIDTH));
+        assertThat(baseHelper.usedHeight, equalTo(USED_HEIGHT));
     }
 
     @Test
@@ -162,7 +161,11 @@ public class TestConfigHelpers {
         assertThat(baseHelper.usedHeight, equalTo(USED_HEIGHT));
     }
 
-    class mockReadWriteHelper implements ReadWriteLayoutHelper {
+    /**
+     * A partial implementation of the read write layout helper interface. Use mock(PartialMockReadWriteHelper.class) to
+     * instantiate a complete mock. Mockito will kindly fill in the unimplemented parts of the mock.
+     */
+    abstract class IncompleteMockReadWriteHelper implements ReadWriteLayoutHelper {
 
         public int left;
 

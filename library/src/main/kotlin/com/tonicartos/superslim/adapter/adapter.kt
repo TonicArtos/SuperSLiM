@@ -65,14 +65,14 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 
     override fun getSections() = sectionLookup.mapValues { it.value.configuration }
 
-    override fun setSectionIds(idMap: Map<ID, Int>) {
+    override fun setSectionIds(idMap: Map<*, Int>) {
         idMap.forEach {
             val section = sectionLookup[it.key] ?: throw IllegalArgumentException("unknown id \"${it.key}\" for section lookup")
             section.id = it.value
         }
     }
 
-    override fun populateSection(data: Pair<ID, SectionData>) {
+    override fun populateSection(data: Pair<*, SectionData>) {
         val section = sectionLookup[data.first] ?: throw IllegalArgumentException("unknown id \"${data.first}\" for section lookup")
         data.second.adapterPosition = section.positionInAdapter
         data.second.hasHeader = section.header != null
