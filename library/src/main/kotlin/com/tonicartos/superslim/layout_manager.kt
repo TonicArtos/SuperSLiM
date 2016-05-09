@@ -75,7 +75,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             else Log.d("Sslm", "Postlayout")
         }
         detachAndScrapAttachedViews(recycler)
-        graph!!.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+        graph?.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
     }
 
     /****************************************************
@@ -86,12 +86,14 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
-    //    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) = graph!!.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
-    //
-    //    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) = graph!!.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
+            graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state))) ?: 0
+
+    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
+            graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state))) ?: 0
 
     override fun scrollToPosition(position: Int) {
-        graph!!.requestedPosition = position
+        graph?.requestedPosition = position
         requestLayout()
     }
 

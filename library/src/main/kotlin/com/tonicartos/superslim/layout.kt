@@ -4,13 +4,41 @@ import android.view.View
 import com.tonicartos.superslim.internal.BaseLayoutHelper
 import com.tonicartos.superslim.internal.RootLayoutHelper
 import com.tonicartos.superslim.internal.SectionState
+import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 interface SectionLayoutManager<T : SectionState> {
-    fun onLayout(helper: LayoutHelper, section: T)
-    fun onFillTop(dy: Int, helper: LayoutHelper, section: T): Int
-    fun onFillBottom(dy: Int, helper: LayoutHelper, section: T): Int
-    fun onTrimTop(helper: LayoutHelper, section: T)
-    fun onTrimBottom(helper: LayoutHelper, section: T)
+    /**
+     * Layout the section. Layout pass may be pre, post, or normal.
+     *
+     * @param helper Layout helper.
+     * @param section The section to lay out.
+     * @param state In/out layout state.
+     */
+    fun onLayout(helper: LayoutHelper, section: T, state: LayoutState)
+
+    /**
+     * Fill distance dy at top of the section. The layout state may already contain some filled distance recorded as
+     * overdraw.
+     *
+     * @param dy Distance to fill.
+     * @param helper Layout helper.
+     * @param section Section to fill.
+     * @param layoutState In/out layout state.
+     */
+    fun onFillTop(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
+
+    /**
+     * Fill distance dy at bottom of the section. The layout state may already contain some filled distance recorded as
+     * overdraw.
+     *
+     * @param dy Distance to fill.
+     * @param helper Layout helper.
+     * @param section Section to fill.
+     * @param layoutState In/out layout state.
+     */
+    fun onFillBottom(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
+    fun onTrimTop(helper: LayoutHelper, section: T, layoutState: LayoutState)
+    fun onTrimBottom(helper: LayoutHelper, section: T, layoutState: LayoutState)
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {

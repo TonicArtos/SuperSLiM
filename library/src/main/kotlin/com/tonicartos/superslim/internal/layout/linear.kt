@@ -1,9 +1,13 @@
 package com.tonicartos.superslim.internal.layout
 
 import android.util.Log
-import com.tonicartos.superslim.*
+import com.tonicartos.superslim.LayoutHelper
+import com.tonicartos.superslim.SectionConfig
+import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.HeaderStyle
+import com.tonicartos.superslim.fillTop
 import com.tonicartos.superslim.internal.SectionState
+import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                           @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle) {
@@ -16,19 +20,21 @@ class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutte
 }
 
 internal open class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState) {
-    override fun doLayout(helper: LayoutHelper) = LinearSlm.onLayout(helper, this)
-    override fun doFillTop(dy: Int, helper: LayoutHelper) = LinearSlm.onFillTop(dy, helper, this)
-    override fun doFillBottom(dy: Int, helper: LayoutHelper) = LinearSlm.onFillTop(dy, helper, this)
-    override fun doTrimTop(helper: LayoutHelper) = LinearSlm.onTrimTop(helper, this)
-    override fun doTrimBottom(helper: LayoutHelper) = LinearSlm.onTrimBottom(helper, this)
+    override fun doLayout(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onLayout(helper, this, layoutState)
+    override fun doFillTop(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int = LinearSlm.onFillTop(dy, helper, this, layoutState)
+    override fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int = LinearSlm.onFillTop(dy, helper, this, layoutState)
+    override fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onTrimTop(helper, this, layoutState)
+    override fun doTrimBottom(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onTrimBottom(helper, this, layoutState)
 }
 
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
-    override fun onLayout(helper: LayoutHelper, section: LinearSectionState) {
-        var currentPosition = section.layout.headPosition
+    override fun onLayout(helper: LayoutHelper, section: LinearSectionState, state: LayoutState) {
+        Log.d("linear", "Laying out section ${section.positionInAdapter} with height limit ${helper.layoutLimit}")
+        var currentPosition = state.headPosition
         var y = 0
 
         while (helper.moreToLayout(currentPosition, section)) {
+            Log.d("linear", "Laying out child $currentPosition")
             val child = helper.getChild(currentPosition, section) ?: break
             child.addToRecyclerView()
             child.measure()
@@ -40,22 +46,24 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             }
             y += childHeight
             helper.filledArea += childHeight
-            currentPosition += 1
 
             child.done()
+            Log.d("linear", "Laid out child $currentPosition with height $childHeight")
+            currentPosition += 1
         }
-        section.layout.height = y
-        section.layout.tailPosition = currentPosition - 1
+        Log.d("linear", "$y")
+        state.bottom = y
+        state.tailPosition = currentPosition - 1
     }
 
     /**
      * Fill revealed area where content has been scrolled down the screen by dy.
      */
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
         Log.d("LinearSLM", "section = $section")
-        var y = section.layout.overdraw
+        var y = layoutState.overdraw
 
-        var currentPos = section.layout.headPosition
+        var currentPos = layoutState.headPosition
 
         if (currentPos < section.numChildren) {
             // Cascade fill top to current position if valid.
@@ -80,9 +88,9 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             child.done()
         }
 
-        section.layout.headPosition = currentPos
-        section.layout.height -= y
-        section.layout.overdraw = y - dy
+        layoutState.headPosition = currentPos
+        layoutState.bottom -= y
+        layoutState.overdraw = y - dy
 
         return -y
     }
@@ -90,10 +98,10 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     /**
      * Fill revealed area where content has been scrolled up the screen by dy.
      */
-    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState): Int {
-        var y = section.layout.height - dy
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
+        var y = layoutState.bottom - dy
 
-        var currentPos = section.layout.tailPosition + 1
+        var currentPos = layoutState.tailPosition + 1
         while (y < helper.layoutLimit && currentPos < section.numChildren) {
             val child = section.getChildAt(helper, currentPos)
             child.addToRecyclerView(0)
@@ -107,15 +115,15 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             child.done()
         }
 
-        section.layout.tailPosition = currentPos
-        section.layout.height = y
+        layoutState.tailPosition = currentPos
+        layoutState.bottom = y
 
-        return y - (section.layout.height - dy)
+        return y - (layoutState.bottom - dy)
     }
 
-    override fun onTrimTop(helper: LayoutHelper, section: LinearSectionState) {
+    override fun onTrimTop(helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState) {
     }
 
-    override fun onTrimBottom(helper: LayoutHelper, section: LinearSectionState) {
+    override fun onTrimBottom(helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState) {
     }
 }
