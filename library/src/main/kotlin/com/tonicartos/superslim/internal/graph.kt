@@ -59,8 +59,11 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionUpdates()
         }
 
-        if (hasRequestedPosition) root.setLayoutPositionFromAdapter(requestedPosition)
-        //        Log.d("layout", "helper = $helper\nsection = $root\n\n")
+        if (hasRequestedPosition) {
+            // A little extra work to do it this way, but it is clearer and easier for now.
+            root.resetLayout()
+            root.setLayoutPositionFromAdapter(requestedPosition)
+        }
         root.layout(helper, 0, 0, helper.layoutWidth)
 
         if (helper.isPreLayout) {
