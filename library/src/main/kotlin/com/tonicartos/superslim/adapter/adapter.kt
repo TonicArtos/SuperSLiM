@@ -92,7 +92,7 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
     @JvmOverloads fun createSection(id: ID, header: Item? = null,
                                     config: SectionConfig = LinearSectionConfig()): Section {
         val section = Section()
-        config.headerStyle = SectionConfig.HEADER_EMBEDDED
+        config.headerStyle = SectionConfig.HEADER_INLINE
         section.header = header
         section.configuration = config
         registerSection(id, section)

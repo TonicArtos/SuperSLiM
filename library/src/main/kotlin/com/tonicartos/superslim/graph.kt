@@ -106,16 +106,17 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
 
     companion object {
         /**
-         * Header is positioned at the head of the section content. Content starts below the header. Inline headers
-         * are always sticky. Use the embedded style if you want an inline header that is not sticky.
+         * Header is positioned at the head of the section content. Content starts below the header. Sticky headers
+         * stick to the top of the layout area until the entire area has scrolled off the screen. Use HEADER_INLINE for
+         * a header style which is otherwise the same without the sticky property.
          */
-        const val HEADER_INLINE = 1
+        const val HEADER_STICKY = 1
 
         /**
          * Header is positioned at the head of the section content. Content starts below the header, but the header
-         * never becomes sticky. Embedded headers can not float and ignores that flag if set.
+         * never becomes sticky. Linear headers can not float and ignores that flag if set.
          */
-        const val HEADER_EMBEDDED = 1 shl 1
+        const val HEADER_INLINE = 1 shl 1
 
         /**
          * Header is placed inside the gutter at the start edge of the section. This is the left for LTR locales.
@@ -125,12 +126,13 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
 
         /**
          * Header is placed inside the gutter at the end edge of the section. This is the right for LTR locales.
-         * Gutter headers are always sticky. Overridden
+         * Gutter headers are always sticky.
          */
         const val HEADER_END = 1 shl 3
 
         /**
-         * Float header above the content. Floating headers are always sticky.
+         * Float header above the content. Content starts at the same top edge as the header. Floating headers are
+         * always sticky in the same way as HEADER_STICKY.
          */
         const val HEADER_FLOAT = 1 shl 4
 
@@ -143,18 +145,6 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
         const val GUTTER_AUTO = -1
 
         internal const val DEFAULT_GUTTER = GUTTER_AUTO
-        internal const val DEFAULT_HEADER_STYLE = HEADER_INLINE
-    }
-
-    /****************************************************
-     * Test access
-     ****************************************************/
-    interface TestAccess {
-        fun makeSection(): SectionState
-    }
-
-    @VisibleForTesting
-    val testAccess = object : TestAccess {
-        override fun makeSection(): SectionState = this@SectionConfig.makeSection()
+        internal const val DEFAULT_HEADER_STYLE = HEADER_STICKY
     }
 }
