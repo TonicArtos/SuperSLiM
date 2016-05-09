@@ -39,11 +39,6 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         }
     }
 
-    internal fun scrollToPocrollition(adapterPosition: Int) {
-        var position = root.constrainToItemRange(adapterPosition)
-        root.setLayoutPositionFromAdapter(position)
-    }
-
     /*************************
      * Layout
      *************************/
