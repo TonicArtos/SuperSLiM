@@ -285,14 +285,6 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         attachView(view, pos)
     }
 
-    override fun offsetChildrenHorizontal(dx: Int) {
-        super.offsetChildrenHorizontal(dx)
-    }
-
-    override fun offsetChildrenVertical(dy: Int) {
-        super.offsetChildrenVertical(dy)
-    }
-
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
         measureChildWithMargins(view, usedWidth, usedHeight)
     }
