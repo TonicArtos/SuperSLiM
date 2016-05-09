@@ -1,3 +1,5 @@
+package com.tonicartos.superslimdbexample;
+
 import com.tonicartos.superslim.adapter.Item;
 import com.tonicartos.superslim.adapter.Section;
 import com.tonicartos.superslim.adapter.SuperSlimAdapter;
