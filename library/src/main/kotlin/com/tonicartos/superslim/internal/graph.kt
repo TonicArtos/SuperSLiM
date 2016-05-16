@@ -193,6 +193,10 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         sectionIndex[eventSectionData.fromSection].removeItems(from, 1)
         sectionIndex[eventSectionData.toSection].addItems(eventSectionData.to, 1)
     }
+
+    override fun toString(): String {
+        return "$root"
+    }
 }
 
 private class SectionManager {
@@ -228,6 +232,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         const val ENABLE_LAYOUT_LOGGING = false
     }
 
+    override fun toString(): String {
+        return  subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
+    }
 
     open class LayoutState {
         /**
