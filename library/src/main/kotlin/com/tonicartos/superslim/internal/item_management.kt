@@ -94,17 +94,22 @@ internal class ItemChangeHelper {
     private fun pullEventData(opCode: Int, positionStart: Int, itemCount: Int): EventSectionData {
         for ((i, op) in ops.withIndex()) {
             if (op is SimpleOp && (op.cmd and opCode > 0) && op.startAp == positionStart && op.itemCount >= itemCount) {
-                op.startAp += itemCount
+//                op.startAp += itemCount
                 op.itemCount -= itemCount
 
-                val result = reusedEvent.copy(op.cmd, op.section, op.start)
+                reusedEvent.action = op.cmd
+                reusedEvent.section = op.section
+                reusedEvent.position1 = op.start
                 if (op.itemCount == 0) {
                     ops.removeAt(i).release()
                 }
-                return result
-            } else if (op is SimpleOp && (op.cmd and opCode > 0) && op.startAp + op.itemCount == positionStart + itemCount && op.startAp < positionStart) {
+                return reusedEvent
+            } else if (op is SimpleOp && (op.cmd and opCode > 0) && positionStart + itemCount <= op.startAp + op.itemCount && op.startAp < positionStart) {
                 op.itemCount -= itemCount
-                return reusedEvent.copy(op.cmd, op.section, op.start + (positionStart - op.startAp))
+                reusedEvent.action = op.cmd
+                reusedEvent.section = op.section
+                reusedEvent.position1 = op.start + (positionStart - op.startAp)
+                return reusedEvent
             }
         }
         // Should have found a match
