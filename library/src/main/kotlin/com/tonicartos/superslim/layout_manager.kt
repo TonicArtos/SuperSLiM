@@ -401,11 +401,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
         if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
-        try {
-            val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
-            graph!!.removeItems(event, positionStart, itemCount)
-        } catch (e: Exception) {
-        }
+        val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
+        graph!!.removeItems(event, positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
