@@ -73,6 +73,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             if (state.isPreLayout) Log.d("SSlm", "Prelayout")
             else if (!state.willRunPredictiveAnimations()) Log.d("Sslm", "layout")
             else Log.d("Sslm", "Postlayout")
+
+            Log.d("Sslm-graph", "$graph")
         }
         detachAndScrapAttachedViews(recycler)
         graph?.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
