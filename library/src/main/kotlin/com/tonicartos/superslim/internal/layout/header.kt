@@ -51,9 +51,9 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
 
     private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
         return when (section.baseConfig.headerStyle) {
-            SectionConfig.HEADER_INLINE -> EmbeddedHlm
+            SectionConfig.HEADER_INLINE -> InlineHlm
             SectionConfig.HEADER_START, SectionConfig.HEADER_END -> GutterHlm
-            else -> InlineHlm
+            else -> StickyHlm
         }
     }
 
@@ -61,7 +61,7 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
     private fun leftGutter(section: SectionState) = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
 }
 
-private object EmbeddedHlm : SectionLayoutManager<SectionState> {
+private object InlineHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         // if the current position is the header
         var y = 0
@@ -193,7 +193,7 @@ private object EmbeddedHlm : SectionLayoutManager<SectionState> {
     }
 }
 
-private object InlineHlm : SectionLayoutManager<SectionState> {
+private object StickyHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, state: LayoutState) {
         throw UnsupportedOperationException()
     }
