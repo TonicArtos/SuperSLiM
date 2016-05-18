@@ -319,6 +319,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun resetLayout() {
         layoutState.forEach { it.reset() }
+        subsections.forEach { resetLayout() }
     }
 
     internal fun setOffset(offset: Int) {
