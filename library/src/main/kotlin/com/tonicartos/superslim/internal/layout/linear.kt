@@ -31,7 +31,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onLayout(helper: LayoutHelper, section: LinearSectionState, state: LayoutState) {
         Log.d("linear", "Laying out section ${section.positionInAdapter} with height limit ${helper.layoutLimit}")
         var currentPosition = state.headPosition
-        var y = 0
+        var y = -state.overdraw
 
         while (helper.moreToLayout(currentPosition, section)) {
             Log.d("linear", "Laying out child $currentPosition")

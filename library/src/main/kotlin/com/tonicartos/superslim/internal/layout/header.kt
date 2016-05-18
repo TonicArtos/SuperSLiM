@@ -64,7 +64,7 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
 private object InlineHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         // if the current position is the header
-        var y = 0
+        var y = -layoutState.overdraw
 
         val state = layoutState as HeaderLayoutState
         if (state.headPosition == 0) {
