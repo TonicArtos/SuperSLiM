@@ -2,6 +2,8 @@ Hi there! So currently development has been happening over on the version5 branc
 
 [SuperSLiM](http://tonicartos.github.io/SuperSLiM/)
 =========
+
+[![Join the chat at https://gitter.im/TonicArtos/SuperSLiM](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/TonicArtos/SuperSLiM?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Current release branch](https://img.shields.io/badge/current%20release%20branch-early__release__4-orange.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/tree/early_release_4)[![Build Status](https://img.shields.io/travis/TonicArtos/SuperSLiM/early_release_4.svg?style=flat-square)](https://travis-ci.org/TonicArtos/SuperSLiM)
 
 [![GitHub Release Version](https://img.shields.io/github/release/tonicartos/superslim.svg?style=flat-square)](https://github.com/TonicArtos/SuperSLiM/releases/latest)[![Maven Central Version](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.tonicartos/superslim)[![Download](https://img.shields.io/badge/jcenter-0.4.13-ff69b4.svg?style=flat-square) ](https://bintray.com/tonicartos/maven/com.tonicartos%3Asuperslim/_latestVersion)
