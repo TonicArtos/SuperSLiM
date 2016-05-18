@@ -4,6 +4,7 @@ import com.tonicartos.superslim.internal.ManagerHelper;
 import com.tonicartos.superslim.internal.ReadWriteLayoutHelper;
 import com.tonicartos.superslim.internal.RecyclerHelper;
 import com.tonicartos.superslim.internal.RootLayoutHelper;
+import com.tonicartos.superslim.internal.SectionState;
 import com.tonicartos.superslim.internal.StateHelper;
 
 import org.junit.Before;
@@ -79,7 +80,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLayout() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
 
         helper.layout(view, VIEW_LEFT, VIEW_TOP, VIEW_RIGHT, VIEW_BOTTOM,
                 VIEW_M_LEFT, VIEW_M_TOP, VIEW_M_RIGHT, VIEW_M_BOTTOM);
@@ -92,7 +93,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLayoutProperties() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
         // Check width was calculated and returned correctly.
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
         assertThat(helper.getLayoutWidth(), equalTo(HELPER_RIGHT - HELPER_LEFT));
@@ -101,7 +102,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testLimitExtension() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
 
         helper.addIgnoredHeight(50);
         assertThat(helper.getLayoutLimit(), equalTo(RECYCLER_HEIGHT + 50 - HELPER_TOP));
@@ -110,7 +111,7 @@ public class TestLayoutHelper {
 
     @Test
     public void testMeasure() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
 
         helper.measure(view, USED_WIDTH, USED_HEIGHT);
         // Check subsection helper offset is correctly applied to used space.
@@ -121,11 +122,11 @@ public class TestLayoutHelper {
 
     @Test
     public void testSubsectionCaptureAndRelease() {
-        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper helper = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
         root.releaseSubsectionHelper(helper);
-        LayoutHelper other = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper other = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
         assertThat(helper, sameInstance(other));
-        LayoutHelper another = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT);
+        LayoutHelper another = root.acquireSubsectionHelper(HELPER_TOP, HELPER_LEFT, HELPER_RIGHT, 0, mock(SectionState.LayoutState.class));
         assertThat(helper, not(sameInstance(another)));
         root.releaseSubsectionHelper(other);
         root.releaseSubsectionHelper(another);

@@ -257,44 +257,12 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun getRight(child: View) = getDecoratedRight(child)
     override fun getBottom(child: View) = getDecoratedBottom(child)
 
-    override fun detachFirstView(): View {
-        val view = getChildAt(0)
-        detachViewAt(0)
-        return view
-    }
-
-    override fun detachLastView(): View {
-        val end = childCount - 1
-        val view = getChildAt(end)
-        detachViewAt(end)
-        return view
-    }
-
-    override fun attachViewToStart(view: View) {
-        attachView(view)
-    }
-
-    override fun attachViewToEnd(view: View) {
-        attachView(view, childCount - 1)
-    }
-
-    override fun attachViewToPosition(view: View, position: Int) {
-        val pos = when {
-            position >= childCount -> childCount - 1
-            position < 0 -> 0
-            else -> position
-        }
-        attachView(view, pos)
-    }
-
-    override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
-        measureChildWithMargins(view, usedWidth, usedHeight)
-    }
-
-    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int,
-                        marginRight: Int, marginBottom: Int) {
-        layoutDecorated(view, left, top, right, bottom)
-    }
+    override fun detachViewAtPosition(position: Int) = getChildAt(position).apply { detachViewAt(position) }
+    override fun attachViewToPosition(position: Int, view: View) = attachView(view, position)
+    override fun measure(view: View, usedWidth: Int, usedHeight: Int) = measureChildWithMargins(view, usedWidth, usedHeight)
+    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
+                        marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) =
+            layoutDecorated(view, left, top, right, bottom)
 
     /****************************************************
      * Data change notifications

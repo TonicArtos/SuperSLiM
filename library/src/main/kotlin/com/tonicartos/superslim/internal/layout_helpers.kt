@@ -2,7 +2,8 @@ package com.tonicartos.superslim.internal
 
 import android.support.v7.widget.RecyclerView
 import android.view.View
-import com.tonicartos.superslim.*
+import com.tonicartos.superslim.LayoutHelper
+import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWriteLayoutHelper,
                                 val recycler: RecyclerHelper, val state: StateHelper) : BaseLayoutHelper,
@@ -10,7 +11,7 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
                                                                                         RecyclerHelper by recycler, StateHelper by state {
     private var helperPool = LayoutHelperPool()
 
-    fun acquireSubsectionHelper(y: Int, left: Int, right: Int): LayoutHelper = helperPool.acquire(this, left, y, right - left)
+    fun acquireSubsectionHelper(y: Int, left: Int, right: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper = helperPool.acquire(this, left, y, right - left, viewsBefore, layoutState)
     fun releaseSubsectionHelper(helper: LayoutHelper) {
         helperPool.release(helper)
     }
@@ -28,11 +29,11 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
     private class LayoutHelperPool {
         private val pool = arrayListOf<LayoutHelper>()
 
-        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int) =
+        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, viewsBefore: Int, layoutState: LayoutState) =
                 if (pool.isEmpty()) {
-                    LayoutHelper(root, x, y, width)
+                    LayoutHelper(root, x, y, width, viewsBefore, layoutState)
                 } else {
-                    pool.removeAt(0).reInit(root, x, y, width)
+                    pool.removeAt(0).reInit(root, x, y, width, viewsBefore, layoutState)
                 }
 
         fun release(helper: LayoutHelper) {
@@ -125,11 +126,8 @@ internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
     val basePaddingRight: Int
     val basePaddingBottom: Int
 
-    fun detachFirstView(): View
-    fun detachLastView(): View
-    fun attachViewToStart(view: View)
-    fun attachViewToEnd(view: View)
-    fun attachViewToPosition(view: View, position: Int)
+    fun attachViewToPosition(position: Int, view: View)
+    fun detachViewAtPosition(position: Int): View
 }
 
 internal interface ReadLayoutHelper {

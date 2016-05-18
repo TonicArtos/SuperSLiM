@@ -84,22 +84,9 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         if (helper.moreToLayout(0, section)) {
-            // The header had to be attached for some views to be correctly measured. Now it must be detached so it can be
-            // correctly placed after the section content.
-            // TODO: fix whatever this is :D
-            //            val headerView = if (state.state == ADDED) helper.detachFirstView() else null
-
             val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
             val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
             section.layoutContent(helper, leftGutter, y, helper.layoutWidth - rightGutter)
-            state.numViews = section.numViews
-
-            // Put the header after the section content. This is required in other header implementations to get the natural
-            // drawing order correct.
-            //            headerView?.let {
-            //                helper.attachViewToEnd(it)
-            //                state.numViews += 1
-            //            }
 
             y += section.height
             state.tailPosition = 1
@@ -109,33 +96,6 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
 
         state.bottom = y
     }
-
-    //    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-    //        Log.d("header", "Laying out section ${section.positionInAdapter} with height limit ${helper.layoutLimit}")
-    //        // if the current position is the header
-    //        var y = 0
-    //        if (layoutState.headPosition <= 0) {
-    //            val header = helper.getHeader(section)
-    //            if (header != null) {
-    //                header.addToRecyclerView()
-    //                header.measure()
-    //                header.layout(0, 0, header.measuredWidth, header.measuredHeight)
-    //                if (helper.isPreLayout && header.isRemoved) {
-    //                    helper.addIgnoredHeight(header.height)
-    //                }
-    //                y += header.height
-    //                header.done()
-    //            }
-    //        }
-    //
-    //        val left = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-    //        val right = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-    //
-    //        section.layoutContent(helper, left, y, helper.layoutWidth - right)
-    //        Log.d("linear", "Laid out content with height ${section.height}")
-    //
-    //        layoutState.bottom = y + section.height
-    //    }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         //        var y = section.headerLayout.overdraw

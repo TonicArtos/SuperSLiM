@@ -37,15 +37,18 @@ interface SectionLayoutManager<T : SectionState> {
      * @param layoutState In/out layout state.
      */
     fun onFillBottom(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
+
     fun onTrimTop(helper: LayoutHelper, section: T, layoutState: LayoutState)
     fun onTrimBottom(helper: LayoutHelper, section: T, layoutState: LayoutState)
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
-    internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int) : this(root) {
+    internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, viewsBefore: Int, layoutState: LayoutState) : this(root) {
         offset.x = x
         offset.y = y
         this.width = width
+        this.viewsBefore = viewsBefore
+        this.layoutState = layoutState
     }
 
     /*************************
@@ -53,19 +56,28 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
      *************************/
 
     private var offset = Offset()
-    private var width: Int = 0
+    private var width = 0
+    private var viewsBefore = 0
+    private lateinit var layoutState: LayoutState
+    var numViews: Int
+        get() = layoutState.numViews
+        set(value) {
+            layoutState.numViews = value
+        }
 
-    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int): LayoutHelper = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right)
+    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, viewsBefore, layoutState)
     internal fun release() {
         root.releaseSubsectionHelper(this)
     }
 
-    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int): LayoutHelper {
+    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
         this.root = root
         offset.x = x
         offset.y = y
         this.width = width
         filledArea = 0
+        this.viewsBefore = viewsBefore
+        this.layoutState = layoutState
         return this
     }
 
@@ -135,6 +147,38 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
             }
         }
         return false
+    }
+
+    override fun addView(child: View) {
+        root.addView(child)
+        numViews += 1
+    }
+
+    override fun addView(child: View, index: Int) {
+        if (index == -1) return addView(child)
+        root.addView(child, viewsBefore + index)
+        numViews += 1
+    }
+
+    override fun addDisappearingView(child: View) {
+        root.addDisappearingView(child)
+        numViews += 1
+    }
+
+    override fun addDisappearingView(child: View, index: Int) {
+        if (index == -1) return addDisappearingView(child)
+        root.addDisappearingView(child, viewsBefore + index)
+        numViews += 1
+    }
+
+    override fun attachViewToPosition(position: Int, view: View) {
+        numViews += 1
+        root.attachViewToPosition(viewsBefore + position, view)
+    }
+
+    override fun detachViewAtPosition(position: Int): View {
+        numViews -= 1
+        return root.detachViewAtPosition(viewsBefore + position)
     }
 
     override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace("\n", "\n\t")
