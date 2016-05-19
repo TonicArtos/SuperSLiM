@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.internal.layout
 
+import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -21,18 +22,18 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
         }
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
         if (section.hasHeader) {
-            return selectHeaderLayout(section).onFillTop(dy, helper, section, layoutState)
+            return selectHeaderLayout(section).onFillTop(dy, helper, section, state)
         }
-        return section.fillContentTop(dy, helper, leftGutter(section), helper.layoutWidth - rightGutter(section))
+        return section.fillContentTop(dy, 0, helper)
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         if (section.hasHeader) {
             return selectHeaderLayout(section).onFillBottom(dy, helper, section, layoutState)
         }
-        return section.fillContentBottom(dy, helper, leftGutter(section), helper.layoutWidth - rightGutter(section))
+        return section.fillContentBottom(dy, 0, helper)
     }
 
     override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
@@ -158,7 +159,7 @@ private object StickyHlm : SectionLayoutManager<SectionState> {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 
@@ -180,7 +181,7 @@ private object GutterHlm : SectionLayoutManager<SectionState> {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 

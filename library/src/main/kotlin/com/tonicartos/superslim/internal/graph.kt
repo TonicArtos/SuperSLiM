@@ -74,25 +74,42 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
         Log.d("Graph", "scrollBy($d)")
         if (d == 0) return 0
-        // If d is +ve, then scrolling to end. To apply the effect we offset children upwards (-ve).
-        return if (d > 0) scrollDown(d, helper) else scrollUp(d, helper)
+        // If d is +ve, then scrolling to end.
+        return if (d > 0) scrollDown(d, helper) else -scrollUp(-d, helper)
     }
 
+    /**
+     * Scroll down.
+     *
+     * @param dy Distance to scroll up by. Expects +ve value.
+     * @param helper Root layout helper.
+     *
+     * @return Actual distance scrolled.
+     */
     private fun scrollDown(dy: Int, helper: RootLayoutHelper): Int {
-        val bottomEdge = fillBottom(dy, helper)
-        val scrolled = if (bottomEdge - dy < helper.layoutLimit - helper.basePaddingBottom) bottomEdge - helper.layoutLimit - helper.basePaddingBottom else dy
-        if (scrolled > 0) {
-            helper.offsetChildrenVertical(-scrolled)
-        }
+//        val bottomEdge = fillBottom(dy, helper)
+//        val scrolled = if (bottomEdge - dy < helper.layoutLimit - helper.basePaddingBottom) bottomEdge - helper.layoutLimit - helper.basePaddingBottom else dy
+//        if (scrolled > 0) {
+//            helper.offsetChildrenVertical(-scrolled)
+//        }
+//
+//        trimTop(helper)
 
-        trimTop(helper)
-
-        return scrolled
+        // TODO: scroll down
+        return dy
     }
 
+    /**
+     * Scroll up.
+     *
+     * @param dy Distance to scroll up by. Expects +ve value.
+     * @param helper Root layout helper.
+     *
+     * @return Actual distance scrolled.
+     */
     private fun scrollUp(dy: Int, helper: RootLayoutHelper): Int {
         val filled = fillTop(dy, helper)
-        val scrolled = if (-filled < dy) -dy else filled
+        val scrolled = if (filled > dy) dy else filled
         Log.d("scrollUp", "dy = $dy, scroll by = $scrolled")
 
         if (scrolled > 0) {
@@ -101,7 +118,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
 
         trimBottom(helper)
 
-        return -scrolled
+        return scrolled
     }
 
     private fun fillTop(dy: Int, helper: RootLayoutHelper) = root.fillTop(dy, helper)
@@ -632,9 +649,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      ****************/
     internal fun fillTop(dy: Int, helper: RootLayoutHelper): Int {
         val state = layoutState.pop()
+
         val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right, 0, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
-        return doFillTop(dy, subsectionHelper, state).apply {
+        return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
         }
@@ -642,9 +660,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun fillBottom(dy: Int, helper: RootLayoutHelper): Int {
         val state = layoutState.pop()
-        // The initial subsection helper is offset to the bottom of the already filled area.
-        val subsectionHelper = helper.acquireSubsectionHelper(state.bottom, state.left, state.right, 0, state)
-        return doFillBottom(dy, subsectionHelper, state).apply {
+
+        val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right, 0, state)
+        return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
         }
@@ -672,12 +690,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     /***************
      * Sections
      ***************/
-    internal fun fillTop(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+    internal fun fillTop(dy: Int, top: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
-        state.left = left
-        state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
         return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
@@ -685,24 +701,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun fillBottom(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+    internal fun fillBottom(dy: Int, top: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
-        state.left = left
-        state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
         }
     }
 
-    internal fun fillContentTop(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+    internal fun fillContentTop(dy: Int, top: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
-        state.left = left
-        state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = numChildren
         return doFillTop(dy, subsectionHelper, state).apply {
             subsectionHelper.release()
@@ -710,12 +722,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun fillContentBottom(dy: Int, helper: LayoutHelper, left: Int, right: Int): Int {
+    internal fun fillContentBottom(dy: Int, top: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
-        state.left = left
-        state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         return doFillBottom(dy, subsectionHelper, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
@@ -1043,15 +1053,11 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
     }
 
     override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
-        _left = left
-        _right = right
-        return section.fillTop(dy, helper, left, right)
+        return section.fillTop(dy, top, helper)
     }
 
     override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
-        _left = left
-        _right = right
-        return section.fillBottom(dy, helper, left, right)
+        return section.fillBottom(dy, top, helper)
     }
 
     override val width: Int
@@ -1114,12 +1120,12 @@ private open class ItemChild(var view: View, helper: LayoutHelper) : ChildIntern
 
     override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
         layout(left, top, right, bottom)
-        return 0
+        return height
     }
 
     override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
         layout(left, top, right, bottom)
-        return 0
+        return height
     }
 
     override val width: Int
@@ -1216,12 +1222,12 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
 
     override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
         layout(left, top, right, bottom)
-        return 0
+        return height
     }
 
     override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
         layout(left, top, right, bottom)
-        return 0
+        return height
     }
 
     private var _width = 0

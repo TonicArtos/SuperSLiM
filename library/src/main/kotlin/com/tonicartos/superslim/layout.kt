@@ -23,9 +23,11 @@ interface SectionLayoutManager<T : SectionState> {
      * @param dy Distance to fill.
      * @param helper Layout helper.
      * @param section Section to fill.
-     * @param layoutState In/out layout state.
+     * @param state In/out layout state.
+     *
+     * @return How much of dy left to fill.
      */
-    fun onFillTop(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
+    fun onFillTop(dy: Int, helper: LayoutHelper, section: T, state: LayoutState): Int
 
     /**
      * Fill distance dy at bottom of the section. The layout state may already contain some filled distance recorded as

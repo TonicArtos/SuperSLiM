@@ -38,7 +38,30 @@ interface Child {
      */
     fun layout(left: Int, top: Int, right: Int, bottom: Int)
 
+    /**
+     * Fill distance dy at top of the child. The child will attempt to extend into this space; only if it is a section.
+     *
+     * @param dy Distance to fill. Value will be -ve.
+     * @param left Left edge of area to fill.
+     * @param top Top edge of area to fill.
+     * @param right Right edge of area to fill.
+     * @param bottom Bottom edge of area to fill.
+     *
+     * @return How much of dy filled.
+     */
     fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
+
+    /**
+     * Fill distance dy at bottom of the child. The child will attempt to extend into this space; only if it is a section.
+     *
+     * @param dy Distance to fill. Value will be +ve.
+     * @param left Left edge of area to fill.
+     * @param top Top edge of area to fill.
+     * @param right Right edge of area to fill.
+     * @param bottom Bottom edge of area to fill.
+     *
+     * @return How much of dy filled.
+     */
     fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
 
     val width: Int
@@ -54,9 +77,6 @@ interface Child {
      */
     fun addToRecyclerView(i: Int)
 }
-
-inline fun Child.fillTop(dy: Int, left: Int, right: Int): Int = fillTop(dy, left, 0, right, 0)
-inline fun Child.fillBottom(dy: Int, left: Int, right: Int): Int = fillBottom(dy, left, 0, right, 0)
 
 /**
  * Configuration of a section.

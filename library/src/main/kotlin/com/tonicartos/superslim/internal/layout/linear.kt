@@ -5,7 +5,6 @@ import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.HeaderStyle
-import com.tonicartos.superslim.fillTop
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
