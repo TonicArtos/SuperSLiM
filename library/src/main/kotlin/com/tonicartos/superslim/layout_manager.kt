@@ -221,13 +221,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     private val configHelper: ReadWriteLayoutHelper
         get() = if (configChanged) {
             // Build a chain of configuration transformations.
-            var chain: ReadWriteLayoutHelper? = if (orientation == HORIZONTAL) HorizontalConfigHelper(this) else null
-            chain = if (stackFromEnd) StackFromEndConfigHelper(chain ?: this) else chain
-            chain = if (reverseLayout) ReverseLayoutConfigHelper(chain ?: this) else chain
-            chain = if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) RtlConfigHelper(chain ?: this) else chain
-            _configHelper = chain
+            var config: ReadWriteLayoutHelper? = if (orientation == HORIZONTAL) HorizontalConfigHelper(this) else null
+            config = if (stackFromEnd) StackFromEndConfigHelper(config ?: this) else config
+            config = if (reverseLayout) ReverseLayoutConfigHelper(config ?: this) else config
+            config = if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) RtlConfigHelper(config ?: this) else config
+            _configHelper = config
             configChanged = false
-            chain ?: this
+            config ?: this
         } else {
             _configHelper ?: this
         }
