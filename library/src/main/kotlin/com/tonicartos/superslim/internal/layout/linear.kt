@@ -55,43 +55,57 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         state.tailPosition = currentPosition - 1
     }
 
-    /**
-     * Fill revealed area where content has been scrolled down the screen by dy.
-     */
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
-        Log.d("LinearSLM", "section = $section")
-        var y = layoutState.overdraw
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, state: LayoutState): Int {
+        Log.d("LinearSlm", "section = $section, headPosition = ${state.headPosition}")
 
-        var currentPos = layoutState.headPosition
+        // How much distance left to fill.
+        var dyRemaining = dy - state.overdraw
+        if (dyRemaining <= 0) {
+            state.overdraw -= dy
+            return dy
+        }
+        // Where we are filling at.
+        var y = -state.overdraw
 
+        var currentPos = state.headPosition
+
+        // Try filling the current child. Ignore if off the bottom.
         if (currentPos < section.numChildren) {
-            // Cascade fill top to current position if valid.
+            // Only try to fill a non-final child (subsection).
             section.getNonFinalChildAt(helper, currentPos)?.let {
                 it.measure()
-                y = -it.fillTop(dy, 0, it.measuredWidth)
+                val filled = it.fillTop(dy, 0, y - it.measuredHeight, it.measuredWidth, y)
+                y -= filled
+                dyRemaining -= filled
             }
         }
 
-        // Move on to remaining positions.
-        while (y > dy && currentPos > 0) {
+        // Fill remaining dy with remaining content.
+        while (dyRemaining > 0 && currentPos >= 1) {
+//            Log.d("LinearSlm", "section = $section")
             currentPos -= 1
+//            Log.d("LinearSlm", "currentPos = $currentPos")
             val child = section.getChildAt(helper, currentPos)
             child.addToRecyclerView(0)
             child.measure()
             val childWidth = child.measuredWidth
             val childHeight = child.measuredHeight
-            child.fillTop(dy, 0, y - childHeight, childWidth, y)
+            val filled = child.fillTop(dy, 0, y - childHeight, childWidth, y)
 
-            y -= child.height
+            y -= filled
+            dyRemaining -= filled
+            Log.d("LinearSlm", "filled = $filled, childWidth = $childWidth, childHeight = $childHeight")
+            Log.d("LinearSlm", "y = $y, dyRemaining = $dyRemaining")
 
             child.done()
         }
+        // Note that currentPos is left at the last child filled in the loop, which will be the new head position.
 
-        layoutState.headPosition = currentPos
-        layoutState.bottom -= y
-        layoutState.overdraw = y - dy
-
-        return -y
+        val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdraw.
+        state.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
+        state.bottom += filled // Section got taller by the filled amount.
+        state.headPosition = currentPos
+        return filled
     }
 
     /**
