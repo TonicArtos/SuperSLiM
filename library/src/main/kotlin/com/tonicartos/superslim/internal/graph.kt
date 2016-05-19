@@ -72,6 +72,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
+        hasRequestedPosition = false
         Log.d("Graph", "scrollBy($d)")
         if (d == 0) return 0
         // If d is +ve, then scrolling to end.
