@@ -103,43 +103,55 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        //        var y = section.headerLayout.overdraw
-        //
-        //        if (section.headerLayout.headPosition == 0) {
-        //            if (y < 0) {
-        //                section.headerLayout.overdraw = y - dy
-        //                return -y
-        //            }
-        //            return 0
-        //        }
-        //
-        //        val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-        //        val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-        //        y = -section.fillContentTop(dy, helper, leftGutter, helper.layoutWidth - rightGutter)
-        //
-        //        if (y > dy) {
-        //            // Not enough filled so add header.
-        //            val headerBottom = y
-        //            val headerHeight = helper.getHeader(section)?.let {
-        //                it.addToRecyclerView()
-        //                it.measure()
-        //                it.layout(0, headerBottom - it.measuredHeight, it.measuredWidth, headerBottom)
-        //                it.done()
-        //
-        //                section.headerLayout.state = ADDED
-        //                section.headerLayout.numViews += 1
-        //                section.headerLayout.headPosition = 0
-        //
-        //                return@let it.measuredHeight
-        //            } ?: 0
-        //
-        //            section.layout.height += headerHeight
-        //            y -= headerHeight
-        //        }
-        //
-        //        section.headerLayout.overdraw = y - dy
-        //        return -y
-        throw UnsupportedOperationException()
+        Log.d("InlineHlm", "section = $section, headPosition = ${layoutState.headPosition
+        }")
+        val state = layoutState as HeaderLayoutState
+
+        // How much distance left to fill.
+        var dyRemaining = dy - state.overdraw
+        if (dyRemaining <= 0) {
+            state.overdraw -= dy
+            Log.d("InlineHlm", "dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+            return dy
+        }
+
+        // Where we are filling at.
+        var y = -state.overdraw
+
+        var currentPos = state.headPosition
+        if (currentPos == 2) currentPos -= 1
+
+        if (currentPos == 1) {
+            // Fill content
+            val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
+            val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+            var filled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
+            y -= filled
+            dyRemaining -= filled
+            Log.d("InlineHlm", "After content: filled = $filled, y = $y, dyRemaining = $dyRemaining")
+
+            if (dyRemaining > 0) {
+                currentPos -= 1
+                helper.getHeader(section)?.apply {
+                    addToRecyclerView()
+                    measure()
+                    filled += fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
+                    Log.d("InlineHlm", "After header: filled = $filled, height = $height, width = $width")
+                    y -= filled
+                    dyRemaining -= filled
+                    done()
+                    state.state = ADDED
+                }
+            }
+        }
+
+        Log.d("InlineHlm", "After inline: dyRemaining = $dyRemaining")
+        val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdraw.
+        state.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
+        state.bottom += filled // Section got taller by the filled amount.
+        state.headPosition = currentPos
+        Log.d("InlineHlm", "filled = $filled, y = $y, dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+        return filled
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
