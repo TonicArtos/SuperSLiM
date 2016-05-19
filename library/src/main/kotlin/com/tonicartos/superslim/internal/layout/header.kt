@@ -26,14 +26,18 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
         if (section.hasHeader) {
             return selectHeaderLayout(section).onFillTop(dy, helper, section, state)
         }
-        return section.fillContentTop(dy, 0, helper)
+        val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
+        val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+        return section.fillContentTop(dy, leftGutter,  0, helper.layoutWidth - rightGutter, helper)
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         if (section.hasHeader) {
             return selectHeaderLayout(section).onFillBottom(dy, helper, section, layoutState)
         }
-        return section.fillContentBottom(dy, 0, helper)
+        val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
+        val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
+        return section.fillContentBottom(dy, leftGutter, 0, helper.layoutWidth - rightGutter, helper)
     }
 
     override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
