@@ -690,8 +690,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     /***************
      * Sections
      ***************/
-    internal fun fillTop(dy: Int, top: Int, helper: LayoutHelper): Int {
+    internal fun fillTop(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
+
+        state.left = left
+        state.right = right
 
         val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
@@ -701,8 +704,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun fillBottom(dy: Int, top: Int, helper: LayoutHelper): Int {
+    internal fun fillBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
+
+        state.left = left
+        state.right = right
 
         val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).apply {
@@ -711,8 +717,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun fillContentTop(dy: Int, top: Int, helper: LayoutHelper): Int {
+    internal fun fillContentTop(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
+
+        state.left = left
+        state.right = right
 
         val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = numChildren
@@ -722,8 +731,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun fillContentBottom(dy: Int, top: Int, helper: LayoutHelper): Int {
+    internal fun fillContentBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
         val state = layoutState.pop()
+
+        state.left = left
+        state.right = right
 
         val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
         return doFillBottom(dy, subsectionHelper, state).apply {
@@ -1053,11 +1065,11 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
     }
 
     override fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
-        return section.fillTop(dy, top, helper)
+        return section.fillTop(dy, left, top, right, helper)
     }
 
     override fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int {
-        return section.fillBottom(dy, top, helper)
+        return section.fillBottom(dy, left, top, right, helper)
     }
 
     override val width: Int
