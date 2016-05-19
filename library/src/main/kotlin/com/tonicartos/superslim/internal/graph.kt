@@ -250,7 +250,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     override fun toString(): String {
-        return  subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
+        return subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
     }
 
     open class LayoutState {
