@@ -6,7 +6,7 @@ import com.tonicartos.superslim.internal.SectionState
 
 interface Child {
     companion object {
-        const val INVALID = -1
+        const val INVALID = 0
         const val ANIM_NONE = 0
         const val ANIM_APPEARING = 1
         const val ANIM_DISAPPEARING = 2
