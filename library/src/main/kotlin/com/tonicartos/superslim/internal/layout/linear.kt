@@ -56,16 +56,18 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, state: LayoutState): Int {
-        Log.d("LinearSlm", "section = $section, headPosition = ${state.headPosition}")
+        Log.d("LinearSlm", "section = $section, headPosition = ${state.headPosition}, overdraw = ${state.overdraw}")
 
         // How much distance left to fill.
         var dyRemaining = dy - state.overdraw
         if (dyRemaining <= 0) {
             state.overdraw -= dy
+            Log.d("LinearSlm", "Nothing todo: dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
             return dy
         }
         // Where we are filling at.
         var y = -state.overdraw
+        Log.d("LinearSlm", "Before: y = $y, dyRemaining = $dyRemaining")
 
         var currentPos = state.headPosition
 
@@ -74,30 +76,29 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             // Only try to fill a non-final child (subsection).
             section.getNonFinalChildAt(helper, currentPos)?.let {
                 it.measure()
-                val filled = it.fillTop(dy, 0, y - it.measuredHeight, it.measuredWidth, y)
+                val filled = it.fillTop(dyRemaining, 0, y - it.measuredHeight, it.measuredWidth, y)
                 y -= filled
                 dyRemaining -= filled
+                Log.d("LinearSlm", "After non-final child: filled = $filled, y = $y, dyRemaining = $dyRemaining")
             }
+        } else {
+            Log.d("LinearSlm", "Started from bottom. *************************************************")
         }
 
         // Fill remaining dy with remaining content.
-        while (dyRemaining > 0 && currentPos >= 1) {
-//            Log.d("LinearSlm", "section = $section")
+        while (dyRemaining > 0 && currentPos > 0) {
             currentPos -= 1
-//            Log.d("LinearSlm", "currentPos = $currentPos")
-            val child = section.getChildAt(helper, currentPos)
-            child.addToRecyclerView(0)
-            child.measure()
-            val childWidth = child.measuredWidth
-            val childHeight = child.measuredHeight
-            val filled = child.fillTop(dy, 0, y - childHeight, childWidth, y)
+            section.getChildAt(helper, currentPos).let {
+                it.addToRecyclerView(0)
+                it.measure()
+                Log.d("LinearSlm", "Fill top with child $currentPos, top = ${y - it.measuredHeight}, bottom = ${it.measuredHeight}")
+                val filled = it.fillTop(dyRemaining, 0, y - it.measuredHeight, it.measuredWidth, y)
+                y -= filled
+                dyRemaining -= filled
+                Log.d("LinearSlm", "After child: filled = $filled, y = $y, childHeight = ${it.measuredHeight}, dyRemaining = $dyRemaining")
 
-            y -= filled
-            dyRemaining -= filled
-            Log.d("LinearSlm", "filled = $filled, childWidth = $childWidth, childHeight = $childHeight")
-            Log.d("LinearSlm", "y = $y, dyRemaining = $dyRemaining")
-
-            child.done()
+                it.done()
+            }
         }
         // Note that currentPos is left at the last child filled in the loop, which will be the new head position.
 
@@ -105,6 +106,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         state.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
         state.bottom += filled // Section got taller by the filled amount.
         state.headPosition = currentPos
+        Log.d("LinearSlm", "Finished: filled = $filled, dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
         return filled
     }
 

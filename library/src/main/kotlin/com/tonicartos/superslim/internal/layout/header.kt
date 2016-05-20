@@ -28,7 +28,7 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
         }
         val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
         val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-        return section.fillContentTop(dy, leftGutter,  0, helper.layoutWidth - rightGutter, helper)
+        return section.fillContentTop(dy, leftGutter, 0, helper.layoutWidth - rightGutter, helper)
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -103,29 +103,28 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        Log.d("InlineHlm", "section = $section, headPosition = ${layoutState.headPosition
-        }")
+        Log.d("HeaderHlm", "section = $section, headPosition = ${layoutState.headPosition}, overdraw = ${layoutState.overdraw}")
         val state = layoutState as HeaderLayoutState
 
         // How much distance left to fill.
         var dyRemaining = dy - state.overdraw
         if (dyRemaining <= 0) {
             state.overdraw -= dy
-            Log.d("InlineHlm", "dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+            Log.d("InlineHlm", "Nothing todo: dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
             return dy
         }
 
         // Where we are filling at.
         var y = -state.overdraw
+        Log.d("InlineHlm", "Before: y = $y, dyRemaining = $dyRemaining")
 
         var currentPos = state.headPosition
         if (currentPos == 2) currentPos -= 1
-
         if (currentPos == 1) {
             // Fill content
             val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
             val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-            var filled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
+            val filled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
             y -= filled
             dyRemaining -= filled
             Log.d("InlineHlm", "After content: filled = $filled, y = $y, dyRemaining = $dyRemaining")
@@ -135,7 +134,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                 helper.getHeader(section)?.apply {
                     addToRecyclerView()
                     measure()
-                    filled += fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
+                    val filled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
                     Log.d("InlineHlm", "After header: filled = $filled, height = $height, width = $width")
                     y -= filled
                     dyRemaining -= filled
