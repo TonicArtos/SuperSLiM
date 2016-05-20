@@ -76,7 +76,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         Log.d("Graph", "scrollBy($d)")
         if (d == 0) return 0
         // If d is +ve, then scrolling to end.
-        return if (d > 0) scrollDown(d, helper) else -scrollUp(-d, helper)
+        return if (d > 0) scrollTowardsBottom(d, helper) else -scrollTowardsTop(-d, helper)
     }
 
     /**
@@ -87,7 +87,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      *
      * @return Actual distance scrolled.
      */
-    private fun scrollDown(dy: Int, helper: RootLayoutHelper): Int {
+    private fun scrollTowardsBottom(dy: Int, helper: RootLayoutHelper): Int {
 //        val bottomEdge = fillBottom(dy, helper)
 //        val scrolled = if (bottomEdge - dy < helper.layoutLimit - helper.basePaddingBottom) bottomEdge - helper.layoutLimit - helper.basePaddingBottom else dy
 //        if (scrolled > 0) {
@@ -108,7 +108,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      *
      * @return Actual distance scrolled.
      */
-    private fun scrollUp(dy: Int, helper: RootLayoutHelper): Int {
+    private fun scrollTowardsTop(dy: Int, helper: RootLayoutHelper): Int {
         val filled = fillTop(dy, helper)
         val scrolled = if (filled > dy) dy else filled
         Log.d("scrollUp", "dy = $dy, scroll by = $scrolled")
