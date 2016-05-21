@@ -9,7 +9,9 @@ import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
-                          @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle) {
+                          @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                          paddingStart: Int = 0, paddingHead: Int = 0, paddingEnd: Int = 0, paddingTail: Int = 0) :
+        SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingHead, paddingEnd, paddingTail) {
 
     override fun onMakeSection(oldState: SectionState?): SectionState = LinearSectionState(this, oldState)
 

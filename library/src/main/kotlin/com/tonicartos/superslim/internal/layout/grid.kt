@@ -6,12 +6,13 @@ import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
-                        @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle),
-                                                                                              ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
+                        @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                        paddingStart: Int = 0, paddingHead: Int = 0, paddingEnd: Int = 0, paddingTail: Int = 0) :
+        SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingHead, paddingEnd, paddingTail),
+        ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
+    override fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
 
-    override protected fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
-
-    override protected fun onCopy(): GridSectionConfig {
+    override fun onCopy(): GridSectionConfig {
         val copy = GridSectionConfig(gutterStart, gutterEnd, headerStyle)
         copy.numColumns = numColumns
         copy.columnWidth = columnWidth

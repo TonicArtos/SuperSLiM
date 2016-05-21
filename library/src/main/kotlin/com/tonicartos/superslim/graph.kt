@@ -1,6 +1,5 @@
 package com.tonicartos.superslim
 
-import android.support.annotation.VisibleForTesting
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
@@ -82,7 +81,8 @@ interface Child {
  * Configuration of a section.
  */
 abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
-                             @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) {
+                             @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                             paddingStart: Int = 0, paddingHead: Int = 0, paddingEnd: Int = 0, paddingTail: Int = 0) {
     var gutterStart = 0
         get() = field
         set(value) {
@@ -94,9 +94,18 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
             field = if (value < 0) GUTTER_AUTO else value
         }
 
+    var paddingLeft = 0
+    var paddingTop = 0
+    var paddingRight = 0
+    var paddingBottom = 0
+
     init {
         this.gutterStart = gutterStart
         this.gutterEnd = gutterEnd
+        this.paddingLeft = paddingStart
+        this.paddingTop = paddingHead
+        this.paddingRight = paddingEnd
+        this.paddingBottom = paddingTail
     }
 
     // Remap names since internally left and right are used since section coordinates are LTR, TTB. The start and
