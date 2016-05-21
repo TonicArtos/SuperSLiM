@@ -14,7 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
+class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private final static int VIEW_TYPE_REGION_HEADER = 1;
 
@@ -24,7 +24,7 @@ public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private Cursor mCursor;
 
-    public Adapter() {
+    Adapter() {
         super();
     }
 
@@ -38,7 +38,7 @@ public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
         return ViewHolder.make(this, viewGroup, viewType);
     }
 
-    public void swapCursor(Cursor data) {
+    void swapCursor(Cursor data) {
         mCursor = data;
         if (mCursor == null) {
             reset();
@@ -89,7 +89,7 @@ public class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
         }
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder {
 
         protected final TextView mTextView;
 

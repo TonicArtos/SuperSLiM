@@ -110,7 +110,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      */
     private fun scrollTowardsTop(dy: Int, helper: RootLayoutHelper): Int {
         val filled = fillTop(dy, helper)
-        val scrolled = if (filled > dy) dy else filled
+        val scrolled = Math.min(dy, filled)
         Log.d("scrollUp", "dy = $dy, scroll by = $scrolled")
 
         if (scrolled > 0) {

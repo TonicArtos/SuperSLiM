@@ -11,10 +11,8 @@ internal class RtlConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayou
     override fun getLeft(child: View): Int = layoutWidth - base.getRight(child)
     override fun getRight(child: View): Int = layoutWidth - base.getLeft(child)
 
-    override val basePaddingLeft: Int
-        get() = base.basePaddingRight
-    override val basePaddingRight: Int
-        get() = base.basePaddingLeft
+    override val basePaddingLeft: Int get() = base.basePaddingRight
+    override val basePaddingRight: Int get() = base.basePaddingLeft
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenHorizontal(-dx)
 
@@ -28,10 +26,8 @@ internal class StackFromEndConfigHelper(val base: ReadWriteLayoutHelper) : ReadW
     override fun getTop(child: View): Int = layoutLimit - base.getBottom(child)
     override fun getBottom(child: View): Int = layoutLimit - base.getTop(child)
 
-    override val basePaddingTop: Int
-        get() = base.basePaddingBottom
-    override val basePaddingBottom: Int
-        get() = base.basePaddingTop
+    override val basePaddingTop: Int get() = base.basePaddingBottom
+    override val basePaddingBottom: Int get() = base.basePaddingTop
 
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenVertical(-dy)
 
@@ -47,14 +43,10 @@ internal class ReverseLayoutConfigHelper(val base: ReadWriteLayoutHelper) : Read
     override fun getRight(child: View): Int = layoutWidth - base.getLeft(child)
     override fun getBottom(child: View): Int = layoutLimit - base.getTop(child)
 
-    override val basePaddingLeft: Int
-        get() = base.basePaddingRight
-    override val basePaddingRight: Int
-        get() = base.basePaddingLeft
-    override val basePaddingTop: Int
-        get() = base.basePaddingBottom
-    override val basePaddingBottom: Int
-        get() = base.basePaddingTop
+    override val basePaddingLeft: Int get() = base.basePaddingRight
+    override val basePaddingRight: Int get() = base.basePaddingLeft
+    override val basePaddingTop: Int get() = base.basePaddingBottom
+    override val basePaddingBottom: Int get() = base.basePaddingTop
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenHorizontal(-dx)
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenVertical(-dy)
@@ -76,14 +68,10 @@ internal class HorizontalConfigHelper(val base: ReadWriteLayoutHelper) : ReadWri
     override fun getMeasuredWidth(child: View): Int = base.getMeasuredHeight(child)
     override fun getMeasuredHeight(child: View): Int = base.getMeasuredWidth(child)
 
-    override val basePaddingTop: Int
-        get() = base.basePaddingLeft
-    override val basePaddingLeft: Int
-        get() = base.basePaddingTop
-    override val basePaddingBottom: Int
-        get() = base.basePaddingRight
-    override val basePaddingRight: Int
-        get() = base.basePaddingBottom
+    override val basePaddingTop: Int get() = base.basePaddingLeft
+    override val basePaddingLeft: Int get() = base.basePaddingTop
+    override val basePaddingBottom: Int get() = base.basePaddingRight
+    override val basePaddingRight: Int get() = base.basePaddingBottom
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenVertical(dx)
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenHorizontal(dy)

@@ -11,9 +11,9 @@ import com.tonicartos.superslim.internal.SectionState.LayoutState
 class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                           @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE) : SectionConfig(gutterStart, gutterEnd, headerStyle) {
 
-    override protected fun onMakeSection(oldState: SectionState?): SectionState = LinearSectionState(this, oldState)
+    override fun onMakeSection(oldState: SectionState?): SectionState = LinearSectionState(this, oldState)
 
-    override protected fun onCopy(): LinearSectionConfig {
+    override fun onCopy(): LinearSectionConfig {
         return LinearSectionConfig(gutterStart, gutterEnd, headerStyle)
     }
 }
