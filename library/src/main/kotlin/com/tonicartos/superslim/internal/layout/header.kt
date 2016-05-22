@@ -66,9 +66,34 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
     private fun leftGutter(section: SectionState) = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
 }
 
+/**
+ * A Hlm that handles layout when there is no header.
+ */
+private object NoHeaderHlm : SectionLayoutManager<SectionState> {
+    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun onTrimBottom(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
+        throw UnsupportedOperationException()
+    }
+
+}
+
 private object InlineHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        // if the current position is the header
         var y = -layoutState.overdraw
 
         val state = layoutState as HeaderLayoutState
