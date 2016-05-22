@@ -11,7 +11,11 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
                                                                                         RecyclerHelper by recycler, StateHelper by state {
     private var helperPool = LayoutHelperPool()
 
-    fun acquireSubsectionHelper(y: Int, left: Int, right: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper = helperPool.acquire(this, left, y, right - left, viewsBefore, layoutState)
+    fun acquireSubsectionHelper(y: Int, left: Int, right: Int,
+                                paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int,
+                                viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
+            helperPool.acquire(this, left, y, right - left, paddingLeft, paddingTop, paddingRight, paddingBottom, viewsBefore, layoutState)
+
     fun releaseSubsectionHelper(helper: LayoutHelper) {
         helperPool.release(helper)
     }
@@ -29,11 +33,12 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
     private class LayoutHelperPool {
         private val pool = arrayListOf<LayoutHelper>()
 
-        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, viewsBefore: Int, layoutState: LayoutState) =
+        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int,
+                    viewsBefore: Int, layoutState: LayoutState) =
                 if (pool.isEmpty()) {
-                    LayoutHelper(root, x, y, width, viewsBefore, layoutState)
+                    LayoutHelper(root, x, y, width, paddingLeft, paddingTop, paddingRight, paddingBottom, viewsBefore, layoutState)
                 } else {
-                    pool.removeAt(0).reInit(root, x, y, width, viewsBefore, layoutState)
+                    pool.removeAt(0).reInit(root, x, y, width, paddingLeft, paddingTop, paddingRight, paddingBottom, viewsBefore, layoutState)
                 }
 
         fun release(helper: LayoutHelper) {

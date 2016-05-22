@@ -516,7 +516,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         state.right = right
         state.numViews = 0
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              baseConfig.paddingLeft, baseConfig.paddingTop, baseConfig.paddingRight, baseConfig.paddingBottom,
+                                                              helper.numViews, state)
 
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
@@ -544,7 +546,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              helper.basePaddingLeft, helper.basePaddingTop, helper.basePaddingRight, helper.basePaddingBottom,
+                                                              0, state)
         // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
         HeaderLayoutManager.onLayout(subsectionHelper, this, state)
         subsectionHelper.release()
@@ -566,7 +570,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, 0, 0, helper.numViews, state)
         doLayout(subsectionHelper, state)
         subsectionHelper.release()
         helper.numViews += state.numViews
@@ -651,7 +655,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     internal fun fillTop(dy: Int, helper: RootLayoutHelper): Int {
         val state = layoutState.pop()
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right, 0, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right,
+                                                              helper.basePaddingLeft, helper.basePaddingTop, helper.basePaddingRight, helper.basePaddingBottom,
+                                                              0, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
         return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
@@ -662,7 +668,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     internal fun fillBottom(dy: Int, helper: RootLayoutHelper): Int {
         val state = layoutState.pop()
 
-        val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right, 0, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(0, state.left, state.right,
+                                                              helper.basePaddingLeft, helper.basePaddingTop, helper.basePaddingRight, helper.basePaddingBottom,
+                                                              0, state)
         return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
@@ -671,9 +679,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimTop(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              helper.basePaddingLeft, helper.basePaddingTop, helper.basePaddingRight, helper.basePaddingBottom,
+                                                              0, state)
         // TODO: Remember to adjust tail and head positions, and also to use -1 for when nothing is attached anymore.
-        doTrimTop(subsectionHelper, state).apply {
+        HeaderLayoutManager.onTrimTop(subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
         }
@@ -681,8 +691,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimBottom(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, state)
-        doTrimBottom(subsectionHelper, state).apply {
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              helper.basePaddingLeft, helper.basePaddingTop, helper.basePaddingRight, helper.basePaddingBottom,
+                                                              0, state)
+        HeaderLayoutManager.onTrimBottom(subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
         }
@@ -697,7 +709,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         state.left = left
         state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right,
+                                                              baseConfig.paddingLeft, baseConfig.paddingTop, baseConfig.paddingRight, baseConfig.paddingBottom,
+                                                              helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
         return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
@@ -711,7 +725,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         state.left = left
         state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right,
+                                                              baseConfig.paddingLeft, baseConfig.paddingTop, baseConfig.paddingRight, baseConfig.paddingBottom,
+                                                              helper.numViews, state)
         return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
@@ -724,7 +740,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         state.left = left
         state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, 0, 0, helper.numViews, state)
         if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = numChildren
         return doFillTop(dy, subsectionHelper, state).apply {
             subsectionHelper.release()
@@ -738,7 +754,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         state.left = left
         state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, 0, 0, helper.numViews, state)
         return doFillBottom(dy, subsectionHelper, state).apply {
             subsectionHelper.release()
             layoutState.push(state)
@@ -750,7 +766,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              baseConfig.paddingLeft, baseConfig.paddingTop, baseConfig.paddingRight, baseConfig.paddingBottom,
+                                                              helper.numViews, state)
         HeaderLayoutManager.onTrimTop(subsectionHelper, this, state)
         subsectionHelper.release()
         layoutState.push(state)
@@ -758,7 +776,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right,
+                                                              baseConfig.paddingLeft, baseConfig.paddingTop, baseConfig.paddingRight, baseConfig.paddingBottom,
+                                                              helper.numViews, state)
         HeaderLayoutManager.onTrimBottom(subsectionHelper, this, state)
         subsectionHelper.release()
         layoutState.push(state)
@@ -766,7 +786,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimContentTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, 0, 0, helper.numViews, state)
         doTrimTop(subsectionHelper, state)
         subsectionHelper.release()
         layoutState.push(state)
@@ -774,7 +794,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun trimContentBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
         val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.numViews, state)
+        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, 0, 0, helper.numViews, state)
         doTrimBottom(subsectionHelper, state)
         subsectionHelper.release()
         layoutState.push(state)
