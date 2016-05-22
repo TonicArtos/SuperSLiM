@@ -46,11 +46,11 @@ class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldSta
 }
 
 private object StaggeredGridSlm : SectionLayoutManager<StaggeredGridSection> {
-    override fun onLayout(helper: LayoutHelper, section: StaggeredGridSection, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: StaggeredGridSection, layoutState: LayoutState) {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: StaggeredGridSection, state: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: StaggeredGridSection, layoutState: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 

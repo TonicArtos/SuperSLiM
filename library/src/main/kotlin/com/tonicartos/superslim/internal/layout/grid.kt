@@ -46,11 +46,11 @@ private class GridSectionState(var configuration: GridSectionConfig, oldState: S
 }
 
 private object GridSlm : SectionLayoutManager<GridSectionState> {
-    override fun onLayout(helper: LayoutHelper, section: GridSectionState, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState) {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: GridSectionState, state: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 

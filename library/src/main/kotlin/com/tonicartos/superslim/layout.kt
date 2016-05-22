@@ -12,9 +12,9 @@ interface SectionLayoutManager<T : SectionState> {
      *
      * @param helper Layout helper.
      * @param section The section to lay out.
-     * @param state In/out layout state.
+     * @param layoutState In/out layout state.
      */
-    fun onLayout(helper: LayoutHelper, section: T, state: LayoutState)
+    fun onLayout(helper: LayoutHelper, section: T, layoutState: LayoutState)
 
     /**
      * Fill distance dy at top of the section. The layout state may already contain some filled distance recorded as
@@ -23,11 +23,11 @@ interface SectionLayoutManager<T : SectionState> {
      * @param dy Distance to fill.
      * @param helper Layout helper.
      * @param section Section to fill.
-     * @param state In/out layout state.
+     * @param layoutState In/out layout state.
      *
      * @return How much of dy left to fill.
      */
-    fun onFillTop(dy: Int, helper: LayoutHelper, section: T, state: LayoutState): Int
+    fun onFillTop(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
 
     /**
      * Fill distance dy at bottom of the section. The layout state may already contain some filled distance recorded as

@@ -13,18 +13,18 @@ private const val ADDED = 1 shl 1
 private const val FLOATING = 1 shl 2
 
 internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         if (section.hasHeader) {
-            selectHeaderLayout(section).onLayout(helper, section, state)
+            selectHeaderLayout(section).onLayout(helper, section, layoutState)
         } else {
             section.layoutContent(helper, leftGutter(section), 0, helper.layoutWidth - rightGutter(section))
-            state.bottom = section.height
+            layoutState.bottom = section.height
         }
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         if (section.hasHeader) {
-            return selectHeaderLayout(section).onFillTop(dy, helper, section, state)
+            return selectHeaderLayout(section).onFillTop(dy, helper, section, layoutState)
         }
         val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
         val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
@@ -124,20 +124,20 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
             // Fill content
             val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
             val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-            val filled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
-            y -= filled
-            dyRemaining -= filled
-            Log.d("InlineHlm", "After content: filled = $filled, y = $y, dyRemaining = $dyRemaining")
+            val contentFilled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
+            y -= contentFilled
+            dyRemaining -= contentFilled
+            Log.d("InlineHlm", "After content: filled = $contentFilled, y = $y, dyRemaining = $dyRemaining")
 
             if (dyRemaining > 0) {
                 currentPos -= 1
                 helper.getHeader(section)?.apply {
                     addToRecyclerView()
                     measure()
-                    val filled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
-                    Log.d("InlineHlm", "After header: filled = $filled, height = $height, width = $width")
-                    y -= filled
-                    dyRemaining -= filled
+                    val headerFilled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
+                    Log.d("InlineHlm", "After header: filled = $headerFilled, height = $height, width = $width")
+                    y -= headerFilled
+                    dyRemaining -= headerFilled
                     done()
                     state.state = ADDED
                 }
@@ -170,11 +170,11 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
 }
 
 private object StickyHlm : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 
@@ -192,11 +192,11 @@ private object StickyHlm : SectionLayoutManager<SectionState> {
 }
 
 private object GutterHlm : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         throw UnsupportedOperationException()
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, state: LayoutState): Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         throw UnsupportedOperationException()
     }
 

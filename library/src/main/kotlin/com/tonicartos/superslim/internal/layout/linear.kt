@@ -29,10 +29,10 @@ internal open class LinearSectionState(val configuration: LinearSectionConfig, o
 }
 
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
-    override fun onLayout(helper: LayoutHelper, section: LinearSectionState, state: LayoutState) {
+    override fun onLayout(helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState) {
         Log.d("linear", "Laying out section ${section.positionInAdapter} with height limit ${helper.layoutLimit}")
-        var currentPosition = state.headPosition
-        var y = -state.overdraw
+        var currentPosition = layoutState.headPosition
+        var y = -layoutState.overdraw
 
         while (helper.moreToLayout(currentPosition, section)) {
             Log.d("linear", "Laying out child $currentPosition")
@@ -53,25 +53,25 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             currentPosition += 1
         }
         Log.d("linear", "$y")
-        state.bottom = y
-        state.tailPosition = currentPosition - 1
+        layoutState.bottom = y
+        layoutState.tailPosition = currentPosition - 1
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, state: LayoutState): Int {
-        Log.d("LinearSlm", "section = $section, headPosition = ${state.headPosition}, overdraw = ${state.overdraw}")
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
+        Log.d("LinearSlm", "section = $section, headPosition = ${layoutState.headPosition}, overdraw = ${layoutState.overdraw}")
 
         // How much distance left to fill.
-        var dyRemaining = dy - state.overdraw
+        var dyRemaining = dy - layoutState.overdraw
         if (dyRemaining <= 0) {
-            state.overdraw -= dy
-            Log.d("LinearSlm", "Nothing todo: dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+            layoutState.overdraw -= dy
+            Log.d("LinearSlm", "Nothing todo: dyRemaining = $dyRemaining, overdraw = ${layoutState.overdraw}")
             return dy
         }
         // Where we are filling at.
-        var y = -state.overdraw
+        var y = -layoutState.overdraw
         Log.d("LinearSlm", "Before: y = $y, dyRemaining = $dyRemaining")
 
-        var currentPos = state.headPosition
+        var currentPos = layoutState.headPosition
 
         // Try filling the current child. Ignore if off the bottom.
         if (currentPos < section.numChildren) {
@@ -105,10 +105,10 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         // Note that currentPos is left at the last child filled in the loop, which will be the new head position.
 
         val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdraw.
-        state.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
-        state.bottom += filled // Section got taller by the filled amount.
-        state.headPosition = currentPos
-        Log.d("LinearSlm", "Finished: filled = $filled, dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+        layoutState.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
+        layoutState.bottom += filled // Section got taller by the filled amount.
+        layoutState.headPosition = currentPos
+        Log.d("LinearSlm", "Finished: filled = $filled, dyRemaining = $dyRemaining, overdraw = ${layoutState.overdraw}")
         return filled
     }
 
