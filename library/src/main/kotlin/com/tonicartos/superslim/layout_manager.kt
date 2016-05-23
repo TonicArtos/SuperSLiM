@@ -246,6 +246,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override val basePaddingTop: Int get() = paddingTop
     override val basePaddingLeft: Int get() = paddingLeft
 
+    override fun getTransformedPaddingLeft(sectionConfig: SectionConfig): Int = sectionConfig.paddingLeft
+    override fun getTransformedPaddingTop(sectionConfig: SectionConfig): Int = sectionConfig.paddingTop
+    override fun getTransformedPaddingRight(sectionConfig: SectionConfig): Int = sectionConfig.paddingRight
+    override fun getTransformedPaddingBottom(sectionConfig: SectionConfig): Int = sectionConfig.paddingBottom
+
     override fun getMeasuredHeight(child: View) = getDecoratedMeasuredHeight(child)
     override fun getMeasuredWidth(child: View) = getDecoratedMeasuredWidth(child)
     override fun getLeft(child: View) = getDecoratedLeft(child)

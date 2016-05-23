@@ -82,7 +82,7 @@ interface Child {
  */
 abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                              @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
-                             paddingStart: Int = 0, paddingHead: Int = 0, paddingEnd: Int = 0, paddingTail: Int = 0) {
+                             paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) {
     var gutterStart = 0
         get() = field
         set(value) {
@@ -103,9 +103,9 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gu
         this.gutterStart = gutterStart
         this.gutterEnd = gutterEnd
         this.paddingLeft = paddingStart
-        this.paddingTop = paddingHead
+        this.paddingTop = paddingTop
         this.paddingRight = paddingEnd
-        this.paddingBottom = paddingTail
+        this.paddingBottom = paddingBottom
     }
 
     // Remap names since internally left and right are used since section coordinates are LTR, TTB. The start and

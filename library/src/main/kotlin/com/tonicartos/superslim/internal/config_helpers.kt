@@ -1,6 +1,7 @@
 package com.tonicartos.superslim.internal
 
 import android.view.View
+import com.tonicartos.superslim.SectionConfig
 
 //internal class LtrConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayoutHelper by base {}
 
@@ -13,6 +14,9 @@ internal class RtlConfigHelper(val base: ReadWriteLayoutHelper) : ReadWriteLayou
 
     override val basePaddingLeft: Int get() = base.basePaddingRight
     override val basePaddingRight: Int get() = base.basePaddingLeft
+
+    override fun getTransformedPaddingLeft(sectionConfig: SectionConfig) = base.getTransformedPaddingRight(sectionConfig)
+    override fun getTransformedPaddingRight(sectionConfig: SectionConfig) = base.getTransformedPaddingLeft(sectionConfig)
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenHorizontal(-dx)
 
@@ -28,6 +32,9 @@ internal class StackFromEndConfigHelper(val base: ReadWriteLayoutHelper) : ReadW
 
     override val basePaddingTop: Int get() = base.basePaddingBottom
     override val basePaddingBottom: Int get() = base.basePaddingTop
+
+    override fun getTransformedPaddingTop(sectionConfig: SectionConfig) = base.getTransformedPaddingBottom(sectionConfig)
+    override fun getTransformedPaddingBottom(sectionConfig: SectionConfig) = base.getTransformedPaddingTop(sectionConfig)
 
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenVertical(-dy)
 
@@ -47,6 +54,11 @@ internal class ReverseLayoutConfigHelper(val base: ReadWriteLayoutHelper) : Read
     override val basePaddingRight: Int get() = base.basePaddingLeft
     override val basePaddingTop: Int get() = base.basePaddingBottom
     override val basePaddingBottom: Int get() = base.basePaddingTop
+
+    override fun getTransformedPaddingLeft(sectionConfig: SectionConfig) = base.getTransformedPaddingRight(sectionConfig)
+    override fun getTransformedPaddingRight(sectionConfig: SectionConfig) = base.getTransformedPaddingLeft(sectionConfig)
+    override fun getTransformedPaddingTop(sectionConfig: SectionConfig) = base.getTransformedPaddingBottom(sectionConfig)
+    override fun getTransformedPaddingBottom(sectionConfig: SectionConfig) = base.getTransformedPaddingTop(sectionConfig)
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenHorizontal(-dx)
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenVertical(-dy)
@@ -72,6 +84,11 @@ internal class HorizontalConfigHelper(val base: ReadWriteLayoutHelper) : ReadWri
     override val basePaddingLeft: Int get() = base.basePaddingTop
     override val basePaddingBottom: Int get() = base.basePaddingRight
     override val basePaddingRight: Int get() = base.basePaddingBottom
+
+    override fun getTransformedPaddingTop(sectionConfig: SectionConfig) = base.getTransformedPaddingLeft(sectionConfig)
+    override fun getTransformedPaddingLeft(sectionConfig: SectionConfig) = base.getTransformedPaddingTop(sectionConfig)
+    override fun getTransformedPaddingBottom(sectionConfig: SectionConfig) = base.getTransformedPaddingRight(sectionConfig)
+    override fun getTransformedPaddingRight(sectionConfig: SectionConfig) = base.getTransformedPaddingBottom(sectionConfig)
 
     override fun offsetChildrenHorizontal(dx: Int) = base.offsetChildrenVertical(dx)
     override fun offsetChildrenVertical(dy: Int) = base.offsetChildrenHorizontal(dy)

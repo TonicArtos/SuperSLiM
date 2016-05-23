@@ -7,8 +7,8 @@ import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 class StaggeredGridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                                  @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
-                                 paddingStart: Int = 0, paddingHead: Int = 0, paddingEnd: Int = 0, paddingTail: Int = 0) :
-        SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingHead, paddingEnd, paddingTail),
+                                 paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) :
+        SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingTop, paddingEnd, paddingBottom),
         ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
     override fun onMakeSection(oldState: SectionState?): SectionState = StaggeredGridSection(this, oldState)
 

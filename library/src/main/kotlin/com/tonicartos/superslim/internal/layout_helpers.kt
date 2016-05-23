@@ -133,6 +133,11 @@ internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
 
     fun attachViewToPosition(position: Int, view: View)
     fun detachViewAtPosition(position: Int): View
+
+    fun getTransformedPaddingLeft(sectionConfig: SectionConfig): Int
+    fun getTransformedPaddingTop(sectionConfig: SectionConfig): Int
+    fun getTransformedPaddingRight(sectionConfig: SectionConfig): Int
+    fun getTransformedPaddingBottom(sectionConfig: SectionConfig): Int
 }
 
 internal interface ReadLayoutHelper {
