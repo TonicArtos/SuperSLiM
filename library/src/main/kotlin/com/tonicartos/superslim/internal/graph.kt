@@ -289,6 +289,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         var overdraw = 0
 
         /**
+         * Top of section.
+         */
+        var top = 0
+
+        /**
          * Reset layout state.
          */
         internal open fun reset() {

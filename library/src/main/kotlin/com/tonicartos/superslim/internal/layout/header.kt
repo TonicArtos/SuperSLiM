@@ -94,7 +94,7 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
 
 private object InlineHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        var y = -layoutState.overdraw
+        var y = -layoutState.top - layoutState.overdraw
 
         val state = layoutState as HeaderLayoutState
         if (state.headPosition == 0) {
@@ -140,7 +140,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         // Where we are filling at.
-        var y = -state.overdraw
+        var y = -state.top - state.overdraw
         Log.d("InlineHlm", "Before: y = $y, dyRemaining = $dyRemaining")
 
         var currentPos = state.headPosition
