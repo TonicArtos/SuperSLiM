@@ -46,14 +46,11 @@ interface SectionLayoutManager<T : SectionState> {
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
     internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int,
-                         paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int,
-                         viewsBefore: Int, layoutState: LayoutState) : this(root) {
+                         paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState) : this(root) {
         offset.x = x
         offset.y = y
         this.width = width
-        this.paddingLeft = paddingLeft
         this.paddingTop = paddingTop
-        this.paddingRight = paddingRight
         this.paddingBottom = paddingBottom
         this.viewsBefore = viewsBefore
         this.layoutState = layoutState
@@ -66,11 +63,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
     private var offset = Offset()
     private var width = 0
 
-    internal var paddingLeft = 0
-        private set
     internal var paddingTop = 0
-        private set
-    internal var paddingRight = 0
         private set
     internal var paddingBottom = 0
         private set
@@ -83,26 +76,20 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
             layoutState.numViews = value
         }
 
-    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int,
-                                         paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int,
-                                         viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
-            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, paddingLeft, paddingTop, paddingRight, paddingBottom, viewsBefore, layoutState)
+    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
+            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, paddingTop, paddingBottom, viewsBefore, layoutState)
 
     internal fun release() {
         root.releaseSubsectionHelper(this)
     }
 
-    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int,
-                        paddingLeft: Int, paddingTop: Int, paddingRight: Int, paddingBottom: Int,
-                        width: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
+    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
         this.root = root
         offset.x = x
         offset.y = y
         this.width = width
         filledArea = 0
-        this.paddingLeft = paddingLeft
         this.paddingTop = paddingTop
-        this.paddingRight = paddingRight
         this.paddingBottom = paddingBottom
         this.viewsBefore = viewsBefore
         this.layoutState = layoutState
