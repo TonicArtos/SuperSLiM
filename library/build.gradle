@@ -30,7 +30,7 @@ repositories {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:recyclerview-v7:22.1.1'
+    compile 'com.android.support:recyclerview-v7:22.2.0'
 
     testCompile "junit:junit:4.12"
     testCompile "org.mockito:mockito-core:2.0.7-beta"
