@@ -59,6 +59,8 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     private boolean mSmoothScrollEnabled = true;
 
+    private boolean mIsRotation = false;
+
     public LayoutManager(Context context) {
         mLinearSlm = new LinearSLM(this);
         mGridSlm = new GridSLM(this, context);
@@ -253,6 +255,15 @@ public class LayoutManager extends RecyclerView.LayoutManager {
         if (itemCount == 0) {
             detachAndScrapAttachedViews(recycler);
             return;
+        }
+
+        if(getChildCount() > 0) {
+            if(mIsRotation) { // handle rotation data set change
+                mIsRotation = false;
+            } else { // handle adapter data set changes
+                mRequestPosition = -1;
+                detachAndScrapAttachedViews(recycler);
+            }
         }
 
         final int requestedPosition;
@@ -608,6 +619,7 @@ public class LayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onRestoreInstanceState(Parcelable state) {
+        mIsRotation = true;
         mRequestPosition = ((SavedState) state).anchorPosition;
         mRequestPositionOffset = ((SavedState) state).anchorOffset;
         requestLayout();
