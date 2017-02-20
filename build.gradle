@@ -6,7 +6,7 @@ buildscript {
         build_tools_version = '23.0.3'
         supportlib_version = '23.4.0'
         rxbinding_version = '0.4.0'
-        anko_version = '0.8.3'
+        anko_version = '0.9.1'
         compile_sdk = 25
         target_sdk = 25
     }
