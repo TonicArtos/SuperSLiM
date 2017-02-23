@@ -34,7 +34,8 @@ class SectionData {
  *
  */
 class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWriteLayoutHelper {
-    @JvmOverloads constructor(@Suppress("UNUSED_PARAMETER") context: Context, @Orientation orientation: Int = VERTICAL, reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
+    @JvmOverloads constructor(@Suppress("UNUSED_PARAMETER") context: Context, @Orientation orientation: Int = VERTICAL,
+                              reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
         this.orientation = orientation
         this.reverseLayout = reverseLayout
         this.stackFromEnd = stackFromEnd
@@ -89,10 +90,12 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
     override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
-            graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state))) ?: 0
+            graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
+                                                 stateHelper.wrap(state))) ?: 0
 
     override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
-            graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state))) ?: 0
+            graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
+                                                 stateHelper.wrap(state))) ?: 0
 
     override fun scrollToPosition(position: Int) {
         graph?.requestedPosition = position
@@ -174,7 +177,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     private fun contractAdapter(adapter: RecyclerView.Adapter<*>) {
-        val contract = adapter as? AdapterContract<*> ?: throw IllegalArgumentException("adapter does not implement AdapterContract")
+        val contract = adapter as? AdapterContract<*> ?: throw IllegalArgumentException(
+                "adapter does not implement AdapterContract")
         contract.onLayoutManagerAttached(this)
         adapterContract = contract
         graph = GraphManager(contract)
@@ -187,7 +191,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     var orientation: Int = VERTICAL
         get() = field
         set(@Orientation value) {
-            if (value != HORIZONTAL && value != VERTICAL) throw IllegalArgumentException("invalid orientation: {$value}")
+            if (value != HORIZONTAL && value != VERTICAL) throw IllegalArgumentException(
+                    "invalid orientation: {$value}")
             assertNotInLayoutOrScroll(null)
             if (orientation == value) return
             field = value
@@ -217,34 +222,29 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     //TODO: Test configuration setup.
     private var configChanged = true
-    private var _configHelper: ReadWriteLayoutHelper? = null
-    private val configHelper: ReadWriteLayoutHelper
-        get() = if (configChanged) {
-            // Build a chain of configuration transformations.
-            var config: ReadWriteLayoutHelper? = if (orientation == HORIZONTAL) HorizontalConfigHelper(this) else null
-            config = if (stackFromEnd) StackFromEndConfigHelper(config ?: this) else config
-            config = if (reverseLayout) ReverseLayoutConfigHelper(config ?: this) else config
-            config = if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) RtlConfigHelper(config ?: this) else config
-            _configHelper = config
+    private var configHelper: ReadWriteLayoutHelper = this
+        get() = field.takeUnless { configChanged } ?: let {
+            // Build chain of configuration transformations.
+            field = this
+            if (orientation == HORIZONTAL) field = HorizontalConfigHelper(field)
+            if (stackFromEnd) field = StackFromEndConfigHelper(field)
+            if (reverseLayout) field = ReverseLayoutConfigHelper(field)
+            if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) field = RtlConfigHelper(field)
             configChanged = false
-            config ?: this
-        } else {
-            _configHelper ?: this
+            field
         }
 
     /****************************************************
      * ReadWriteLayoutHelper implementation
      ****************************************************/
 
-    override val layoutLimit: Int
-        get() = height
-    override val layoutWidth: Int
-        get() = width
+    override val layoutLimit get() = height
+    override val layoutWidth get() = width
 
-    override val basePaddingBottom: Int get() = paddingBottom
-    override val basePaddingRight: Int get() = paddingRight
-    override val basePaddingTop: Int get() = paddingTop
-    override val basePaddingLeft: Int get() = paddingLeft
+    override val basePaddingBottom get() = paddingBottom
+    override val basePaddingRight get() = paddingRight
+    override val basePaddingTop get() = paddingTop
+    override val basePaddingLeft get() = paddingLeft
 
     override fun getTransformedPaddingLeft(sectionConfig: SectionConfig): Int = sectionConfig.paddingLeft
     override fun getTransformedPaddingTop(sectionConfig: SectionConfig): Int = sectionConfig.paddingTop
@@ -258,9 +258,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun getRight(child: View) = getDecoratedRight(child)
     override fun getBottom(child: View) = getDecoratedBottom(child)
 
-    override fun detachViewAtPosition(position: Int) = getChildAt(position).apply { detachViewAt(position) }
+    override fun detachViewAtPosition(position: Int) = getChildAt(position).also { detachViewAt(position) }
     override fun attachViewToPosition(position: Int, view: View) = attachView(view, position)
-    override fun measure(view: View, usedWidth: Int, usedHeight: Int) = measureChildWithMargins(view, usedWidth, usedHeight)
+    override fun measure(view: View, usedWidth: Int, usedHeight: Int) = measureChildWithMargins(view, usedWidth,
+                                                                                                usedHeight)
+
     override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
                         marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) =
             layoutDecorated(view, left, top, right, bottom)
@@ -298,7 +300,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * @param[config] Section configuration.
      */
     fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(parent: $parent, position: $position, config: $config)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs",
+                                               "notifySectionAdded(parent: $parent, position: $position, config: $config)")
         // Always copy the config as soon as it enters this domain.
         return graph!!.sectionAdded(parent, position, config.copy())
     }
@@ -332,28 +335,35 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     fun notifySectionHeaderAdded(section: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionHeaderAdded(section: $section, position: $adapterPosition)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionHeaderAdded(section: $section, position: $adapterPosition)")
         itemChangeHelper.queueSectionHeaderAdded(section, 0, adapterPosition)
     }
 
     fun notifySectionHeaderRemoved(section: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionHeaderRemoved(section: $section, position: $adapterPosition)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionHeaderRemoved(section: $section, position: $adapterPosition)")
         itemChangeHelper.queueSectionHeaderRemoved(section, 0, adapterPosition)
     }
 
     fun notifySectionItemsAdded(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsAdded(section: $section, positionStart: $start, itemCount: $itemCount)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionItemsAdded(section: $section, positionStart: $start, itemCount: $itemCount)")
         itemChangeHelper.queueSectionItemsAdded(section, start, startAdapterPosition, itemCount)
     }
 
     fun notifySectionItemsRemoved(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsRemoved(section: $section, positionStart: $start, itemCount: $itemCount)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionItemsRemoved(section: $section, positionStart: $start, itemCount: $itemCount)")
         itemChangeHelper.queueSectionItemsRemoved(section, start, startAdapterPosition, itemCount)
     }
 
-    fun notifySectionItemsMoved(fromSection: Int, from: Int, fromAdapterPosition: Int, toSection: Int, to: Int, toAdapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs", "notifySectionItemsMoved(fromSection: $fromSection, from: $from, toSection: $toSection, to: $to)")
-        itemChangeHelper.queueSectionItemsMoved(fromSection, from, fromAdapterPosition, toSection, to, toAdapterPosition)
+    fun notifySectionItemsMoved(fromSection: Int, from: Int, fromAdapterPosition: Int, toSection: Int, to: Int,
+                                toAdapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionItemsMoved(fromSection: $fromSection, from: $from, toSection: $toSection, to: $to)")
+        itemChangeHelper.queueSectionItemsMoved(fromSection, from, fromAdapterPosition, toSection, to,
+                                                toAdapterPosition)
     }
 
     /*************************
@@ -361,7 +371,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsAdded(position: $positionStart, itemCount: $itemCount)")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs",
+                                              "onItemsAdded(position: $positionStart, itemCount: $itemCount)")
         val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
         graph!!.addItems(event, positionStart, itemCount)
     }
@@ -369,7 +380,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     var bugCount = 0
 
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs",
+                                              "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
         val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
         graph!!.removeItems(event, positionStart, itemCount)
     }

@@ -1,5 +1,19 @@
 package com.tonicartos.superslim
 
+import com.nhaarman.mockito_kotlin.mock
+import com.tonicartos.superslim.internal.SectionState
+import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
+import com.tonicartos.superslim.internal.layout.LinearSectionConfig
+import com.tonicartos.superslim.internal.layout.LinearSectionState
+import org.junit.Before
+import org.junit.Test
+
+class HeaderTests {
+    //TODO: mock helper
+    //TODO: mock section state
+    //TODO: mock layout state
+}
+
 //import android.support.v7.widget.RecyclerView
 //import android.view.View
 //import android.view.ViewGroup.LayoutParams

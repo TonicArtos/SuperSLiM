@@ -80,7 +80,8 @@ interface Child {
 /**
  * Configuration of a section.
  */
-abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
+abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
+                             gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                              @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
                              paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) {
     var gutterStart = 0

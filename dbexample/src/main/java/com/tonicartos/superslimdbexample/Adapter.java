@@ -3,6 +3,7 @@ package com.tonicartos.superslimdbexample;
 import com.tonicartos.superslim.adapter.Item;
 import com.tonicartos.superslim.adapter.Section;
 import com.tonicartos.superslim.adapter.SuperSlimAdapter;
+import com.tonicartos.superslim.internal.layout.LinearSectionConfig;
 
 import android.database.Cursor;
 import android.support.annotation.NonNull;
