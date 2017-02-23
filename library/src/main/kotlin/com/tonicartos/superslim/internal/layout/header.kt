@@ -1,8 +1,9 @@
 package com.tonicartos.superslim.internal.layout
 
-import android.util.Log
+import com.tonicartos.superslim.BuildConfig
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
+import com.tonicartos.superslim.SectionConfig.Companion.GUTTER_AUTO
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.HeaderLayoutState
@@ -12,58 +13,35 @@ private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
 private const val FLOATING = 1 shl 2
 
+private inline fun rightGutter(section: SectionState, autoWidth: Int = 0)
+        = if (section.baseConfig.gutterRight == GUTTER_AUTO) autoWidth else section.baseConfig.gutterRight
+
+private inline fun leftGutter(section: SectionState, autoWidth: Int = 0)
+        = if (section.baseConfig.gutterLeft == GUTTER_AUTO) autoWidth else section.baseConfig.gutterLeft
+
 internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
-    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        if (section.hasHeader) {
-            selectHeaderLayout(section).onLayout(helper, section, layoutState)
-        } else {
-            section.layoutContent(helper, leftGutter(section), 0, helper.layoutWidth - rightGutter(section))
-            layoutState.bottom = section.height
-        }
-    }
+    override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
+            = selectHeaderLayout(section).onLayout(helper, section, layoutState)
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).onFillTop(dy, helper, section, layoutState)
-        }
-        val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-        val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-        return section.fillContentTop(dy, leftGutter, 0, helper.layoutWidth - rightGutter, helper)
-    }
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
+            = selectHeaderLayout(section).onFillTop(dy, helper, section, layoutState)
 
-    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).onFillBottom(dy, helper, section, layoutState)
-        }
-        val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-        val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-        return section.fillContentBottom(dy, leftGutter, 0, helper.layoutWidth - rightGutter, helper)
-    }
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
+            = selectHeaderLayout(section).onFillBottom(dy, helper, section, layoutState)
 
-    override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).onTrimTop(helper, section, layoutState)
-        }
-        return section.trimContentTop(helper, leftGutter(section), 0, helper.layoutWidth - rightGutter(section))
-    }
+    override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
+            = selectHeaderLayout(section).onTrimTop(helper, section, layoutState)
 
-    override fun onTrimBottom(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        if (section.hasHeader) {
-            return selectHeaderLayout(section).onTrimBottom(helper, section, layoutState)
-        }
-        return section.trimContentBottom(helper, leftGutter(section), 0, helper.layoutWidth - rightGutter(section))
-    }
+    override fun onTrimBottom(helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
+            = selectHeaderLayout(section).onTrimBottom(helper, section, layoutState)
 
     private fun selectHeaderLayout(section: SectionState): SectionLayoutManager<SectionState> {
-        return when (section.baseConfig.headerStyle) {
+        return NoHeaderHlm.takeUnless { section.hasHeader } ?: when (section.baseConfig.headerStyle) {
             SectionConfig.HEADER_INLINE -> InlineHlm
             SectionConfig.HEADER_START, SectionConfig.HEADER_END -> GutterHlm
             else -> StickyHlm
         }
     }
-
-    private fun rightGutter(section: SectionState) = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-    private fun leftGutter(section: SectionState) = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
 }
 
 /**
@@ -71,23 +49,67 @@ internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
  */
 private object NoHeaderHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+        val state = layoutState as HeaderLayoutState
+        var y = state.top
+        if (helper.moreToLayout(0, section)) {
+            section.layoutContent(helper, leftGutter(section), y, helper.layoutWidth - rightGutter(section))
+            y += section.height
+        }
+        state.tailPosition = 0
+        state.tailPosition = 0
+        state.bottom = y + helper.paddingBottom
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        val state = layoutState as HeaderLayoutState
+
+        // How much distance left to fill.
+        val padding = helper.paddingTop
+        val dyRemaining = dy + padding - state.overdraw
+
+        var filled: Int
+        if (dyRemaining <= 0) {
+            filled = Math.min(dy, state.overdraw)
+        } else {
+            // Fill space starting at overdraw.
+            val slmY = state.top
+            val filledContent = section.fillContentTop(dyRemaining, leftGutter(section), slmY,
+                                                       helper.layoutWidth - rightGutter(section), helper)
+
+            // Determine if actual filled area includes padding or not.
+            val atTopOfContent = filledContent < dyRemaining
+            val paddingAlreadyAdded = filledContent == 0 && state.overdraw >= padding
+            val actualFilled = filledContent + (padding.takeIf { atTopOfContent && paddingAlreadyAdded } ?: 0)
+
+            // Update partial state and compute dy filled.
+            state.top -= filledContent
+            state.overdraw += actualFilled
+            filled = Math.min(dy, state.overdraw)
+        }
+
+        // Advance top by the filled area which will be scrolled. However, prevent scrolling past the top.
+        state.top += filled
+        if (state.top > 0) {
+            filled -= state.top
+            state.top = 0
+        }
+
+        // Update state
+        state.overdraw -= filled
+        state.bottom += filled
+        state.headPosition = 0
+        state.tailPosition = 0
+        return filled
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        return 0
     }
 
     override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
     }
 
     override fun onTrimBottom(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
     }
 
 }
