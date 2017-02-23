@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.internal.layout
 
-import com.tonicartos.superslim.BuildConfig
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionConfig.Companion.GUTTER_AUTO
@@ -65,27 +64,24 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
 
         // How much distance left to fill.
         val padding = helper.paddingTop
-        val dyRemaining = dy + padding - state.overdraw
+        val toFill = dy + padding - state.overdraw
 
-        var filled: Int
-        if (dyRemaining <= 0) {
-            filled = Math.min(dy, state.overdraw)
-        } else {
+        if (toFill > 0) {
             // Fill space starting at overdraw.
-            val slmY = state.top
-            val filledContent = section.fillContentTop(dyRemaining, leftGutter(section), slmY,
+            val y = state.top
+            val filledContent = section.fillContentTop(toFill, leftGutter(section), y,
                                                        helper.layoutWidth - rightGutter(section), helper)
 
             // Determine if actual filled area includes padding or not.
-            val atTopOfContent = filledContent < dyRemaining
+            val atTopOfContent = filledContent < toFill
             val paddingAlreadyAdded = filledContent == 0 && state.overdraw >= padding
             val actualFilled = filledContent + (padding.takeIf { atTopOfContent && paddingAlreadyAdded } ?: 0)
 
             // Update partial state and compute dy filled.
             state.top -= filledContent
             state.overdraw += actualFilled
-            filled = Math.min(dy, state.overdraw)
         }
+        var filled = Math.min(dy, state.overdraw)
 
         // Advance top by the filled area which will be scrolled. However, prevent scrolling past the top.
         state.top += filled
@@ -116,14 +112,13 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
 
 private object InlineHlm : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        var y = -layoutState.top - layoutState.overdraw
-
         val state = layoutState as HeaderLayoutState
+        var y = state.top
         if (state.headPosition == 0) {
             helper.getHeader(section)?.apply {
                 addToRecyclerView()
                 measure()
-                layout(0, 0, measuredWidth, measuredHeight)
+                layout(0, y, measuredWidth, y + measuredHeight)
                 if (helper.isPreLayout && isRemoved) {
                     helper.addIgnoredHeight(height)
                 }
@@ -136,9 +131,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         if (helper.moreToLayout(0, section)) {
-            val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-            val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-            section.layoutContent(helper, leftGutter, y, helper.layoutWidth - rightGutter)
+            section.layoutContent(helper, leftGutter(section), y, helper.layoutWidth - rightGutter(section))
 
             y += section.height
             state.tailPosition = 1
@@ -150,53 +143,51 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        Log.d("HeaderHlm", "section = $section, headPosition = ${layoutState.headPosition}, overdraw = ${layoutState.overdraw}")
         val state = layoutState as HeaderLayoutState
 
         // How much distance left to fill.
-        var dyRemaining = dy - state.overdraw
-        if (dyRemaining <= 0) {
-            state.overdraw -= dy
-            Log.d("InlineHlm", "Nothing todo: dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
-            return dy
-        }
+        val padding = helper.paddingTop
+        var toFill = dy + padding - state.overdraw
 
-        // Where we are filling at.
-        var y = -state.top - state.overdraw
-        Log.d("InlineHlm", "Before: y = $y, dyRemaining = $dyRemaining")
+        if (toFill > 0 && state.headPosition > 0) {
+            var currentPos = state.headPosition
+            if (currentPos == 2) currentPos -= 1
+            if (currentPos == 1) {
+                // Fill content
+                var filled = section.fillContentTop(toFill, leftGutter(section), state.top,
+                                                    helper.layoutWidth - rightGutter(section), helper)
+                state.top -= filled
+                state.tailPosition = 1
 
-        var currentPos = state.headPosition
-        if (currentPos == 2) currentPos -= 1
-        if (currentPos == 1) {
-            // Fill content
-            val leftGutter = if (section.baseConfig.gutterLeft == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterLeft
-            val rightGutter = if (section.baseConfig.gutterRight == SectionConfig.GUTTER_AUTO) 0 else section.baseConfig.gutterRight
-            val contentFilled = section.fillContentTop(dyRemaining, leftGutter, y, helper.layoutWidth - rightGutter, helper)
-            y -= contentFilled
-            dyRemaining -= contentFilled
-            Log.d("InlineHlm", "After content: filled = $contentFilled, y = $y, dyRemaining = $dyRemaining")
-
-            if (dyRemaining > 0) {
-                currentPos -= 1
-                helper.getHeader(section)?.apply {
-                    addToRecyclerView()
-                    measure()
-                    val headerFilled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
-                    Log.d("InlineHlm", "After header: filled = $headerFilled, height = $height, width = $width")
-                    y -= headerFilled
-                    dyRemaining -= headerFilled
-                    done()
-                    state.state = ADDED
+                // Fill header and add padding if there is space left.
+                if (filled < toFill) {
+                    currentPos -= 1
+                    helper.getHeader(section)?.apply {
+                        addToRecyclerView()
+                        measure()
+                        val filledHeader = fillTop(toFill, 0, state.top - measuredHeight, measuredWidth, state.top)
+                        state.top -= filledHeader
+                        filled += filledHeader + padding
+                        state.state = ADDED
+                        done()
+                    }
                 }
+                state.overdraw += filled
             }
+            state.headPosition = currentPos
+        }
+        var filled = Math.min(dy, state.overdraw)
+
+        // Scroll top
+        state.top += filled
+        if (state.top > 0) {
+            filled -= state.top
+            state.top = 0
         }
 
-        Log.d("InlineHlm", "After inline: dyRemaining = $dyRemaining")
-        val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdraw.
-        state.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
-        state.bottom += filled // Section got taller by the filled amount.
-        state.headPosition = currentPos
-        Log.d("InlineHlm", "filled = $filled, y = $y, dyRemaining = $dyRemaining, overdraw = ${state.overdraw}")
+        // Update state
+        state.overdraw -= filled
+        state.bottom += filled
         return filled
     }
 
