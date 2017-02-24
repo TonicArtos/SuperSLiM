@@ -57,6 +57,9 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         state.tailPosition = 0
         state.tailPosition = 0
         state.bottom = y + helper.paddingBottom
+
+        // Fill any padding space and handle any header specialties.
+        onFillTop(0, helper, section, layoutState)
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -140,6 +143,9 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         state.bottom = y
+
+        // Fill any padding space and handle any header specialties.
+        onFillTop(0, helper, section, layoutState)
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
