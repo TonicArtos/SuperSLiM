@@ -1,5 +1,8 @@
 package com.tonicartos.superslim.internal
 
+import android.os.Parcel
+import android.os.Parcelable
+import android.support.annotation.CallSuper
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.SparseArray
@@ -13,13 +16,11 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         private const val ENABLE_ITEM_CHANGE_LOGGING = false
     }
 
-
-    val root: SectionState
+    val root: SectionState = adapter.getRoot().makeSection()
     private val sectionIndex = SectionManager()
 
     init {
         // Init root
-        root = adapter.getRoot().makeSection()
         val rootId = sectionIndex.add(root)
         adapter.setRootId(rootId)
         // Init rest
@@ -40,13 +41,17 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     /*************************
+     * State
+     *************************/
+
+    internal fun saveState() = root.saveState()
+
+    /*************************
      * Layout
      *************************/
+    internal var requestedPositionOffset = 0
     internal var requestedPosition = 0
-        get() {
-            //            hasRequestedPosition = false
-            return field
-        }
+        get() = field
         set(value) {
             field = value
             hasRequestedPosition = true
@@ -69,6 +74,9 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         if (helper.isPreLayout) {
             doSectionRemovals()
         }
+
+        helper.clearAnchor()
+        scrollTowardsTop(0, helper)
     }
 
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
@@ -257,12 +265,30 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         const val ENABLE_LAYOUT_LOGGING = false
     }
 
-    override fun toString(): String {
-        return "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
-//        return subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
-    }
+    open class LayoutState() : Parcelable {
+        constructor(source: Parcel) : this() {
+            headPosition = source.readInt()
+            overdraw = source.readInt()
+        }
 
-    open class LayoutState {
+        constructor(other: LayoutState) : this() {
+            headPosition = other.headPosition
+            overdraw = other.overdraw
+        }
+
+        companion object {
+            @JvmField @Suppress("unused")
+            val CREATOR = createParcel(::LayoutState)
+        }
+
+        @CallSuper
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeInt(headPosition)
+            dest.writeInt(overdraw)
+        }
+
+        override fun describeContents() = 0
+
         /**
          * Number of views.
          */
@@ -319,7 +345,31 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal class HeaderLayoutState() : LayoutState() {
+    internal class HeaderLayoutState : LayoutState {
+        constructor() : super()
+        constructor(source: Parcel) : super(source) {
+            top = source.readInt()
+            state = source.readInt()
+        }
+
+        constructor(other: HeaderLayoutState) : super(other) {
+            top = other.top
+            state = other.state
+        }
+
+        companion object {
+            @JvmField
+            val CREATOR = createParcel(::HeaderLayoutState)
+        }
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            super.writeToParcel(dest, flags)
+            dest.writeInt(top)
+            dest.writeInt(state)
+        }
+
+        override fun describeContents() = 1
+
         /**
          * The current state of the header. State values are header implementation dependent.
          */
@@ -330,12 +380,36 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state = 0
         }
 
-        override fun toString(): String {
-            return "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
-        }
+        override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
 
         var top = 0
     }
+
+    class SavedSectionState(val hlmState: LayoutState, val slmState: LayoutState) : Parcelable {
+        companion object {
+            @JvmField @Suppress("unused")
+            val CREATOR = createParcel(::SavedSectionState)
+        }
+
+        val headPosition get() = hlmState.headPosition
+
+        constructor(source: Parcel) : this(hlmState = source.readParcelable(HeaderLayoutState::class.java.classLoader),
+                                           slmState = source.readParcelable(LayoutState::class.java.classLoader))
+
+        constructor (other: SavedSectionState) : this(other.hlmState, other.slmState)
+
+        override fun describeContents() = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeParcelable(hlmState, flags)
+            dest.writeParcelable(slmState, flags)
+        }
+    }
+
+    internal fun saveState() = SavedSectionState(hlmState = layoutState[0], slmState = layoutState[1])
+
+    override fun toString() = "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
+//    override fun toString() = subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
 
     private val layoutState = Stack<LayoutState>()
 
@@ -401,6 +475,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
     init {
+        // Important!!
+        // Sequence of hlmState and slmState in layoutState stack is hardcoded to positions 0 and 1 respectively.
+        // This must hold true between layout passes.
         layoutState.push(LayoutState())
         layoutState.push(HeaderLayoutState())
         if (oldState != null) {
@@ -424,14 +501,14 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun getHeader(helper: LayoutHelper): Child? =
             if (hasHeader) {
-                ItemChild.wrap(helper.getView(positionInAdapter), helper)
+                ItemChild.wrap(helper.getView(positionInAdapter), helper, positionInAdapter)
             } else {
                 null
             }
 
     internal fun getDisappearingHeader(helper: LayoutHelper): Child? =
             if (hasHeader && helper.scrapHasPosition(positionInAdapter)) {
-                DisappearingItemChild.wrap(helper.getView(positionInAdapter), helper)
+                DisappearingItemChild.wrap(helper.getView(positionInAdapter), helper, positionInAdapter)
             } else {
                 null
             }
@@ -472,7 +549,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             }
         }
 
-        return ItemChild.wrap(helper.getView(hiddenItems + position - lastSectionPosition), helper)
+        val viewPosition = hiddenItems + position - lastSectionPosition
+        return ItemChild.wrap(helper.getView(viewPosition), helper, viewPosition)
     }
 
     /**
@@ -496,7 +574,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         val viewPosition = hiddenItems + position - lastSectionPosition
         if (helper.scrapHasPosition(viewPosition)) {
-            return DisappearingItemChild.wrap(helper.getView(viewPosition), helper)
+            return DisappearingItemChild.wrap(helper.getView(viewPosition), helper, viewPosition)
         } else {
             return DummyChild.wrap(helper)
         }
@@ -604,7 +682,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      */
     internal fun setLayoutPositionFromAdapter(requestedAdapterPosition: Int): Boolean {
         // Check requested position is in this section.
-        if (requestedAdapterPosition < positionInAdapter || positionInAdapter + totalItems <= requestedAdapterPosition) return false
+        if (requestedAdapterPosition < positionInAdapter ||
+                positionInAdapter + totalItems <= requestedAdapterPosition) {
+            return false
+        }
 
         // Check if position is header.
         if (hasHeader && requestedAdapterPosition == positionInAdapter) {
@@ -624,7 +705,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 // Position is before this subsection, so it must be a child item not a member of a subsection.
                 layoutState.pop().let {
                     it.headPosition = 1
-                    layoutState.peek().headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
+                    layoutState.peek().headPosition =
+                            childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
                     layoutState.push(it)
                 }
                 return true
@@ -1131,22 +1213,23 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
     }
 }
 
-private open class ItemChild(var view: View, helper: LayoutHelper) : ChildInternal(helper) {
+private open class ItemChild(var view: View, helper: LayoutHelper, var positionInAdapter: Int) : ChildInternal(helper) {
     companion object {
         val pool = arrayListOf<ItemChild>()
 
-        fun wrap(view: View, helper: LayoutHelper): ItemChild {
+        fun wrap(view: View, helper: LayoutHelper, pos: Int): ItemChild {
             return if (pool.isEmpty()) {
-                ItemChild(view, helper)
+                ItemChild(view, helper, pos)
             } else {
-                pool.removeAt(0).reInit(view, helper)
+                pool.removeAt(0).reInit(view, helper, pos)
             }
         }
     }
 
-    private fun reInit(view: View, helper: LayoutHelper): ItemChild {
+    private fun reInit(view: View, helper: LayoutHelper, positionInAdapter: Int): ItemChild {
         this.view = view
         this.helper = helper
+        this.positionInAdapter = positionInAdapter
         return this
     }
 
@@ -1198,15 +1281,23 @@ private open class ItemChild(var view: View, helper: LayoutHelper) : ChildIntern
     override fun addToRecyclerView(i: Int) {
         helper.addView(view, i)
     }
+
+    override fun anchorAt(y: Int) {
+        helper.makeAnchor(positionInAdapter, y)
+    }
+
+    override val offsetIfAnchor: Int
+        get() = if (helper.isAnchor(positionInAdapter)) helper.anchorOffset else 0
 }
 
-private class DisappearingItemChild(view: View, helper: LayoutHelper) : ItemChild(view, helper) {
+private class DisappearingItemChild(view: View, helper: LayoutHelper, positionInAdapter: Int) :
+        ItemChild(view, helper, positionInAdapter) {
     companion object {
         val pool = arrayListOf<DisappearingItemChild>()
 
-        fun wrap(view: View, helper: LayoutHelper): DisappearingItemChild {
+        fun wrap(view: View, helper: LayoutHelper, pos: Int): DisappearingItemChild {
             return if (pool.isEmpty()) {
-                DisappearingItemChild(view, helper)
+                DisappearingItemChild(view, helper, pos)
             } else {
                 pool.removeAt(0).reInit(view, helper)
             }

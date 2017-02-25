@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.adapter
 
+import android.support.annotation.IntDef
 import android.support.v7.widget.RecyclerView
 import com.tonicartos.superslim.*
 import com.tonicartos.superslim.internal.layout.LinearSectionConfig
@@ -67,13 +68,15 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 
     override fun setSectionIds(idMap: Map<*, Int>) {
         idMap.forEach {
-            val section = sectionLookup[it.key] ?: throw IllegalArgumentException("unknown id \"${it.key}\" for section lookup")
+            val section = sectionLookup[it.key] ?: throw IllegalArgumentException(
+                    "unknown id \"${it.key}\" for section lookup")
             section.id = it.value
         }
     }
 
     override fun populateSection(data: Pair<*, SectionData>) {
-        val section = sectionLookup[data.first] ?: throw IllegalArgumentException("unknown id \"${data.first}\" for section lookup")
+        val section = sectionLookup[data.first] ?: throw IllegalArgumentException(
+                "unknown id \"${data.first}\" for section lookup")
         data.second.adapterPosition = section.positionInAdapter
         data.second.hasHeader = section.header != null
         data.second.itemCount = section.itemCount
@@ -144,12 +147,15 @@ internal interface SectionContract {
 
     fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
     fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int)
+    fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section,
+                                toPosition: Int, toAdapterPosition: Int)
 }
 
-private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layoutManager: SuperSlimLayoutManager) : SectionContract {
+private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
+                                 val layoutManager: SuperSlimLayoutManager) : SectionContract {
     final override fun notifySectionInserted(
-            section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInParent, section.configuration)
+            section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInParent,
+                                                                      section.configuration)
 
     final override fun notifySectionRemoved(section: Section) {
         layoutManager.notifySectionRemoved(section.id, section.parent!!.id)
@@ -174,16 +180,20 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>, val layout
         layoutManager.notifySectionHeaderRemoved(section.id, section.positionInAdapter)
     }
 
-    final override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+    final override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int,
+                                                  itemCount: Int) {
         layoutManager.notifySectionItemsAdded(section.id, positionStart, adapterPositionStart, itemCount)
     }
 
-    final override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
+    final override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int,
+                                                 itemCount: Int) {
         layoutManager.notifySectionItemsRemoved(section.id, positionStart, adapterPositionStart, itemCount)
     }
 
-    final override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int) {
-        layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromPosition, fromAdapterPosition, toSection.parent!!.id, toPosition, toAdapterPosition)
+    final override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int,
+                                               toSection: Section, toPosition: Int, toAdapterPosition: Int) {
+        layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromPosition, fromAdapterPosition,
+                                              toSection.parent!!.id, toPosition, toAdapterPosition)
     }
 }
 
@@ -246,4 +256,15 @@ internal class Registration<ID : Comparable<ID>>(val id: ID, val manager: SuperS
     }
 }
 
-class OnlySupportsOneRecyclerViewException : RuntimeException("SuperSLiM currently only supports a single recycler view per adapter.")
+class OnlySupportsOneRecyclerViewException : RuntimeException(
+        "SuperSLiM currently only supports a single recycler view per adapter.")
+
+@IntDef(SectionConfig.HEADER_END.toLong(),
+        SectionConfig.HEADER_STICKY.toLong(),
+        SectionConfig.HEADER_INLINE.toLong(),
+        SectionConfig.HEADER_START.toLong(),
+        SectionConfig.HEADER_END.toLong(),
+        SectionConfig.HEADER_FLOAT.toLong(),
+        SectionConfig.HEADER_TAIL.toLong())
+@Retention(AnnotationRetention.SOURCE)
+annotation class HeaderStyle

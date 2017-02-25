@@ -1,11 +1,15 @@
 package com.tonicartos.superslim
 
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
+import android.support.annotation.IntDef
 import android.support.v4.view.ViewCompat
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import com.tonicartos.superslim.BuildConfig.DEBUG
 import com.tonicartos.superslim.internal.*
 
 internal interface AdapterContract<ID> {
@@ -30,17 +34,16 @@ class SectionData {
     internal var subsections = emptyList<SectionState>()
 }
 
-/**
- *
- */
 class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWriteLayoutHelper {
-    @JvmOverloads constructor(@Suppress("UNUSED_PARAMETER") context: Context, @Orientation orientation: Int = VERTICAL,
-                              reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
+    @JvmOverloads @Suppress("unused")
+    constructor(@Suppress("unused_parameter") context: Context, @Orientation orientation: Int = VERTICAL,
+                reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
         this.orientation = orientation
         this.reverseLayout = reverseLayout
         this.stackFromEnd = stackFromEnd
     }
 
+    @Suppress("unused")
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int) {
         val properties = getProperties(context, attrs, defStyleAttr, defStyleRes)
         properties ?: return
@@ -50,12 +53,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     companion object {
-        const val VERTICAL = RecyclerView.VERTICAL
-        const val HORIZONTAL = RecyclerView.HORIZONTAL
+        const val TAG = "SuperSlimLayoutManager"
+        const val VERTICAL: Int = RecyclerView.VERTICAL
+        const val HORIZONTAL: Int = RecyclerView.HORIZONTAL
 
-        private const val ENABLE_NOTIFICATION_LOGGING = true
-        private const val ENABLE_ITEM_CHANGE_LOGGING = true
-        private const val ENABLE_LAYOUT_LOGGING = true
+        private const val ENABLE_NOTIFICATION_LOGGING = false
+        private const val ENABLE_ITEM_CHANGE_LOGGING = false
+        private const val ENABLE_LAYOUT_LOGGING = false
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
@@ -65,11 +69,45 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     /****************************************************
      * Layout
      ****************************************************/
+    private var anchorSet = false
+    private var anchorPosition = 0
+        set(value) {
+            anchorSet = true
+            field = value
+            Log.d("ANCHOR", "anchor = $anchorPosition")
+        }
+    override var anchorOffset = 0
+        private set(value) {
+            field = value
+            Log.d("ANCHOR", "offset = $anchorOffset")
+        }
+
+    override fun isAnchor(position: Int) = position == anchorPosition
 
     private val recyclerHelper = RecyclerWrapper()
     private val stateHelper = StateWrapper()
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+        pendingSavedState?.let {
+            if (state.itemCount == 0) {
+                removeAndRecycleAllViews(recycler)
+                return
+            }
+
+            if (it.position > 0) {
+                anchorPosition = it.position
+                anchorOffset = it.offset
+            }
+        }
+
+        if (anchorSet) {
+            graph?.requestedPosition = anchorPosition
+            graph?.requestedPositionOffset = anchorOffset
+        } else {
+            anchorPosition = 0
+            anchorOffset = 0
+        }
+
         if (ENABLE_LAYOUT_LOGGING) {
             if (state.isPreLayout) Log.d("SSlm", "Prelayout")
             else if (!state.willRunPredictiveAnimations()) Log.d("Sslm", "layout")
@@ -89,16 +127,25 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
-    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
-            graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
-                                                 stateHelper.wrap(state))) ?: 0
+    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
+        anchorSet = false
+        val scrolled = graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
+                                                            stateHelper.wrap(state))) ?: 0
+        anchorOffset -= scrolled
+        return scrolled
+    }
 
-    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State) =
-            graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
-                                                 stateHelper.wrap(state))) ?: 0
+    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
+        anchorSet = false
+        val scrolled = graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
+                                                            stateHelper.wrap(state))) ?: 0
+        anchorOffset -= scrolled
+        return scrolled
+    }
 
     override fun scrollToPosition(position: Int) {
-        graph?.requestedPosition = position
+        if (anchorSet) return
+        anchorPosition = position
         requestLayout()
     }
 
@@ -177,8 +224,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     private fun contractAdapter(adapter: RecyclerView.Adapter<*>) {
-        val contract = adapter as? AdapterContract<*> ?: throw IllegalArgumentException(
-                "adapter does not implement AdapterContract")
+        val contract = adapter as? AdapterContract<*> ?:
+                throw IllegalArgumentException("adapter does not implement AdapterContract")
         contract.onLayoutManagerAttached(this)
         adapterContract = contract
         graph = GraphManager(contract)
@@ -266,6 +313,15 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
                         marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) =
             layoutDecorated(view, left, top, right, bottom)
+
+    override fun clearAnchor() {
+        anchorSet = false
+    }
+    override fun makeAnchor(position: Int, y: Int) {
+        if (anchorSet) return
+        anchorPosition = position
+        anchorOffset = y
+    }
 
     /****************************************************
      * Data change notifications
@@ -396,18 +452,49 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * State management
      *************************/
 
-    var pendingSavedState: RecyclerView.SavedState? = null
+    class SavedState(val position: Int, val offset: Int) : Parcelable {
+        constructor(source: Parcel) : this(position = source.readInt(), offset = source.readInt())
+        constructor(other: SavedState) : this(other.position, other.offset)
 
-    override val supportsPredictiveItemAnimations: Boolean
-        get() = pendingSavedState == null
+        companion object {
+            @JvmField @Suppress("unused")
+            val CREATOR = createParcel(::SavedState)
+        }
 
-    override fun supportsPredictiveItemAnimations(): Boolean {
-        return true
+        override fun describeContents() = 0
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeInt(position)
+            dest.writeInt(offset)
+        }
     }
 
+    var pendingSavedState: SavedState? = null
+    override val supportsPredictiveItemAnimations get() = pendingSavedState == null
+    override fun supportsPredictiveItemAnimations() = pendingSavedState == null
+
     override fun assertNotInLayoutOrScroll(message: String?) {
-        if (pendingSavedState == null) {
-            super.assertNotInLayoutOrScroll(message)
+        if (pendingSavedState == null) super.assertNotInLayoutOrScroll(message)
+    }
+
+    override fun onSaveInstanceState(): Parcelable? {
+        graph?.anchorPosition
+        return SavedState(anchorPosition, anchorOffset)
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        pendingSavedState = state as? SavedState
+        pendingSavedState?.let { requestLayout() }
+
+        if (DEBUG) {
+            when (pendingSavedState) {
+                null -> Log.d(TAG, "Invalid saved state.")
+                else -> Log.d(TAG, "Loaded saved state.")
+            }
         }
     }
 }
+
+@IntDef(SuperSlimLayoutManager.HORIZONTAL.toLong(),
+        SuperSlimLayoutManager.VERTICAL.toLong())
+@Retention(AnnotationRetention.SOURCE)
+annotation class Orientation

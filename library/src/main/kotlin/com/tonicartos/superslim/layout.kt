@@ -6,7 +6,7 @@ import com.tonicartos.superslim.internal.RootLayoutHelper
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
-interface SectionLayoutManager<T : SectionState> {
+interface SectionLayoutManager<in T : SectionState> {
     /**
      * Layout the section. Layout pass may be pre, post, or normal.
      *
@@ -45,8 +45,8 @@ interface SectionLayoutManager<T : SectionState> {
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
-    internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int,
-                         paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState) : this(root) {
+    internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
+                         viewsBefore: Int, layoutState: LayoutState) : this(root) {
         offset.x = x
         offset.y = y
         this.width = width
@@ -76,14 +76,17 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
             layoutState.numViews = value
         }
 
-    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
-            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, paddingTop, paddingBottom, viewsBefore, layoutState)
+    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                         viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
+            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, paddingTop, paddingBottom,
+                                         viewsBefore, layoutState)
 
     internal fun release() {
         root.releaseSubsectionHelper(this)
     }
 
-    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
+    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
+                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
         this.root = root
         offset.x = x
         offset.y = y
@@ -105,9 +108,16 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
     override val layoutLimit: Int
         get() = root.layoutLimit - offset.y
 
-    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
-        root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom, marginLeft, marginTop, marginRight, marginBottom)
+    override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
+                        marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
+        root.layout(view, offset.x + left, offset.y + top, offset.x + right, offset.y + bottom,
+                    marginLeft, marginTop, marginRight, marginBottom)
     }
+
+    override fun clearAnchor() = root.clearAnchor()
+    override fun makeAnchor(position: Int, y: Int) = root.makeAnchor(position, y)
+    override fun isAnchor(position: Int) = root.isAnchor(position)
+    override val anchorOffset get() = root.anchorOffset
 
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
         root.measure(view, usedWidth + root.layoutWidth - width, usedHeight + offset.y)
@@ -196,7 +206,8 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         return root.detachViewAtPosition(viewsBefore + position)
     }
 
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace("\n", "\n\t")
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace(
+            "\n", "\n\t")
 
     private data class Offset(var x: Int = 0, var y: Int = 0)
 }

@@ -75,6 +75,9 @@ interface Child {
      * Adds child to the recycler view.
      */
     fun addToRecyclerView(i: Int)
+
+    fun anchorAt(y: Int) {}
+    val offsetIfAnchor get() = 0
 }
 
 /**
@@ -82,7 +85,7 @@ interface Child {
  */
 abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
                              gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
-                             @HeaderStyle var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                             @HeaderStyle @JvmField var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
                              paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) {
     var gutterStart = 0
         get() = field
@@ -178,3 +181,4 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
         internal const val DEFAULT_HEADER_STYLE = HEADER_STICKY
     }
 }
+

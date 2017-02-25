@@ -12,9 +12,11 @@ private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
 private const val FLOATING = 1 shl 2
 
+@Suppress("nothing_to_inline")
 private inline fun rightGutter(section: SectionState, autoWidth: Int = 0)
         = if (section.baseConfig.gutterRight == GUTTER_AUTO) autoWidth else section.baseConfig.gutterRight
 
+@Suppress("nothing_to_inline")
 private inline fun leftGutter(section: SectionState, autoWidth: Int = 0)
         = if (section.baseConfig.gutterLeft == GUTTER_AUTO) autoWidth else section.baseConfig.gutterLeft
 
@@ -57,9 +59,6 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         state.tailPosition = 0
         state.tailPosition = 0
         state.bottom = y + helper.paddingBottom
-
-        // Fill any padding space and handle any header specialties.
-        onFillTop(0, helper, section, layoutState)
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -114,11 +113,14 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
 }
 
 private object InlineHlm : SectionLayoutManager<SectionState> {
+
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         val state = layoutState as HeaderLayoutState
         var y = state.top
         if (state.headPosition == 0) {
             helper.getHeader(section)?.apply {
+                y += offsetIfAnchor
+                state.top = y
                 addToRecyclerView()
                 measure()
                 layout(0, y, measuredWidth, y + measuredHeight)
@@ -143,9 +145,6 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         state.bottom = y
-
-        // Fill any padding space and handle any header specialties.
-        onFillTop(0, helper, section, layoutState)
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -175,6 +174,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                         state.top -= filledHeader
                         filled += filledHeader + padding
                         state.state = ADDED
+                        anchorAt(state.top - measuredHeight)
                         done()
                     }
                 }
