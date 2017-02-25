@@ -131,6 +131,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             requestLayout()
         }
     }
+
     /****************************************************
      * Scroll indicator computation
      ****************************************************/
@@ -417,7 +418,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
         if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsMoved(from: $from, to: $to, itemCount: $itemCount)")
-        var event = itemChangeHelper.pullMoveEventData(from, to)
+        val event = itemChangeHelper.pullMoveEventData(from, to)
         graph!!.moveItems(event, from, to)
     }
 

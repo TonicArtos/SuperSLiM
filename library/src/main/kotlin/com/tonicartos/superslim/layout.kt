@@ -76,10 +76,19 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
             layoutState.numViews = value
         }
 
-    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
-                                         viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
-            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right, paddingTop, paddingBottom,
-                                         viewsBefore, layoutState)
+    private fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
+            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
+                                         paddingTop, paddingBottom, viewsBefore, layoutState)
+
+    internal inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                                viewsBefore: Int, layoutState: LayoutState,
+                                                block: (LayoutHelper) -> T): T {
+        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState)
+        val r = block(helper)
+        helper.release()
+        return r
+    }
 
     internal fun release() {
         root.releaseSubsectionHelper(this)

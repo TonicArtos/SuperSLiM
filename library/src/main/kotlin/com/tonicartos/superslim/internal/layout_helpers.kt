@@ -7,14 +7,22 @@ import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWriteLayoutHelper,
-                                val recycler: RecyclerHelper, val state: StateHelper) : BaseLayoutHelper,
-                                                                                        ManagerHelper by manager, ReadWriteLayoutHelper by config,
-                                                                                        RecyclerHelper by recycler, StateHelper by state {
+                                val recycler: RecyclerHelper, val state: StateHelper) :
+        BaseLayoutHelper, ManagerHelper by manager, ReadWriteLayoutHelper by config, RecyclerHelper by recycler,
+        StateHelper by state {
     private var helperPool = LayoutHelperPool()
 
-    fun acquireSubsectionHelper(y: Int, left: Int, right: Int,
-                                paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState) =
+    internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                         viewsBefore: Int, layoutState: LayoutState) =
             helperPool.acquire(this, left, y, right - left, paddingTop, paddingBottom, viewsBefore, layoutState)
+
+    inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                       viewsBefore: Int, layoutState: LayoutState, block: (LayoutHelper) -> T): T {
+        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState)
+        val r = block(helper)
+        helper.release()
+        return r
+    }
 
     fun releaseSubsectionHelper(helper: LayoutHelper) {
         helperPool.release(helper)
@@ -28,12 +36,14 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         layoutLimitExtension += ignoredHeight
     }
 
-    override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n".replace("\n", "\n\t")
+    override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n".replace(
+            "\n", "\n\t")
 
     private class LayoutHelperPool {
         private val pool = arrayListOf<LayoutHelper>()
 
-        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int, viewsBefore: Int, layoutState: LayoutState) =
+        fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
+                    viewsBefore: Int, layoutState: LayoutState) =
                 if (pool.isEmpty()) {
                     LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState)
                 } else {
@@ -163,7 +173,8 @@ internal interface ReadLayoutHelper {
 
 internal interface WriteLayoutHelper {
     fun measure(view: View, usedWidth: Int = 0, usedHeight: Int = 0)
-    fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0, marginRight: Int = 0, marginBottom: Int = 0)
+    fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0,
+               marginRight: Int = 0, marginBottom: Int = 0)
 
     fun offsetChildrenVertical(dy: Int)
     fun offsetChildrenHorizontal(dx: Int)
