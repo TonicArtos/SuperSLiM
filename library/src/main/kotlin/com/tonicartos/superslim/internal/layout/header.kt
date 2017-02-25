@@ -7,6 +7,7 @@ import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.HeaderLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
+import com.tonicartos.superslim.use
 
 private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
@@ -118,9 +119,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         val state = layoutState as HeaderLayoutState
         var y = state.top
         if (state.headPosition == 0) {
-            helper.getHeader(section)?.apply {
-                y += offsetIfAnchor
-                state.top = y
+            helper.getHeader(section)?.use {
                 addToRecyclerView()
                 measure()
                 layout(0, y, measuredWidth, y + measuredHeight)
@@ -128,7 +127,6 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                     helper.addIgnoredHeight(height)
                 }
                 y += height
-                done()
                 state.state = ADDED
             }
         } else {
@@ -167,7 +165,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                 // Fill header and add padding if there is space left.
                 if (filled < toFill) {
                     currentPos -= 1
-                    helper.getHeader(section)?.apply {
+                    helper.getHeader(section)?.use {
                         addToRecyclerView()
                         measure()
                         val filledHeader = fillTop(toFill, 0, state.top - measuredHeight, measuredWidth, state.top)
@@ -175,7 +173,6 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                         filled += filledHeader + padding
                         state.state = ADDED
                         anchorAt(state.top - measuredHeight)
-                        done()
                     }
                 }
                 state.overdraw += filled

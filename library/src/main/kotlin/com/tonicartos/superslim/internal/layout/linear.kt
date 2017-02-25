@@ -1,14 +1,15 @@
 package com.tonicartos.superslim.internal.layout
 
-import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
+import com.tonicartos.superslim.use
 
-class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
+class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
+                          gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                           @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
                           paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) :
         SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingTop, paddingEnd, paddingBottom) {
@@ -34,11 +35,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         var y = -layoutState.overdraw
 
         while (helper.moreToLayout(currentPosition, section)) {
-            helper.getChild(currentPosition, section)?.apply {
-                val offset = offsetIfAnchor
-                layoutState.overdraw -= offset
-                y += offset
-
+            helper.getChild(currentPosition, section)?.use {
                 addToRecyclerView()
                 measure()
                 layout(0, y, measuredWidth, y + measuredHeight)
@@ -47,7 +44,6 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 }
                 y += height
                 helper.filledArea += height
-                done()
                 currentPosition += 1
             } ?: break
         }
@@ -70,7 +66,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         // Try filling the current child. Ignore if off the bottom.
         if (currentPos < section.numChildren) {
             // Only try to fill a non-final child (subsection).
-            section.getNonFinalChildAt(helper, currentPos)?.apply {
+            section.getNonFinalChildAt(helper, currentPos)?.use {
                 measure()
                 val filled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
                 y -= filled
@@ -81,7 +77,7 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
         // Fill remaining dy with remaining content.
         while (dyRemaining > 0 && currentPos > 0) {
             currentPos -= 1
-            section.getChildAt(helper, currentPos).apply {
+            section.getChildAt(helper, currentPos).use {
                 addToRecyclerView(0)
                 measure()
                 val filled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
@@ -89,7 +85,6 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 dyRemaining -= filled
 
                 if (dyRemaining <= 0) anchorAt(y - measuredHeight)
-                done()
             }
         }
 
@@ -103,21 +98,21 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     /**
      * Fill revealed area where content has been scrolled up the screen by dy.
      */
-    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
+    override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState,
+                              layoutState: LayoutState): Int {
         var y = layoutState.bottom - dy
 
         var currentPos = layoutState.tailPosition + 1
         while (y < helper.layoutLimit && currentPos < section.numChildren) {
-            val child = section.getChildAt(helper, currentPos)
-            child.addToRecyclerView(0)
-            child.measure()
-            val childWidth = child.measuredWidth
-            val childHeight = child.measuredHeight
-            child.layout(0, y, childWidth, y + childHeight)
-            y += childHeight
-            currentPos += 1
-
-            child.done()
+            section.getChildAt(helper, currentPos).use {
+                addToRecyclerView(0)
+                measure()
+                val childWidth = measuredWidth
+                val childHeight = measuredHeight
+                layout(0, y, childWidth, y + childHeight)
+                y += childHeight
+                currentPos += 1
+            }
         }
 
         layoutState.tailPosition = currentPos

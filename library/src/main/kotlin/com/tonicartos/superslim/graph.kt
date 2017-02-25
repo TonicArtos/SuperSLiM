@@ -3,6 +3,21 @@ package com.tonicartos.superslim
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
+inline fun <T : Child, R> T.use(block: T.() -> R): R {
+    var done = false
+    try {
+        return block(this)
+    } catch (e: Exception) {
+        done = true
+        this?.done()
+        throw e
+    } finally {
+        if (!done) {
+            this?.done()
+        }
+    }
+}
+
 interface Child {
     companion object {
         const val INVALID = 0
