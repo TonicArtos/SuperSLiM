@@ -21,12 +21,22 @@ class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
     }
 }
 
-internal open class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState) {
-    override fun doLayout(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onLayout(helper, this, layoutState)
-    override fun doFillTop(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int = LinearSlm.onFillTop(dy, helper, this, layoutState)
-    override fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int = LinearSlm.onFillTop(dy, helper, this, layoutState)
-    override fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onTrimTop(helper, this, layoutState)
-    override fun doTrimBottom(helper: LayoutHelper, layoutState: LayoutState) = LinearSlm.onTrimBottom(helper, this, layoutState)
+internal open class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null)
+    : SectionState(configuration, oldState) {
+    override fun doLayout(helper: LayoutHelper, layoutState: LayoutState)
+            = LinearSlm.onLayout(helper, this, layoutState)
+
+    override fun doFillTop(dy: Int, helper: LayoutHelper, layoutState: LayoutState)
+            = LinearSlm.onFillTop(dy, helper, this, layoutState)
+
+    override fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState)
+            = LinearSlm.onFillTop(dy, helper, this, layoutState)
+
+    override fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState)
+            = LinearSlm.onTrimTop(helper, this, layoutState)
+
+    override fun doTrimBottom(helper: LayoutHelper, layoutState: LayoutState)
+            = LinearSlm.onTrimBottom(helper, this, layoutState)
 }
 
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
