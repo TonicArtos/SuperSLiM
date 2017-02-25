@@ -75,7 +75,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionRemovals()
         }
 
-        scrollTowardsTop(0, helper)
+        scrollTowardsTop(if (hasRequestedPosition) requestedPositionOffset else 0, helper)
     }
 
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
