@@ -517,39 +517,30 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *
      * @return Null if the child at the position is known to be fully laid out.
      */
-    internal fun getNonFinalChildAt(helper: LayoutHelper, position: Int): Child? {
+    internal fun getNonFinalChildAt(helper: LayoutHelper, position: Int): Child?
+            = findAndWrap(position, { SectionChild.wrap(it, helper) }, { null })
+
+    internal fun getChildAt(helper: LayoutHelper, position: Int): Child
+            = findAndWrap(position, { SectionChild.wrap(it, helper) },
+                          { ItemChild.wrap(helper.getView(it), helper, it) })
+
+    inline private fun <T> findAndWrap(position: Int, wrapSection: (SectionState) -> T,
+                                       wrapItem: (viewPosition: Int) -> T): T {
         var hiddenItems = positionInAdapter + if (hasHeader) 1 else 0
         var lastSectionPosition = 0
+
         for ((i, it) in subsections.withIndex()) {
             if (it.positionInAdapter - hiddenItems + i > position) {
                 break
             } else if (it.positionInAdapter - hiddenItems + i == position) {
-                return SectionChild.wrap(it, helper)
+                return wrapSection(it)
             } else {
                 hiddenItems += it.totalItems
                 lastSectionPosition = i
             }
         }
 
-        return null
-    }
-
-    internal fun getChildAt(helper: LayoutHelper, position: Int): Child {
-        var hiddenItems = positionInAdapter + if (hasHeader) 1 else 0
-        var lastSectionPosition = 0
-        for ((i, it) in subsections.withIndex()) {
-            if (it.positionInAdapter - hiddenItems + i > position) {
-                break
-            } else if (it.positionInAdapter - hiddenItems + i == position) {
-                return SectionChild.wrap(it, helper)
-            } else {
-                hiddenItems += it.totalItems
-                lastSectionPosition = i
-            }
-        }
-
-        val viewPosition = hiddenItems + position - lastSectionPosition
-        return ItemChild.wrap(helper.getView(viewPosition), helper, viewPosition)
+        return wrapItem(hiddenItems + position - lastSectionPosition)
     }
 
     /**
