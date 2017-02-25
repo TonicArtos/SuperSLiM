@@ -75,7 +75,6 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionRemovals()
         }
 
-        helper.clearAnchor()
         scrollTowardsTop(0, helper)
     }
 
@@ -1281,13 +1280,6 @@ private open class ItemChild(var view: View, helper: LayoutHelper, var positionI
     override fun addToRecyclerView(i: Int) {
         helper.addView(view, i)
     }
-
-    override fun anchorAt(y: Int) {
-        helper.makeAnchor(positionInAdapter, y)
-    }
-
-    override val offsetIfAnchor: Int
-        get() = if (helper.isAnchor(positionInAdapter)) helper.anchorOffset else 0
 }
 
 private class DisappearingItemChild(view: View, helper: LayoutHelper, positionInAdapter: Int) :

@@ -172,7 +172,6 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                         state.top -= filledHeader
                         filled += filledHeader + padding
                         state.state = ADDED
-                        anchorAt(state.top - measuredHeight)
                     }
                 }
                 state.overdraw += filled

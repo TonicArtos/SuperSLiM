@@ -114,11 +114,6 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
                     marginLeft, marginTop, marginRight, marginBottom)
     }
 
-    override fun clearAnchor() = root.clearAnchor()
-    override fun makeAnchor(position: Int, y: Int) = root.makeAnchor(position, y)
-    override fun isAnchor(position: Int) = root.isAnchor(position)
-    override val anchorOffset get() = root.anchorOffset
-
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) {
         root.measure(view, usedWidth + root.layoutWidth - width, usedHeight + offset.y)
     }

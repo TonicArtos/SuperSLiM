@@ -69,21 +69,6 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     /****************************************************
      * Layout
      ****************************************************/
-    private var anchorSet = false
-    private var anchorPosition = 0
-        set(value) {
-            anchorSet = true
-            field = value
-            Log.d("ANCHOR", "anchor = $anchorPosition")
-        }
-    override var anchorOffset = 0
-        private set(value) {
-            field = value
-            Log.d("ANCHOR", "offset = $anchorOffset")
-        }
-
-    override fun isAnchor(position: Int) = position == anchorPosition
-
     private val recyclerHelper = RecyclerWrapper()
     private val stateHelper = StateWrapper()
 
@@ -95,17 +80,9 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             }
 
             if (it.position > 0) {
-                anchorPosition = it.position
-                anchorOffset = it.offset
+                graph?.requestedPosition = it.position
+                graph?.requestedPositionOffset = it.offset
             }
-        }
-
-        if (anchorSet) {
-            graph?.requestedPosition = anchorPosition
-            graph?.requestedPositionOffset = anchorOffset
-        } else {
-            anchorPosition = 0
-            anchorOffset = 0
         }
 
         if (ENABLE_LAYOUT_LOGGING) {
@@ -128,27 +105,32 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
     override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        anchorSet = false
         val scrolled = graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
                                                             stateHelper.wrap(state))) ?: 0
-        anchorOffset -= scrolled
         return scrolled
     }
 
     override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        anchorSet = false
         val scrolled = graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
                                                             stateHelper.wrap(state))) ?: 0
-        anchorOffset -= scrolled
         return scrolled
     }
 
     override fun scrollToPosition(position: Int) {
-        if (anchorSet) return
-        anchorPosition = position
-        requestLayout()
+        graph?.apply {
+            requestedPosition = position
+            requestedPositionOffset = -paddingTop
+            requestLayout()
+        }
     }
 
+    fun scrollToPositionWithOffset(position: Int, offset: Int) {
+        graph?.apply {
+            requestedPosition = position
+            requestedPositionOffset = offset - paddingTop
+            requestLayout()
+        }
+    }
     /****************************************************
      * Scroll indicator computation
      ****************************************************/
@@ -314,15 +296,6 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
                         marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) =
             layoutDecorated(view, left, top, right, bottom)
 
-    override fun clearAnchor() {
-        anchorSet = false
-    }
-    override fun makeAnchor(position: Int, y: Int) {
-        if (anchorSet) return
-        anchorPosition = position
-        anchorOffset = y
-    }
-
     /****************************************************
      * Data change notifications
      *
@@ -477,8 +450,9 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     }
 
     override fun onSaveInstanceState(): Parcelable? {
-        graph?.anchorPosition
-        return SavedState(anchorPosition, anchorOffset)
+        return graph?.let {
+            SavedState(it.anchor)
+        }
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {

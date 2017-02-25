@@ -83,8 +83,6 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 val filled = fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y)
                 y -= filled
                 dyRemaining -= filled
-
-                if (dyRemaining <= 0) anchorAt(y - measuredHeight)
             }
         }
 

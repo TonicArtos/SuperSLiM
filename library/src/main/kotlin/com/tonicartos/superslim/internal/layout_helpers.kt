@@ -108,11 +108,6 @@ internal interface ManagerHelper {
     fun addDisappearingView(child: View)
     fun addDisappearingView(child: View, index: Int)
 
-    fun clearAnchor()
-    fun makeAnchor(position: Int, y: Int)
-    fun isAnchor(position: Int): Boolean
-    val anchorOffset: Int
-
     val supportsPredictiveItemAnimations: Boolean
 }
 

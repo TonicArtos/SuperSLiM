@@ -90,9 +90,6 @@ interface Child {
      * Adds child to the recycler view.
      */
     fun addToRecyclerView(i: Int)
-
-    fun anchorAt(y: Int) {}
-    val offsetIfAnchor get() = 0
 }
 
 /**
