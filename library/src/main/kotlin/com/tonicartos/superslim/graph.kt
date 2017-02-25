@@ -9,11 +9,11 @@ inline fun <T : Child, R> T.use(block: T.() -> R): R {
         return block(this)
     } catch (e: Exception) {
         done = true
-        this?.done()
+        this.done()
         throw e
     } finally {
         if (!done) {
-            this?.done()
+            this.done()
         }
     }
 }
