@@ -423,10 +423,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     internal fun setOffset(offset: Int) {
-        layoutState.pop().let {
-            layoutState.peek().overdraw = offset
-            layoutState.push(it)
-        }
+        layoutState.babushka { peek().overdraw = offset }
     }
 
     /****************************************************
@@ -594,21 +591,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         val paddingRight = parentHelper.getTransformedPaddingRight(baseConfig)
         val paddingBottom = parentHelper.getTransformedPaddingBottom(baseConfig)
 
-        val state = layoutState.pop()
-        state.left = left + paddingLeft
-        state.right = right - paddingRight
-        state.numViews = 0
-        val helper = parentHelper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
-                                                          paddingBottom, parentHelper.numViews, state)
+        layoutState.babushka { state ->
+            state.left = left + paddingLeft
+            state.right = right - paddingRight
+            state.numViews = 0
+            val helper = parentHelper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
+                                                              paddingBottom, parentHelper.numViews, state)
 
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
-        // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
-        HeaderLayoutManager.onLayout(helper, this, state)
-        helper.release()
-        parentHelper.numViews += state.numViews
-
-        layoutState.push(state)
+            // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
+            HeaderLayoutManager.onLayout(helper, this@SectionState, state)
+            helper.release()
+            parentHelper.numViews += state.numViews
+        }
     }
 
     /**
@@ -626,19 +622,18 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         val paddingRight = rootHelper.basePaddingRight
         val paddingBottom = rootHelper.basePaddingBottom
 
-        val state = layoutState.pop()
-        state.left = left + paddingLeft
-        state.right = right - paddingRight
-        state.numViews = 0
+        layoutState.babushka { state ->
+            state.left = left + paddingLeft
+            state.right = right - paddingRight
+            state.numViews = 0
 
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
-        val helper = rootHelper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
-                                                        paddingBottom, 0, state)
-        // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
-        HeaderLayoutManager.onLayout(helper, this, state)
-        helper.release()
-
-        layoutState.push(state)
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
+            val helper = rootHelper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
+                                                            paddingBottom, 0, state)
+            // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
+            HeaderLayoutManager.onLayout(helper, this@SectionState, state)
+            helper.release()
+        }
     }
 
     internal fun layoutContent(helper: LayoutHelper, left: Int, top: Int, right: Int) {
@@ -648,19 +643,18 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         // Store layout positions for use during scrolling.
-        val state = layoutState.pop()
-        state.left = left
-        state.right = right
-        state.numViews = 0
+        layoutState.babushka { state ->
+            state.left = left
+            state.right = right
+            state.numViews = 0
 
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
-        doLayout(subsectionHelper, state)
-        subsectionHelper.release()
-        helper.numViews += state.numViews
-
-        layoutState.push(state)
+            val helper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
+            doLayout(helper, state)
+            helper.numViews += state.numViews
+            helper.release()
+        }
     }
 
     protected abstract fun doLayout(helper: LayoutHelper, layoutState: LayoutState)
@@ -693,11 +687,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         for ((i, section) in subsections.withIndex()) {
             if (requestedAdapterPosition < section.positionInAdapter) {
                 // Position is before this subsection, so it must be a child item not a member of a subsection.
-                layoutState.pop().let {
+                layoutState.babushka {
                     it.headPosition = 1
-                    layoutState.peek().headPosition =
+                    peek().headPosition =
                             childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
-                    layoutState.push(it)
                 }
                 return true
             }
@@ -707,10 +700,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
             if (section.setLayoutPositionFromAdapter(requestedAdapterPosition)) {
                 // Requested position was within the subsection so store it as the layout position of this section.
-                layoutState.pop().let {
+                layoutState.babushka {
                     it.headPosition = 1
-                    layoutState.peek().headPosition = childrenAccountedFor - if (hasHeader) 1 else 0
-                    layoutState.push(it)
+                    peek().headPosition = childrenAccountedFor - if (hasHeader) 1 else 0
                 }
                 return true
             }
@@ -723,10 +715,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
 
         // Position must be a child item after the last subsection.
-        layoutState.pop().let {
+        layoutState.babushka {
             it.headPosition = 1
-            layoutState.peek().headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
-            layoutState.push(it)
+            peek().headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
         }
         return true
     }
@@ -742,53 +733,52 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Root
      ****************/
     internal fun fillTop(dy: Int, rootHelper: RootLayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
+            val paddingTop = rootHelper.basePaddingTop
+            val paddingBottom = rootHelper.basePaddingBottom
 
-        val paddingTop = rootHelper.basePaddingTop
-        val paddingBottom = rootHelper.basePaddingBottom
-
-        val helper = rootHelper.acquireSubsectionHelper(paddingTop, state.left, state.right, paddingTop, paddingBottom,
-                                                        0, state)
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
-        return HeaderLayoutManager.onFillTop(dy, helper, this, state).also {
-            helper.release()
-            layoutState.push(state)
+            val helper = rootHelper.acquireSubsectionHelper(paddingTop, state.left, state.right,
+                                                            paddingTop, paddingBottom, 0, state)
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
+            return HeaderLayoutManager.onFillTop(dy, helper, this@SectionState, state).also {
+                helper.release()
+            }
         }
+
     }
 
     internal fun fillBottom(dy: Int, rootHelper: RootLayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
+            val paddingTop = rootHelper.basePaddingTop
+            val paddingBottom = rootHelper.basePaddingBottom
 
-        val paddingTop = rootHelper.basePaddingTop
-        val paddingBottom = rootHelper.basePaddingBottom
-
-        val helper = rootHelper.acquireSubsectionHelper(paddingTop, state.left, state.right, paddingTop, paddingBottom,
-                                                        0, state)
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
-        return HeaderLayoutManager.onFillBottom(dy, helper, this, state).apply {
-            helper.release()
-            layoutState.push(state)
+            val helper = rootHelper.acquireSubsectionHelper(paddingTop, state.left, state.right,
+                                                            paddingTop, paddingBottom, 0, state)
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
+            return HeaderLayoutManager.onFillBottom(dy, helper, this@SectionState, state).apply {
+                helper.release()
+            }
         }
     }
 
     internal fun trimTop(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.basePaddingTop,
-                                                              helper.basePaddingBottom, 0, state)
-        // TODO: Remember to adjust tail and head positions, and also to use -1 for when nothing is attached anymore.
-        HeaderLayoutManager.onTrimTop(subsectionHelper, this, state).apply {
-            subsectionHelper.release()
-            layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.basePaddingTop,
+                                                                  helper.basePaddingBottom, 0, state)
+            // TODO: Remember to adjust tail and head positions, and also to use -1 for when nothing is attached anymore.
+            HeaderLayoutManager.onTrimTop(subsectionHelper, this@SectionState, state).apply {
+                subsectionHelper.release()
+            }
         }
     }
 
     internal fun trimBottom(helper: RootLayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.basePaddingTop,
-                                                              helper.basePaddingBottom, 0, state)
-        HeaderLayoutManager.onTrimBottom(subsectionHelper, this, state).apply {
-            subsectionHelper.release()
-            layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, helper.basePaddingTop,
+                                                                  helper.basePaddingBottom, 0, state)
+            HeaderLayoutManager.onTrimBottom(subsectionHelper, this, state).apply {
+                subsectionHelper.release()
+            }
         }
     }
 
@@ -796,70 +786,68 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Sections
      ***************/
     internal fun fillTop(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
 
-        val paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
-        val paddingTop = helper.getTransformedPaddingTop(baseConfig)
-        val paddingRight = helper.getTransformedPaddingRight(baseConfig)
-        val paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
+            val paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
+            val paddingTop = helper.getTransformedPaddingTop(baseConfig)
+            val paddingRight = helper.getTransformedPaddingRight(baseConfig)
+            val paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
 
-        state.left = left + paddingLeft
-        state.right = right - paddingRight
+            state.left = left + paddingLeft
+            state.right = right - paddingRight
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
-                                                              paddingBottom, helper.numViews, state)
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
-        return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this, state).also {
-            subsectionHelper.release()
-            layoutState.push(state)
+            val subsectionHelper = helper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
+                                                                  paddingBottom, helper.numViews, state)
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
+            return HeaderLayoutManager.onFillTop(dy, subsectionHelper, this@SectionState, state).also {
+                subsectionHelper.release()
+            }
         }
     }
 
     internal fun fillBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
+            val paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
+            val paddingTop = helper.getTransformedPaddingTop(baseConfig)
+            val paddingRight = helper.getTransformedPaddingRight(baseConfig)
+            val paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
 
-        val paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
-        val paddingTop = helper.getTransformedPaddingTop(baseConfig)
-        val paddingRight = helper.getTransformedPaddingRight(baseConfig)
-        val paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
+            state.left = left + paddingLeft
+            state.right = right - paddingRight
 
-        state.left = left + paddingLeft
-        state.right = right - paddingRight
-
-        val subsectionHelper = helper.acquireSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
-                                                              paddingBottom, helper.numViews, state)
-        return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this, state).also {
-            subsectionHelper.release()
-            layoutState.push(state)
+            val subsectionHelper = helper.acquireSubsectionHelper(top + paddingTop, state.left, state.right,
+                                                                  paddingTop, paddingBottom, helper.numViews, state)
+            return HeaderLayoutManager.onFillBottom(dy, subsectionHelper, this@SectionState, state).also {
+                subsectionHelper.release()
+            }
         }
     }
 
     internal fun fillContentTop(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
 
-        state.left = left
-        state.right = right
+            state.left = left
+            state.right = right
 
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, helper.numViews,
-                                                              state)
-        if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = numChildren
-        return doFillTop(dy, subsectionHelper, state).apply {
-            subsectionHelper.release()
-            layoutState.push(state)
+            val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, helper.numViews,
+                                                                  state)
+            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = numChildren
+            return doFillTop(dy, subsectionHelper, state).apply {
+                subsectionHelper.release()
+            }
         }
     }
 
     internal fun fillContentBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper): Int {
-        val state = layoutState.pop()
+        layoutState.babushka { state ->
+            state.left = left
+            state.right = right
 
-        state.left = left
-        state.right = right
-
-        val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, helper.numViews,
-                                                              state)
-        return doFillBottom(dy, subsectionHelper, state).apply {
-            subsectionHelper.release()
-            layoutState.push(state)
+            val subsectionHelper = helper.acquireSubsectionHelper(top, state.left, state.right, 0, 0, helper.numViews,
+                                                                  state)
+            return doFillBottom(dy, subsectionHelper, state).apply {
+                subsectionHelper.release()
+            }
         }
     }
 
@@ -867,37 +855,37 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     protected abstract fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int
 
     internal fun trimTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, baseConfig.paddingTop,
-                                                              baseConfig.paddingBottom, helper.numViews, state)
-        HeaderLayoutManager.onTrimTop(subsectionHelper, this, state)
-        subsectionHelper.release()
-        layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, baseConfig.paddingTop,
+                                                                  baseConfig.paddingBottom, helper.numViews, state)
+            HeaderLayoutManager.onTrimTop(subsectionHelper, this@SectionState, state)
+            subsectionHelper.release()
+        }
     }
 
     internal fun trimBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, baseConfig.paddingTop,
-                                                              baseConfig.paddingBottom, helper.numViews, state)
-        HeaderLayoutManager.onTrimBottom(subsectionHelper, this, state)
-        subsectionHelper.release()
-        layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, baseConfig.paddingTop,
+                                                                  baseConfig.paddingBottom, helper.numViews, state)
+            HeaderLayoutManager.onTrimBottom(subsectionHelper, this@SectionState, state)
+            subsectionHelper.release()
+        }
     }
 
     internal fun trimContentTop(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
-        doTrimTop(subsectionHelper, state)
-        subsectionHelper.release()
-        layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
+            doTrimTop(subsectionHelper, state)
+            subsectionHelper.release()
+        }
     }
 
     internal fun trimContentBottom(helper: LayoutHelper, left: Int, top: Int, right: Int) {
-        val state = layoutState.pop()
-        val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
-        doTrimBottom(subsectionHelper, state)
-        subsectionHelper.release()
-        layoutState.push(state)
+        layoutState.babushka { state ->
+            val subsectionHelper = helper.acquireSubsectionHelper(top, left, right, 0, 0, helper.numViews, state)
+            doTrimBottom(subsectionHelper, state)
+            subsectionHelper.release()
+        }
     }
 
     protected abstract fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState)
