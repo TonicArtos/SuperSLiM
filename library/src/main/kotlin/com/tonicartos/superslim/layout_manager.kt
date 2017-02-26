@@ -427,6 +427,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     class SavedState(val position: Int, val offset: Int) : Parcelable {
+        constructor(anchor: Pair<Int, Int>) : this(anchor.first, anchor.second)
         constructor(source: Parcel) : this(position = source.readInt(), offset = source.readInt())
         constructor(other: SavedState) : this(other.position, other.offset)
 
@@ -450,11 +451,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         if (pendingSavedState == null) super.assertNotInLayoutOrScroll(message)
     }
 
-    override fun onSaveInstanceState(): Parcelable? {
-        return graph?.let {
-            SavedState(it.anchor)
-        }
-    }
+    override fun onSaveInstanceState(): Parcelable? = graph?.let { SavedState(it.anchor) }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
         pendingSavedState = state as? SavedState

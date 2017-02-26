@@ -1,7 +1,5 @@
 package com.tonicartos.superslim.internal
 
-import android.os.Parcel
-import android.support.annotation.CallSuper
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.util.SparseArray
@@ -74,7 +72,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         fillTop(0, helper)
 
         if (hasRequestedPosition && requestedPositionOffset != 0) {
-            scrollBy(-requestedPositionOffset, helper)
+            scrollBy(requestedPositionOffset, helper)
         }
     }
 
@@ -339,6 +337,14 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
     }
 
+    internal val anchor: Pair<Int, Int> get() =
+    layoutState.babushka { hlmState ->
+        if (hasHeader && hlmState.headPosition == 0) {
+            positionInAdapter to (hlmState as HeaderLayoutState).top
+        } else {
+            babushka { slmState ->
+                findAndWrap(slmState.headPosition, { it.anchor }, { it to slmState.overdraw })
+            }
         }
     }
 
