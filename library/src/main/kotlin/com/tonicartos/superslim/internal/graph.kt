@@ -1,7 +1,6 @@
 package com.tonicartos.superslim.internal
 
 import android.os.Parcel
-import android.os.Parcelable
 import android.support.annotation.CallSuper
 import android.support.v7.widget.RecyclerView
 import android.util.Log
@@ -41,14 +40,10 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     /*************************
-     * State
-     *************************/
-
-    internal fun saveState() = root.saveState()
-
-    /*************************
      * Layout
      *************************/
+    internal val anchor get() = root.anchor
+
     internal var requestedPositionOffset = 0
     internal var requestedPosition = 0
         get() = field
@@ -264,30 +259,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         const val ENABLE_LAYOUT_LOGGING = false
     }
 
-    open class LayoutState() : Parcelable {
-        constructor(source: Parcel) : this() {
-            headPosition = source.readInt()
-            overdraw = source.readInt()
-        }
-
-        constructor(other: LayoutState) : this() {
-            headPosition = other.headPosition
-            overdraw = other.overdraw
-        }
-
-        companion object {
-            @JvmField @Suppress("unused")
-            val CREATOR = createParcel(::LayoutState)
-        }
-
-        @CallSuper
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeInt(headPosition)
-            dest.writeInt(overdraw)
-        }
-
-        override fun describeContents() = 0
-
+    open class LayoutState() {
         /**
          * Number of views.
          */
@@ -346,28 +318,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal class HeaderLayoutState : LayoutState {
         constructor() : super()
-        constructor(source: Parcel) : super(source) {
-            top = source.readInt()
-            state = source.readInt()
-        }
 
-        constructor(other: HeaderLayoutState) : super(other) {
-            top = other.top
-            state = other.state
-        }
-
-        companion object {
-            @JvmField
-            val CREATOR = createParcel(::HeaderLayoutState)
-        }
-
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            super.writeToParcel(dest, flags)
-            dest.writeInt(top)
-            dest.writeInt(state)
-        }
-
-        override fun describeContents() = 1
+        var top = 0
 
         /**
          * The current state of the header. State values are header implementation dependent.
@@ -380,32 +332,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
-
-        var top = 0
     }
 
-    class SavedSectionState(val hlmState: LayoutState, val slmState: LayoutState) : Parcelable {
-        companion object {
-            @JvmField @Suppress("unused")
-            val CREATOR = createParcel(::SavedSectionState)
-        }
-
-        val headPosition get() = hlmState.headPosition
-
-        constructor(source: Parcel) : this(hlmState = source.readParcelable(HeaderLayoutState::class.java.classLoader),
-                                           slmState = source.readParcelable(LayoutState::class.java.classLoader))
-
-        constructor (other: SavedSectionState) : this(other.hlmState, other.slmState)
-
-        override fun describeContents() = 0
-
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeParcelable(hlmState, flags)
-            dest.writeParcelable(slmState, flags)
         }
     }
-
-    internal fun saveState() = SavedSectionState(hlmState = layoutState[0], slmState = layoutState[1])
 
     override fun toString() = "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
 //    override fun toString() = subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
