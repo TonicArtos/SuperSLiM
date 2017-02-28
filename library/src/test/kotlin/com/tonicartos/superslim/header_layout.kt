@@ -1,12 +1,5 @@
 package com.tonicartos.superslim
 
-import com.nhaarman.mockito_kotlin.mock
-import com.tonicartos.superslim.internal.SectionState
-import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
-import com.tonicartos.superslim.internal.layout.LinearSectionConfig
-import com.tonicartos.superslim.internal.layout.LinearSectionState
-import org.junit.Before
-import org.junit.Test
 
 class HeaderTests {
     //TODO: mock helper

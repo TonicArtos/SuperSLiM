@@ -67,24 +67,24 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
 
         // How much distance left to fill.
         val padding = helper.paddingTop
-        val toFill = dy + padding - state.overdraw
+        val toFill = dy + padding - state.overdrawTop
 
         if (toFill > 0) {
-            // Fill space starting at overdraw.
+            // Fill space starting at overdrawTop.
             val y = state.top
             val filledContent = section.fillContentTop(toFill, leftGutter(section), y,
                                                        helper.layoutWidth - rightGutter(section), helper)
 
             // Determine if actual filled area includes padding or not.
             val atTopOfContent = filledContent < toFill
-            val paddingAlreadyAdded = filledContent == 0 && state.overdraw >= padding
+            val paddingAlreadyAdded = filledContent == 0 && state.overdrawTop >= padding
             val actualFilled = filledContent + (padding.takeIf { atTopOfContent && paddingAlreadyAdded } ?: 0)
 
             // Update partial state and compute dy filled.
             state.top -= filledContent
-            state.overdraw += actualFilled
+            state.overdrawTop += actualFilled
         }
-        var filled = Math.min(dy, state.overdraw)
+        var filled = Math.min(dy, state.overdrawTop)
 
         // Advance top by the filled area which will be scrolled. However, prevent scrolling past the top.
         state.top += filled
@@ -94,7 +94,7 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         }
 
         // Update state
-        state.overdraw -= filled
+        state.overdrawTop -= filled
         state.bottom += filled
         state.headPosition = 0
         state.tailPosition = 0
@@ -102,7 +102,28 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        return 0
+        val state = layoutState as HeaderLayoutState
+
+        var toFill = dy - state.overdrawBottom
+        if (toFill > 0 && state.headPosition < 0) {
+            val filled = helper.paddingTop
+            state.overdrawBottom += filled
+            toFill -= filled
+        }
+
+        if (toFill > 0) {
+            val filled = section.fillContentBottom(toFill, leftGutter(section), state.bottom + state.overdrawBottom,
+                                                   helper.layoutWidth - rightGutter(section), helper)
+            state.overdrawBottom += filled
+            toFill -= filled
+        }
+        val filled = Math.min(dy, state.overdrawBottom)
+
+        state.overdrawBottom -= filled
+        state.bottom += filled
+        state.headPosition = 0
+        state.tailPosition = 0
+        return filled
     }
 
     override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
@@ -150,7 +171,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
 
         // How much distance left to fill.
         val padding = helper.paddingTop
-        var toFill = dy + padding - state.overdraw
+        var toFill = dy + padding - state.overdrawTop
 
         if (toFill > 0 && state.headPosition > 0) {
             var currentPos = state.headPosition
@@ -174,11 +195,11 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
                         state.state = ADDED
                     }
                 }
-                state.overdraw += filled
+                state.overdrawTop += filled
             }
             state.headPosition = currentPos
         }
-        var filled = Math.min(dy, state.overdraw)
+        var filled = Math.min(dy, state.overdrawTop)
 
         // Scroll top
         state.top += filled
@@ -188,16 +209,58 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         // Update state
-        state.overdraw -= filled
+        state.overdrawTop -= filled
         state.bottom += filled
         return filled
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        //        if (section.headerLayout.headPosition == 0) {
-        //            val bottom = helper.getBottom(helper.getView(section.headerLayout.numViews - 1))
-        //        }
-        throw UnsupportedOperationException()
+        val state = layoutState as HeaderLayoutState
+
+        var toFill = dy - state.overdrawBottom
+
+        // Add padding if not laid out yet.
+        if (toFill > 0 && state.headPosition < 0) {
+            val filled = helper.paddingTop
+            state.overdrawBottom += filled
+            toFill -= filled
+            state.headPosition = 0
+            state.tailPosition = 0
+        }
+
+        // Add header if room.
+        if (toFill > 0 && state.tailPosition == 0) {
+            helper.getHeader(section)?.use {
+                addToRecyclerView()
+                measure()
+                val filled = fillTop(toFill, 0, state.bottom + state.overdrawBottom, measuredWidth, measuredHeight)
+                state.overdrawBottom += filled
+                toFill -= filled
+                state.state = ADDED
+            }
+        }
+
+        // Fill content if room.
+        if (toFill > 0) {
+            /*
+             * NOTE: Filled will always be equal to toFill, because fillContent is always tracking it's own overdraw.
+             */
+            val filled = section.fillContentBottom(toFill, leftGutter(section),
+                                                   state.bottom + state.overdrawBottom,
+                                                   helper.layoutWidth - rightGutter(section),
+                                                   helper)
+            state.overdrawBottom += filled
+            toFill -= filled
+            state.tailPosition = 1
+        }
+
+        val filled = Math.min(dy, state.overdrawBottom)
+
+        state.top -= filled
+
+        state.overdrawBottom -= filled
+
+        return filled
     }
 
     override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {

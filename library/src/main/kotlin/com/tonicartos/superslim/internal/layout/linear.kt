@@ -42,7 +42,7 @@ internal open class LinearSectionState(val configuration: LinearSectionConfig, o
 private object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onLayout(helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState) {
         var currentPosition = layoutState.headPosition
-        var y = -layoutState.overdraw
+        var y = -layoutState.overdrawTop
 
         while (helper.moreToLayout(currentPosition, section)) {
             helper.getChild(currentPosition, section)?.use {
@@ -63,13 +63,13 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
         // How much distance left to fill.
-        var dyRemaining = dy - layoutState.overdraw
+        var dyRemaining = dy - layoutState.overdrawTop
         if (dyRemaining <= 0) {
-            layoutState.overdraw -= dy
+            layoutState.overdrawTop -= dy
             return dy
         }
         // Where we are filling at.
-        var y = -layoutState.overdraw
+        var y = -layoutState.overdrawTop
 
         var currentPos = layoutState.headPosition
 
@@ -96,8 +96,8 @@ private object LinearSlm : SectionLayoutManager<LinearSectionState> {
             }
         }
 
-        val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdraw.
-        layoutState.overdraw = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdraw happened.
+        val filled = Math.min(dy, dy - dyRemaining) // Cap filled distance at dy. Any left over is overdrawTop.
+        layoutState.overdrawTop = Math.max(0, -dyRemaining) // If dyRemaining is -ve, then overdrawTop happened.
         layoutState.bottom += filled // Section got taller by the filled amount.
         layoutState.headPosition = currentPos
         return filled

@@ -71,9 +71,9 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         // Fill padding
         fillTop(0, helper)
 
-        if (hasRequestedPosition && requestedPositionOffset != 0) {
-            scrollBy(requestedPositionOffset, helper)
-        }
+//        if (hasRequestedPosition && requestedPositionOffset != 0) {
+//            scrollBy(requestedPositionOffset, helper)
+//        }
     }
 
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
@@ -93,16 +93,15 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      * @return Actual distance scrolled.
      */
     private fun scrollTowardsBottom(dy: Int, helper: RootLayoutHelper): Int {
-//        val bottomEdge = fillBottom(dy, helper)
-//        val scrolled = if (bottomEdge - dy < helper.layoutLimit - helper.basePaddingBottom) bottomEdge - helper.layoutLimit - helper.basePaddingBottom else dy
-//        if (scrolled > 0) {
-//            helper.offsetChildrenVertical(-scrolled)
-//        }
-//
-//        trimTop(helper)
+        val filled = fillBottom(dy, helper)
+        val scrolled = Math.min(dy, filled)
+        if (scrolled > 0) {
+            helper.offsetChildrenVertical(-scrolled)
+        }
 
-        // TODO: scroll down
-        return dy
+        trimTop(helper)
+
+        return scrolled
     }
 
     /**
@@ -270,41 +269,46 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             internal set
 
         /**
-         * The height of the section for this layout pass. Only valid after section is laid out, and never use outside the
-         * same layout pass.
+         * The height of the section for this layout pass. Only valid after section is laid out.
          */
         open var bottom = 0
 
         /**
          * Position that is the head of the displayed section content. -1 is the unset default value.
          */
-        var headPosition = -1
+        var headPosition = UNSET_OR_BEFORE_CHILDREN
             set(value) {
                 field = value
             }
         /**
          * Position that is the tail of the displayed section content. -1 is the unset and default value.
          */
-        var tailPosition = -1
+        var tailPosition = UNSET_OR_BEFORE_CHILDREN
 
         var left = 0
         var right = 0
 
         /**
-         * Area drawn pass y0.
+         * Area drawn past y0 and dy.
          */
-        var overdraw = 0
+        var overdrawTop = 0
+
+        /**
+         * Area drawn past bottom and dy.
+         */
+        var overdrawBottom = 0
 
         /**
          * Reset layout state.
          */
         internal open fun reset() {
             bottom = 0
-            headPosition = -1
-            tailPosition = -1
+            headPosition = UNSET_OR_BEFORE_CHILDREN
+            tailPosition = UNSET_OR_BEFORE_CHILDREN
             left = 0
             right = 0
-            overdraw = 0
+            overdrawTop = 0
+            overdrawBottom = 0
             numViews = 0
         }
 
@@ -315,7 +319,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         override fun toString(): String {
-            return "(headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
+            return "(headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdrawTop = $overdrawTop)"
         }
     }
 
@@ -334,7 +338,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state = 0
         }
 
-        override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw)"
+        override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdrawTop = $overdrawTop)"
     }
 
     internal val anchor: Pair<Int, Int> get() =
@@ -343,7 +347,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             positionInAdapter to (hlmState as HeaderLayoutState).top
         } else {
             babushka { slmState ->
-                findAndWrap(slmState.headPosition, { it.anchor }, { it to slmState.overdraw })
+                findAndWrap(slmState.headPosition, { it.anchor }, { it to slmState.overdrawTop })
             }
         }
     }
@@ -361,10 +365,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal fun resetLayout() {
         layoutState.forEach { it.reset() }
-    }
-
-    internal fun setOffset(offset: Int) {
-        layoutState.babushka { peek().overdraw = offset }
     }
 
     /****************************************************

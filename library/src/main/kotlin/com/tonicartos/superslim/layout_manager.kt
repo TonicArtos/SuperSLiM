@@ -80,9 +80,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
             }
 
             if (it.position > 0) {
+                Log.d("SavedState", "position = ${it.position}, offset = ${it.offset}")
                 graph?.requestedPosition = it.position
                 graph?.requestedPositionOffset = it.offset
             }
+        } ?: let {
+//            Log.d("SavedSate", "Forced position to 5.")
+//            graph?.requestedPosition = 5
         }
 
         if (ENABLE_LAYOUT_LOGGING) {
@@ -119,7 +123,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun scrollToPosition(position: Int) {
         graph?.apply {
             requestedPosition = position
-            requestedPositionOffset = -paddingTop
+            requestedPositionOffset = paddingTop
             requestLayout()
         }
     }
@@ -127,7 +131,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     fun scrollToPositionWithOffset(position: Int, offset: Int) {
         graph?.apply {
             requestedPosition = position
-            requestedPositionOffset = offset - paddingTop
+            requestedPositionOffset = offset + paddingTop
             requestLayout()
         }
     }

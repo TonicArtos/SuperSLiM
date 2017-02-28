@@ -40,7 +40,7 @@ public class ContentFragment extends Fragment {
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
             mAdapter.swapCursor(data);
-//            recyclerView.scrollToPosition(5);
+            recyclerView.scrollToPosition(5);
         }
 
         @Override
