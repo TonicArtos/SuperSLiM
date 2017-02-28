@@ -5,6 +5,7 @@ import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.*
+import com.tonicartos.superslim.SectionConfig.Companion.GUTTER_AUTO
 import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import java.util.*
 
@@ -387,7 +388,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
     /**
-     * Total number of items in the section, including the header and items in subsections.
+     * Total number of items in the section, including the header, footer, and items in subsections.
      */
     internal var totalItems = 0
         private set(value) {
@@ -441,11 +442,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Access items
      *************************/
 
-    internal var hasHeader: Boolean = false
+    internal var hasHeader = false
+    internal var hasFooter = false
 
     internal fun getHeader(helper: LayoutHelper): Child? =
             if (hasHeader) {
                 ItemChild.wrap(helper.getView(positionInAdapter), helper, positionInAdapter)
+            } else {
+                null
+            }
+
+    internal fun getFooter(helper: LayoutHelper): Child? =
+            if (hasFooter) {
+                val footerPositionInAdapter = positionInAdapter + totalItems - 1
+                ItemChild.wrap(helper.getView(footerPositionInAdapter), helper, footerPositionInAdapter)
             } else {
                 null
             }
@@ -456,6 +466,15 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             } else {
                 null
             }
+
+    internal fun getDisappearingFooter(helper: LayoutHelper): Child? {
+        val footerPositionInAdapter = positionInAdapter + totalItems - 1
+        return if (hasFooter && helper.scrapHasPosition(footerPositionInAdapter)) {
+            DisappearingItemChild.wrap(helper.getView(footerPositionInAdapter), helper, footerPositionInAdapter)
+        } else {
+            null
+        }
+    }
 
     /**
      * Gets a child at the specified position that might need more layout.
@@ -831,9 +850,19 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         totalItems += 1
     }
 
+    internal fun addFooter() {
+        hasFooter = true
+        totalItems += 1
+    }
+
     internal fun removeHeader() {
         hasHeader = false
         subsections.forEach { it.positionInAdapter -= 1 }
+        totalItems -= 1
+    }
+
+    internal fun removeFooter() {
+        hasFooter = false
         totalItems -= 1
     }
 

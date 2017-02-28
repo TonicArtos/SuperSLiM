@@ -132,10 +132,18 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
     private val willCheckForDisappearedItems = !isPreLayout && willRunPredictiveAnimations && supportsPredictiveItemAnimations
 
     internal fun getHeader(section: SectionState): Child? {
-        if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
-            return section.getDisappearingHeader(this)
+        return if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
+            section.getDisappearingHeader(this)
         } else {
-            return section.getHeader(this)
+            section.getHeader(this)
+        }
+    }
+
+    internal fun getFooter(section: SectionState): Child? {
+        return if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
+            section.getDisappearingHeader(this)
+        } else {
+            section.getHeader(this)
         }
     }
 
