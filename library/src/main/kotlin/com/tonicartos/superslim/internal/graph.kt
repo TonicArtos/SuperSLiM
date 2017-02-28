@@ -1041,6 +1041,15 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             }
         }
     }
+
+    @Suppress("nothing_to_inline")
+    internal inline fun rightGutter(autoWidth: Int = 0) =
+            if (baseConfig.gutterRight == GUTTER_AUTO) autoWidth else baseConfig.gutterRight
+
+    @Suppress("nothing_to_inline")
+    internal inline fun leftGutter(autoWidth: Int = 0) =
+            if (baseConfig.gutterLeft == GUTTER_AUTO) autoWidth else baseConfig.gutterLeft
+
 }
 
 internal abstract class ChildInternal(var helper: LayoutHelper) : Child

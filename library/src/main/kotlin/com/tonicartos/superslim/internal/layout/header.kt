@@ -13,14 +13,6 @@ private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
 private const val FLOATING = 1 shl 2
 
-@Suppress("nothing_to_inline")
-private inline fun rightGutter(section: SectionState, autoWidth: Int = 0)
-        = if (section.baseConfig.gutterRight == GUTTER_AUTO) autoWidth else section.baseConfig.gutterRight
-
-@Suppress("nothing_to_inline")
-private inline fun leftGutter(section: SectionState, autoWidth: Int = 0)
-        = if (section.baseConfig.gutterLeft == GUTTER_AUTO) autoWidth else section.baseConfig.gutterLeft
-
 internal object HeaderLayoutManager : SectionLayoutManager<SectionState> {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState)
             = selectHeaderLayout(section).onLayout(helper, section, layoutState)
@@ -54,7 +46,7 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         val state = layoutState as HeaderLayoutState
         var y = -state.overdraw
         if (helper.moreToLayout(0, section)) {
-            section.layoutContent(helper, leftGutter(section), y, helper.layoutWidth - rightGutter(section))
+            section.layoutContent(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
             y += section.height
         }
         state.tailPosition = 0
@@ -71,8 +63,8 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         if (toFill > 0) {
             // Fill space starting at overdraw.
             val y = -state.overdraw
-            val filled = section.fillContentTop(toFill, leftGutter(section), y,
-                                                helper.layoutWidth - rightGutter(section), helper)
+            val filled = section.fillContentTop(toFill, section.leftGutter(), y,
+                                                helper.layoutWidth - section.rightGutter(), helper)
             // Update partial state and compute dy filled.
             state.overdraw += filled
         }
@@ -92,8 +84,8 @@ private object NoHeaderHlm : SectionLayoutManager<SectionState> {
         var filled = (state.bottom - helper.layoutLimit).takeIf { it > 0} ?: 0
         var toFill = dy - filled
         if (toFill > 0) {
-            section.fillContentBottom(toFill, leftGutter(section), state.bottom,
-                                      helper.layoutWidth - rightGutter(section), helper).let {
+            section.fillContentBottom(toFill, section.leftGutter(), state.bottom,
+                                      helper.layoutWidth - section.rightGutter(), helper).let {
                 toFill -= it
                 filled += it
                 state.bottom += it
@@ -135,7 +127,7 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         }
 
         if (helper.moreToLayout(0, section)) {
-            section.layoutContent(helper, leftGutter(section), y, helper.layoutWidth - rightGutter(section))
+            section.layoutContent(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
 
             y += section.height
             state.tailPosition = 1
@@ -155,8 +147,8 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
         if (toFill > 0 && state.headPosition > 0) {
             if (state.headPosition >= 1) {
                 // Fill content
-                section.fillContentTop(toFill, leftGutter(section), -state.overdraw,
-                                       helper.layoutWidth - rightGutter(section), helper).let {
+                section.fillContentTop(toFill, section.leftGutter(), -state.overdraw,
+                                       helper.layoutWidth - section.rightGutter(), helper).let {
                     state.overdraw += it
                     toFill -= it
                     state.tailPosition = 1
@@ -210,8 +202,8 @@ private object InlineHlm : SectionLayoutManager<SectionState> {
             /*
              * NOTE: Filled will always be equal to toFill, because fillContent is always tracking it's own overdraw.
              */
-            section.fillContentBottom(toFill, leftGutter(section), state.bottom,
-                                      helper.layoutWidth - rightGutter(section), helper).let {
+            section.fillContentBottom(toFill, section.leftGutter(), state.bottom,
+                                      helper.layoutWidth - section.rightGutter(), helper).let {
                 toFill -= it
                 filled += it
                 state.bottom += it

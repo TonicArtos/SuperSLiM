@@ -4,14 +4,16 @@ import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.adapter.HeaderStyle
+import com.tonicartos.superslim.adapter.FooterStyle
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 class FlexboxSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
                            gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                            @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                           @FooterStyle footerStyle: Int = SectionConfig.DEFAULT_FOOTER_STYLE,
                            paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) :
-        SectionConfig(gutterStart, gutterEnd, headerStyle, paddingStart, paddingTop, paddingEnd, paddingBottom) {
+        SectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle, paddingStart, paddingTop, paddingEnd, paddingBottom) {
 
     override fun onMakeSection(oldState: SectionState?): SectionState = FlexSectionState(this, oldState)
 

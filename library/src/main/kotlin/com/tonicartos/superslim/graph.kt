@@ -99,6 +99,7 @@ interface Child {
 abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
                              gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                              @HeaderStyle @JvmField var headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
+                             @FooterStyle @JvmField var footerStyle: Int = SectionConfig.DEFAULT_FOOTER_STYLE,
                              paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) {
     var gutterStart = 0
         get() = field
@@ -188,10 +189,48 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
          */
         const val HEADER_TAIL = 1 shl 5
 
+        /**
+         * Footer is positioned at the head of the section content. Content starts below the footer. Sticky footers
+         * stick to the top of the layout area until the entire area has scrolled off the screen. Use FOOTER_INLINE for
+         * a footer style which is otherwise the same without the sticky property.
+         */
+        const val FOOTER_STICKY = 1
+
+        /**
+         * Footer is positioned at the head of the section content. Content starts below the footer, but the footer
+         * never becomes sticky. Linear footers can not float and ignores that flag if set.
+         */
+        const val FOOTER_INLINE = 1 shl 1
+
+        /**
+         * Footer is placed inside the gutter at the start edge of the section. This is the left for LTR locales.
+         * Gutter footers are always sticky.
+         */
+        const val FOOTER_START = 1 shl 2
+
+        /**
+         * Footer is placed inside the gutter at the end edge of the section. This is the right for LTR locales.
+         * Gutter footers are always sticky.
+         */
+        const val FOOTER_END = 1 shl 3
+
+        /**
+         * Float footer above the content. Content starts at the same top edge as the footer. Floating footers are
+         * always sticky in the same way as FOOTER_STICKY.
+         */
+        const val FOOTER_FLOAT = 1 shl 4
+
+        /**
+         * Footer is placed at the tail of the section. If sticky, it will stick to the bottom edge rather than the
+         * top. Combines with all other options.
+         */
+        const val FOOTER_TAIL = 1 shl 5
+
         const val GUTTER_AUTO = -1
 
         internal const val DEFAULT_GUTTER = GUTTER_AUTO
         internal const val DEFAULT_HEADER_STYLE = HEADER_STICKY
+        internal const val DEFAULT_FOOTER_STYLE = FOOTER_STICKY
     }
 }
 
