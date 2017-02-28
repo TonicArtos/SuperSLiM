@@ -6,7 +6,9 @@ import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.*
 import com.tonicartos.superslim.SectionConfig.Companion.GUTTER_AUTO
+import com.tonicartos.superslim.internal.layout.FooterLayoutManager
 import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
+import com.tonicartos.superslim.internal.layout.PaddingLayoutManager
 import java.util.*
 
 internal class GraphManager(adapter: AdapterContract<*>) {
@@ -326,18 +328,24 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             tailPosition = old.tailPosition
         }
 
-        override fun toString(): String {
-            return "(headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdrawTop = $overdrawTop)"
+        override fun toString() = "($string)"
+
+
+        protected open val string get() = "headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw"
+
+        open fun layout(helper: LayoutHelper, section: SectionState, state: SectionState.LayoutState) {
+            section.doLayout(helper, state)
+            helper.numViews += state.numViews
         }
     }
 
-    internal class HeaderLayoutState : LayoutState {
-        constructor() : super()
+    internal abstract class InternalLayoutState : LayoutState() {
+        abstract fun anchor(section: SectionState): Pair<Int, Int>
+    }
 
-        var top = 0
-
+    internal abstract class HfCommonLayoutState : InternalLayoutState() {
         /**
-         * The current state of the header. State values are header implementation dependent.
+         * The current state of the header or footer. Values are HLM/FLM implementation dependent.
          */
         var state = 0
 
@@ -346,23 +354,62 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state = 0
         }
 
-        override fun toString() = "(state = $state, headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdrawTop = $overdrawTop)"
+        override val string: String
+            get() = "state = $state, ${super.string}"
+    }
+
+    internal class PaddingLayoutState : InternalLayoutState() {
+        var paddingTop = 0
+
+        override fun anchor(section: SectionState) = if (overdraw < paddingTop) {
+            section.positionInAdapter to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun layout(helper: LayoutHelper, section: SectionState, state: SectionState.LayoutState) {
+            PaddingLayoutManager.onLayout(helper, section, state)
+        }
+    }
+
+    internal class HeaderLayoutState : HfCommonLayoutState() {
+        override fun anchor(section: SectionState) = if (section.hasHeader && headPosition == 0) {
+            section.positionInAdapter to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun layout(helper: LayoutHelper, section: SectionState, state: SectionState.LayoutState) {
+            HeaderLayoutManager.onLayout(helper, section, state)
+        }
+    }
+
+    internal class FooterLayoutState : HfCommonLayoutState() {
+        override fun anchor(section: SectionState) = if (section.hasFooter && headPosition == 1) {
+            section.positionInAdapter + section.totalItems to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun layout(helper: LayoutHelper, section: SectionState, state: SectionState.LayoutState) {
+            FooterLayoutManager.onLayout(helper, section, state)
+        }
     }
 
     internal val anchor: Pair<Int, Int> get() =
-    layoutState.babushka { hlmState ->
-        if (hasHeader && hlmState.headPosition == 0) {
-            positionInAdapter to (hlmState as HeaderLayoutState).top
-        } else {
-            babushka { slmState ->
-                findAndWrap(slmState.headPosition, { it.anchor }, { it to slmState.overdrawTop })
-            }
-        }
+    layoutState.babushka { state ->
+        (state as? InternalLayoutState)
+                ?.anchor(this@SectionState)
+                ?: let { findAndWrap(state.headPosition, { it.anchor }, { it to state.overdraw }) }
     }
 
     override fun toString() = "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
 //    override fun toString() = subsections.foldIndexed("Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}") { i, s, it -> s + "\n$i $it".replace("\n", "\n\t") }
 
+    /**
+     * A stack of states. Plm, hlm, flm, slm. Except in special circumstances only the top one should be accessed at
+     * a time.
+     */
     private val layoutState = Stack<LayoutState>()
 
     internal val height: Int
@@ -420,14 +467,15 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
     init {
-        // Important!!
-        // Sequence of hlmState and slmState in layoutState stack is hardcoded to positions 0 and 1 respectively.
-        // This must hold true between layout passes.
         layoutState.push(LayoutState())
+        layoutState.push(FooterLayoutState())
         layoutState.push(HeaderLayoutState())
+        layoutState.push(PaddingLayoutState())
         if (oldState != null) {
             layoutState[0].copy(oldState.layoutState[0])
             layoutState[1].copy(oldState.layoutState[1])
+            layoutState[2].copy(oldState.layoutState[2])
+            layoutState[3].copy(oldState.layoutState[3])
             totalItems = oldState.totalItems
             numChildren = oldState.numChildren
             subsections = oldState.subsections
@@ -546,6 +594,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * Layout
      *************************/
 
+    /**
+     * First call into a section.
+     */
     fun layout(parentHelper: LayoutHelper, left: Int, top: Int, right: Int) {
         if (totalItems == 0) {
             layoutState.peek().reset()
@@ -565,9 +616,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             parentHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom,
                                              parentHelper.numViews, state) { helper ->
                 if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
-
-                // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
-                HeaderLayoutManager.onLayout(helper, this@SectionState, state)
+                state.layout(helper, this@SectionState, state)
                 parentHelper.numViews += state.numViews
             }
 
@@ -575,7 +624,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     /**
-     * Root layout.
+     * First call into the root section. Comes from graph manager.
      */
     internal fun layout(rootHelper: RootLayoutHelper, left: Int, top: Int, right: Int) {
         if (totalItems == 0) {
@@ -597,8 +646,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
             rootHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, 0,
                                            state) { helper ->
-                // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
-                HeaderLayoutManager.onLayout(helper, this@SectionState, state)
+                state.layout(helper, this@SectionState, state)
             }
         }
     }
@@ -616,10 +664,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state.numViews = 0
 
             if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
-
             helper.useSubsectionHelper(top, left, right, 0, 0, helper.numViews, state) { helper ->
-                doLayout(helper, state)
-                helper.numViews += state.numViews
+                state.layout(helper, this@SectionState, state)
             }
         }
     }
@@ -637,10 +683,18 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 positionInAdapter + totalItems <= requestedAdapterPosition) {
             return false
         }
+        layoutState.plm { it.headPosition = 0 }
 
         // Check if position is header.
         if (hasHeader && requestedAdapterPosition == positionInAdapter) {
-            layoutState.peek().headPosition = 0
+            layoutState.hlm { it.headPosition = 0 }
+            return true
+        }
+
+        // Check if position is footer.
+        if (hasFooter && requestedAdapterPosition == positionInAdapter + totalItems - 1) {
+            layoutState.hlm { it.headPosition = 1 }
+            layoutState.flm { it.headPosition = 1 }
             return true
         }
 
@@ -648,16 +702,18 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
          * Position is within content. It may be in a subsection or an item of this section. Calculating the child
          * position is a little difficult as it must account for interleaved child items and subsections.
          */
-        var offset = positionInAdapter + if (hasHeader) 1 else 0
-        var childrenAccountedFor = 0 + if (hasHeader) 1 else 0
+        val headerCount = if (hasHeader) 1 else 0
+        var offset = positionInAdapter + headerCount
+        var childrenAccountedFor = 0 + headerCount
 
         for ((i, section) in subsections.withIndex()) {
             if (requestedAdapterPosition < section.positionInAdapter) {
                 // Position is before this subsection, so it must be a child item not a member of a subsection.
-                layoutState.babushka {
-                    it.headPosition = 1
-                    peek().headPosition =
-                            childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
+                layoutState.hlm { it.headPosition = 1 }
+                layoutState.flm { it.headPosition = 0 }
+                layoutState.slm {
+                    it.headPosition =
+                            childrenAccountedFor + requestedAdapterPosition - offset - headerCount
                 }
                 return true
             }
@@ -667,10 +723,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
             if (section.setLayoutPositionFromAdapter(requestedAdapterPosition)) {
                 // Requested position was within the subsection so store it as the layout position of this section.
-                layoutState.babushka {
-                    it.headPosition = 1
-                    peek().headPosition = childrenAccountedFor - if (hasHeader) 1 else 0
-                }
+                layoutState.hlm { it.headPosition = 1 }
+                layoutState.flm { it.headPosition = 0 }
+                layoutState.slm { it.headPosition = childrenAccountedFor - headerCount }
                 return true
             }
 
@@ -682,15 +737,17 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
 
         // Position must be a child item after the last subsection.
-        layoutState.babushka {
-            it.headPosition = 1
-            peek().headPosition = childrenAccountedFor + requestedAdapterPosition - offset - if (hasHeader) 1 else 0
+        layoutState.hlm { it.headPosition = 1 }
+        layoutState.flm { it.headPosition = 0 }
+        layoutState.slm {
+            peek().headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
         }
         return true
     }
 
     internal infix operator fun contains(viewHolder: RecyclerView.ViewHolder): Boolean =
-            viewHolder.layoutPosition >= positionInAdapter && viewHolder.layoutPosition < positionInAdapter + totalItems
+            viewHolder.layoutPosition >= positionInAdapter &&
+                    viewHolder.layoutPosition < positionInAdapter + totalItems
 
     /*************************
      * Scrolling
