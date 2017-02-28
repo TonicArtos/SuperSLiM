@@ -68,9 +68,6 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionRemovals()
         }
 
-        // Fill padding
-        fillTop(0, helper)
-
 //        if (hasRequestedPosition && requestedPositionOffset != 0) {
 //            scrollBy(requestedPositionOffset, helper)
 //        }
@@ -291,12 +288,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         /**
          * Area drawn past y0 and dy.
          */
-        var overdrawTop = 0
-
-        /**
-         * Area drawn past bottom and dy.
-         */
-        var overdrawBottom = 0
+        var overdraw = 0
 
         /**
          * Reset layout state.
@@ -307,8 +299,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             tailPosition = UNSET_OR_BEFORE_CHILDREN
             left = 0
             right = 0
-            overdrawTop = 0
-            overdrawBottom = 0
+            overdraw = 0
             numViews = 0
         }
 
@@ -536,7 +527,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state.left = left + paddingLeft
             state.right = right - paddingRight
             state.numViews = 0
-            parentHelper.useSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop, paddingBottom,
+            parentHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom,
                                              parentHelper.numViews, state) { helper ->
                 if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
 
@@ -569,8 +560,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state.numViews = 0
 
             if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
-            rootHelper.useSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop,
-                                           paddingBottom, 0, state) { helper ->
+            rootHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, 0,
+                                           state) { helper ->
                 // Insert HLM to handle headers. HLM will pass back layout to SLM with a call to layoutContent.
                 HeaderLayoutManager.onLayout(helper, this@SectionState, state)
             }
@@ -678,7 +669,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 val paddingTop = rootHelper.basePaddingTop
                 val paddingBottom = rootHelper.basePaddingBottom
 
-                rootHelper.useSubsectionHelper(paddingTop, state.left, state.right, paddingTop, paddingBottom, 0,
+                rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0,
                                                state) { helper ->
                     if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
                     HeaderLayoutManager.onFillTop(dy, helper, this@SectionState, state)
@@ -690,7 +681,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 val paddingTop = rootHelper.basePaddingTop
                 val paddingBottom = rootHelper.basePaddingBottom
 
-                rootHelper.useSubsectionHelper(paddingTop, state.left, state.right, paddingTop, paddingBottom, 0,
+                rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0,
                                                state) { helper ->
                     if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
                     HeaderLayoutManager.onFillBottom(dy, helper, this@SectionState, state)
@@ -733,8 +724,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 state.left = left + paddingLeft
                 state.right = right - paddingRight
 
-                helper.useSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop, paddingBottom,
-                                           helper.numViews, state) {
+                helper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, helper.numViews,
+                                           state) {
                     if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = NUM_HEADER_CHILDREN
                     HeaderLayoutManager.onFillTop(dy, it, this@SectionState, state)
                 }
@@ -750,8 +741,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 state.left = left + paddingLeft
                 state.right = right - paddingRight
 
-                helper.useSubsectionHelper(top + paddingTop, state.left, state.right, paddingTop, paddingBottom,
-                                           helper.numViews, state) {
+                helper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, helper.numViews,
+                                           state) {
                     HeaderLayoutManager.onFillBottom(dy, it, this@SectionState, state)
                 }
             }

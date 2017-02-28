@@ -123,7 +123,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun scrollToPosition(position: Int) {
         graph?.apply {
             requestedPosition = position
-            requestedPositionOffset = paddingTop
+            requestedPositionOffset = 0
             requestLayout()
         }
     }
@@ -131,7 +131,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     fun scrollToPositionWithOffset(position: Int, offset: Int) {
         graph?.apply {
             requestedPosition = position
-            requestedPositionOffset = offset + paddingTop
+            requestedPositionOffset = offset
             requestLayout()
         }
     }

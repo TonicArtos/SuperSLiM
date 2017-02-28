@@ -18,7 +18,7 @@ interface SectionLayoutManager<in T : SectionState> {
 
     /**
      * Fill distance dy at top of the section. The layout state may already contain some filled distance recorded as
-     * overdrawTop.
+     * overdraw.
      *
      * @param dy Distance to fill.
      * @param helper Layout helper.
@@ -31,7 +31,7 @@ interface SectionLayoutManager<in T : SectionState> {
 
     /**
      * Fill distance dy at bottom of the section. The layout state may already contain some filled distance recorded as
-     * overdrawTop.
+     * overdraw.
      *
      * @param dy Distance to fill.
      * @param helper Layout helper.
