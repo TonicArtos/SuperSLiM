@@ -193,11 +193,18 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events",
                                               "addItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
         val section = sectionIndex[eventSectionData.section]
-        if (eventSectionData.action and EventSectionData.HEADER > 0) {
-            if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add header operation.")
-            section.addHeader()
-        } else {
-            section.addItems(eventSectionData.start, itemCount)
+        when {
+            eventSectionData.action and EventSectionData.HEADER > 0 -> {
+                if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add header operation.")
+                section.addHeader()
+            }
+            eventSectionData.action and EventSectionData.FOOTER > 0 -> {
+                if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add footer operation.")
+                section.addFooter()
+            }
+            else                                                    -> {
+                section.addItems(eventSectionData.start, itemCount)
+            }
         }
     }
 
@@ -205,11 +212,20 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events",
                                               "removeItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
         val section = sectionIndex[eventSectionData.section]
-        if (eventSectionData.action and EventSectionData.HEADER > 0) {
-            if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for remove header operation.")
-            section.removeHeader()
-        } else {
-            section.removeItems(positionStart, itemCount)
+        when {
+            eventSectionData.action and EventSectionData.HEADER > 0 -> {
+                if (itemCount > 1) throw IllegalArgumentException(
+                        "Expected item count of 1 for remove header operation.")
+                section.removeHeader()
+            }
+            eventSectionData.action and EventSectionData.FOOTER > 0 -> {
+                if (itemCount > 1) throw IllegalArgumentException(
+                        "Expected item count of 1 for remove footer operation.")
+                section.removeFooter()
+            }
+            else                                                    -> {
+                section.removeItems(positionStart, itemCount)
+            }
         }
     }
 

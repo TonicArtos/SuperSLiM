@@ -380,6 +380,18 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         itemChangeHelper.queueSectionHeaderRemoved(section, 0, adapterPosition)
     }
 
+    fun notifySectionFooterAdded(section: Int, start: Int, adapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionFooterAdded(section: $section, position: $adapterPosition)")
+        itemChangeHelper.queueSectionFooterAdded(section, start, adapterPosition)
+    }
+
+    fun notifySectionFooterRemoved(section: Int, start: Int, adapterPosition: Int) {
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
+                                               "notifySectionFooterRemoved(section: $section, position: $adapterPosition)")
+        itemChangeHelper.queueSectionFooterRemoved(section, start, adapterPosition)
+    }
+
     fun notifySectionItemsAdded(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
         if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
                                                "notifySectionItemsAdded(section: $section, positionStart: $start, itemCount: $itemCount)")

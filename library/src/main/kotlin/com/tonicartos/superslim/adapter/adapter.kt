@@ -92,11 +92,13 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
 
     fun getSectionWithId(id: ID): Section? = sectionLookup[id]
 
-    @JvmOverloads fun createSection(id: ID, header: Item? = null,
+    @JvmOverloads fun createSection(id: ID, header: Item? = null, footer: Item? = null,
                                     config: SectionConfig = LinearSectionConfig()): Section {
         val section = Section()
         config.headerStyle = SectionConfig.HEADER_INLINE
+        config.footerStyle = SectionConfig.FOOTER_INLINE
         section.header = header
+        section.footer = footer
         section.configuration = config
         registerSection(id, section)
         return section
@@ -145,6 +147,9 @@ internal interface SectionContract {
     fun notifySectionHeaderInserted(section: Section)
     fun notifySectionHeaderRemoved(section: Section)
 
+    fun notifySectionFooterInserted(section: Section, positionStart: Int)
+    fun notifySectionFooterRemoved(section: Section, positionStart: Int)
+
     fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
     fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
     fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section,
@@ -178,6 +183,14 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
 
     final override fun notifySectionHeaderRemoved(section: Section) {
         layoutManager.notifySectionHeaderRemoved(section.id, section.positionInAdapter)
+    }
+
+    final override fun notifySectionFooterInserted(section: Section, positionStart: Int) {
+        layoutManager.notifySectionFooterAdded(section.id, positionStart, section.positionInAdapter)
+    }
+
+    final override fun notifySectionFooterRemoved(section: Section, positionStart: Int) {
+        layoutManager.notifySectionFooterRemoved(section.id, positionStart, section.positionInAdapter)
     }
 
     final override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int,
@@ -268,3 +281,13 @@ class OnlySupportsOneRecyclerViewException : RuntimeException(
         SectionConfig.HEADER_TAIL.toLong())
 @Retention(AnnotationRetention.SOURCE)
 annotation class HeaderStyle
+
+@IntDef(SectionConfig.FOOTER_END.toLong(),
+        SectionConfig.FOOTER_STICKY.toLong(),
+        SectionConfig.FOOTER_INLINE.toLong(),
+        SectionConfig.FOOTER_START.toLong(),
+        SectionConfig.FOOTER_END.toLong(),
+        SectionConfig.FOOTER_FLOAT.toLong(),
+        SectionConfig.FOOTER_TAIL.toLong())
+@Retention(AnnotationRetention.SOURCE)
+annotation class FooterStyle

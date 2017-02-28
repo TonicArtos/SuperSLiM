@@ -104,18 +104,21 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
      * Header management
      *************************/
 
-    private var _header: Item? = null
-
-    var header: Item?
-        get() = _header
+    var header: Item? = null
         set(value) {
             if (value == null) {
-                removeHeader()
+                field?.let {
+                    it.removeItemsFromAdapter()
+                    contract?.notifySectionHeaderRemoved(this)
+                    totalItemsChanged(-1)
+                    children.forEach { child -> child.peersItemsBeforeThis -= 1 }
+                    field = null
+                }
                 return
             }
             initChild(0, value)
             value.peersItemsBeforeThis = 0
-            if (header != null) {
+            if (field != null) {
                 itemManager?.set(positionInAdapter, value)
             } else {
                 itemManager?.insert(positionInAdapter, value)
@@ -123,18 +126,40 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
                 children.forEach { it.peersItemsBeforeThis += 1 }
                 totalItemsChanged(1)
             }
-            _header = value
+            field = value
+        }
+
+    var footer: Item? = null
+        set(value) {
+            if (value == null) {
+                field?.let {
+                    it.removeItemsFromAdapter()
+                    contract?.notifySectionFooterRemoved(this, itemCount - 1)
+                    totalItemsChanged(-1)
+                    field = null
+                }
+                return
+            }
+            initChild(0, value)
+            value.peersItemsBeforeThis = itemCount
+            if (field != null) {
+                itemManager?.set(positionInAdapter, value)
+            } else {
+                itemManager?.insert(positionInAdapter, value)
+                contract?.notifySectionFooterInserted(this, itemCount)
+                totalItemsChanged(1)
+            }
+            field = value
         }
 
     fun removeHeader() {
-        header?.let { header ->
-            header.removeItemsFromAdapter()
-            contract?.notifySectionHeaderRemoved(this)
-            totalItemsChanged(-1)
-            children.forEach { child -> child.peersItemsBeforeThis -= 1 }
-            _header = null
-        }
+        header = null
     }
+
+    fun removeFooter() {
+        footer = null
+    }
+
 
     /*************************
      * Expandable section stuff
@@ -153,26 +178,33 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             numItemsAdded += child.itemCount
         }
         totalItemsChanged(numItemsAdded)
+        footer = collapsedFooter
+        collapsedFooter = null
         collapsed = false
     }
 
     private fun collapseChildren() {
-        val jumpHeader = if (header == null) 0 else 1
-        val numItemsToRemove = itemCount - jumpHeader
-        itemManager?.removeRange(positionInAdapter + jumpHeader, numItemsToRemove)
-        contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + jumpHeader, numItemsToRemove)
+        val headerCount = if (header == null) 0 else 1
+        val footerCount = if (footer == null) 0 else 1
+        val numItemsToRemove = itemCount - headerCount - footerCount
+        itemManager?.removeRange(positionInAdapter + headerCount + footerCount, numItemsToRemove)
+        contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + headerCount + footerCount, numItemsToRemove)
         for (it in children) {
             it.reset()
         }
         totalItemsChanged(-numItemsToRemove)
+        collapsedFooter = footer
+        removeFooter()
         collapsed = true
     }
+
+    private var collapsedFooter: Item? = null
 
     /*************************
      * Item management
      *************************/
 
-    override internal fun insertItemsToAdapter() {
+    override fun insertItemsToAdapter() {
         if (id == -1) {
             id = contract?.notifySectionInserted(this) ?: -1
         }
@@ -190,7 +222,7 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         }
     }
 
-    override internal fun removeItemsFromAdapter() {
+    override fun removeItemsFromAdapter() {
         contract?.notifySectionRemoved(this)
         id = -1
 
@@ -395,6 +427,7 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         if (change == 0) return
 
         itemCount += change
+        footer?.let { it.peersItemsBeforeThis += change}
         parent?.totalItemsChangedInChild(positionInParent, change)
     }
 
@@ -471,6 +504,14 @@ internal class GraphImpl() : Graph, SectionContract {
 
     override fun notifySectionHeaderRemoved(section: Section) {
         contract?.notifySectionHeaderRemoved(section)
+    }
+
+    override fun notifySectionFooterInserted(section: Section, positionStart: Int) {
+        contract?.notifySectionFooterInserted(section, positionStart)
+    }
+
+    override fun notifySectionFooterRemoved(section: Section, positionStart: Int) {
+        contract?.notifySectionFooterRemoved(section, positionStart)
     }
 
     override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {

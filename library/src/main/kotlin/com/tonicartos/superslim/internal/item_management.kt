@@ -1,16 +1,17 @@
 package com.tonicartos.superslim.internal
 
-import android.util.Log
 import java.util.*
 
 private const val HEADER = 1
 private const val ADD = 1 shl 1
 private const val REMOVE = 1 shl 2
 private const val MOVE = 1 shl 3
+private const val FOOTER = 1 shl 4
 
 private val reusedEvent = EventSectionData(0, 0, 0, 0, 0)
 
-internal data class EventSectionData(var action: Int, var section: Int, var position1: Int, var otherSection: Int, var position2: Int) {
+internal data class EventSectionData(var action: Int, var section: Int, var position1: Int, var otherSection: Int,
+                                     var position2: Int) {
     val start: Int get() = position1
     val fromSection: Int get() = section
     val from: Int get() = position1
@@ -19,6 +20,7 @@ internal data class EventSectionData(var action: Int, var section: Int, var posi
 
     companion object {
         const val HEADER = com.tonicartos.superslim.internal.HEADER
+        const val FOOTER = com.tonicartos.superslim.internal.FOOTER
         const val ADD = com.tonicartos.superslim.internal.ADD
         const val REMOVE = com.tonicartos.superslim.internal.REMOVE
         const val MOVE = com.tonicartos.superslim.internal.MOVE
@@ -28,14 +30,19 @@ internal data class EventSectionData(var action: Int, var section: Int, var posi
             opCode and REMOVE > 0 -> "REMOVE"
             opCode and MOVE > 0   -> "MOVE"
             else                  -> "Unknown"
-        } + if (opCode and HEADER > 0) "|HEADER" else ""
+        } + when {
+            opCode and HEADER > 0 -> "|HEADER"
+            opCode and FOOTER > 0 -> "|FOOTER"
+            else                  -> ""
+        }
     }
 
     override fun toString(): String {
         if (action and MOVE == 0) {
             return "EventData(cmd = ${stringify(action)}, section = $section, start = $start)"
         } else {
-            return "EventData(cmd = ${stringify(action)}, fromSection = $fromSection, from = $from, toSection = $toSection, to = $to)"
+            return "EventData(cmd = ${stringify(
+                    action)}, fromSection = $fromSection, from = $from, toSection = $toSection, to = $to)"
         }
     }
 }
@@ -62,6 +69,14 @@ internal class ItemChangeHelper {
 
     fun queueSectionHeaderRemoved(section: Int, start: Int, startAp: Int) {
         SimpleOp.acquire(REMOVE or HEADER, section, start, startAp, 1).insertInto(ops)
+    }
+
+    fun queueSectionFooterAdded(section: Int, start: Int, startAp: Int) {
+        SimpleOp.acquire(ADD or FOOTER, section, start, startAp, 1).insertInto(ops)
+    }
+
+    fun queueSectionFooterRemoved(section: Int, start: Int, startAp: Int) {
+        SimpleOp.acquire(REMOVE or FOOTER, section, start, startAp, 1).insertInto(ops)
     }
 
     fun queueSectionItemsAdded(section: Int, start: Int, startAp: Int, itemCount: Int) {
@@ -113,7 +128,8 @@ internal class ItemChangeHelper {
             }
         }
         // Should have found a match
-        throw NoMatchedOpException("Could not find a matching op for cmd = ${EventSectionData.stringify(opCode)}, positionStart = $positionStart, itemCount = $itemCount")
+        throw NoMatchedOpException("Could not find a matching op for cmd = ${EventSectionData.stringify(
+                opCode)}, positionStart = $positionStart, itemCount = $itemCount")
     }
 }
 
@@ -135,7 +151,8 @@ private abstract class Op {
     abstract fun release()
 }
 
-private class SimpleOp(private var _cmd: Int, var section: Int, var start: Int, var startAp: Int, var itemCount: Int) : Op() {
+private class SimpleOp(private var _cmd: Int, var section: Int, var start: Int, var startAp: Int,
+                       var itemCount: Int) : Op() {
     companion object {
         private val pool = arrayListOf<SimpleOp>()
 
@@ -178,7 +195,8 @@ private class SimpleOp(private var _cmd: Int, var section: Int, var start: Int, 
     }
 }
 
-private class MoveOp private constructor(var fromSection: Int, var from: Int, var fromAp: Int, var toSection: Int, var to: Int, var toAp: Int) : Op() {
+private class MoveOp private constructor(var fromSection: Int, var from: Int, var fromAp: Int, var toSection: Int,
+                                         var to: Int, var toAp: Int) : Op() {
     companion object {
         private val pool = arrayListOf<MoveOp>()
 
@@ -276,7 +294,8 @@ private class MoveOp private constructor(var fromSection: Int, var from: Int, va
         } else if (fromAp < remove.startAp + remove.itemCount) {
             // Move is in middle of remove so it needs to be split.
             val remaining = remove.startAp + remove.itemCount - fromAp
-            SimpleOp.acquire(REMOVE, remove.section, if (fromSameSection) from + 1 else from, fromAp + 1, remaining).insertInto(ops)
+            SimpleOp.acquire(REMOVE, remove.section, if (fromSameSection) from + 1 else from, fromAp + 1,
+                             remaining).insertInto(ops)
             remove.itemCount = fromAp - remove.startAp
         }
 

@@ -1,6 +1,7 @@
 package com.tonicartos.superslim
 
 import com.tonicartos.superslim.adapter.HeaderStyle
+import com.tonicartos.superslim.adapter.FooterStyle
 import com.tonicartos.superslim.internal.SectionState
 
 inline fun <T : Child, R> T.use(block: T.() -> R): R {
