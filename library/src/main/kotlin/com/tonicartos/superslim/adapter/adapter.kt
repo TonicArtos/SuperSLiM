@@ -3,7 +3,7 @@ package com.tonicartos.superslim.adapter
 import android.support.annotation.IntDef
 import android.support.v7.widget.RecyclerView
 import com.tonicartos.superslim.*
-import com.tonicartos.superslim.internal.layout.LinearSectionConfig
+import com.tonicartos.superslim.layout.LinearSectionConfig
 import java.util.*
 
 interface Graph {

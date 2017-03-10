@@ -13,12 +13,14 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
     private var helperPool = LayoutHelperPool()
 
     internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
-                                         viewsBefore: Int, layoutState: LayoutState) =
-            helperPool.acquire(this, left, y, right - left, paddingTop, paddingBottom, viewsBefore, layoutState)
+                                         viewsBefore: Int, layoutState: LayoutState,
+                                         tellParentViewsChangedBy: (Int) -> Unit)
+            = helperPool.acquire(this, left, y, right - left, paddingTop, paddingBottom, viewsBefore, layoutState,
+                                 tellParentViewsChangedBy)
 
     inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                        viewsBefore: Int, layoutState: LayoutState, block: (LayoutHelper) -> T): T {
-        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState)
+        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState, {})
         val r = block(helper)
         helper.release()
         return r
@@ -36,18 +38,19 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         layoutLimitExtension += ignoredHeight
     }
 
-    override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n".replace(
-            "\n", "\n\t")
+    override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n"
+            .replace("\n", "\n\t")
 
     private class LayoutHelperPool {
         private val pool = arrayListOf<LayoutHelper>()
 
         fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                    viewsBefore: Int, layoutState: LayoutState) =
+                    viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit) =
                 if (pool.isEmpty()) {
-                    LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState)
+                    LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
+                                 tellParentViewsChangedBy)
                 } else {
-                    pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState)
+                    pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState, tellParentViewsChangedBy)
                 }
 
         fun release(helper: LayoutHelper) {
@@ -118,6 +121,9 @@ internal interface ManagerHelper {
     fun addDisappearingView(child: View)
     fun addDisappearingView(child: View, index: Int)
 
+    fun removeView(child: View)
+    fun removeViewAt(position: Int)
+
     val supportsPredictiveItemAnimations: Boolean
 }
 
@@ -141,7 +147,7 @@ internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
     val basePaddingBottom: Int
 
     fun attachViewToPosition(position: Int, view: View)
-    fun detachViewAtPosition(position: Int): View
+    fun detachViewAtPosition(position: Int): View?
 
     fun getTransformedPaddingLeft(sectionConfig: SectionConfig): Int
     fun getTransformedPaddingTop(sectionConfig: SectionConfig): Int
@@ -156,6 +162,8 @@ internal interface ReadLayoutHelper {
     fun getBottom(child: View): Int
     fun getMeasuredWidth(child: View): Int
     fun getMeasuredHeight(child: View): Int
+
+    fun getAttachedViewAt(position: Int): View
 
     /**
      * Width of the layout area.

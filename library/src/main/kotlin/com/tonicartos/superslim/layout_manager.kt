@@ -59,7 +59,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
 
         private const val ENABLE_NOTIFICATION_LOGGING = false
         private const val ENABLE_ITEM_CHANGE_LOGGING = false
-        private const val ENABLE_LAYOUT_LOGGING = false
+        private const val ENABLE_LAYOUT_LOGGING = true
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
@@ -72,6 +72,10 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     private val recyclerHelper = RecyclerWrapper()
     private val stateHelper = StateWrapper()
 
+    override fun addView(child: View, index: Int) {
+        Log.d("LM", "add view to index = $index")
+        super.addView(child, index)
+    }
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
         pendingSavedState?.let {
             if (state.itemCount == 0) {
@@ -85,7 +89,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
                 graph?.requestedPositionOffset = it.offset
             }
         } ?: let {
-//            Log.d("SavedSate", "Forced position to 5.")
+            //            Log.d("SavedSate", "Forced position to 5.")
 //            graph?.requestedPosition = 5
         }
 
@@ -128,13 +132,17 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         }
     }
 
-    fun scrollToPositionWithOffset(position: Int, offset: Int) {
-        graph?.apply {
-            requestedPosition = position
-            requestedPositionOffset = offset
-            requestLayout()
-        }
-    }
+    // TODO: Scroll to position with offset.
+//    fun scrollToPositionWithOffset(position: Int, offset: Int) {
+//        graph?.apply {
+//            requestedPosition = position
+//            requestedPositionOffset = offset
+//            requestLayout()
+//        }
+//    }
+
+    // TODO: Custom find views.
+//    override fun findViewByPosition(position: Int) = graph?.findViewByPosition(position, this)
 
     /****************************************************
      * Scroll indicator computation
@@ -292,7 +300,13 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
     override fun getRight(child: View) = getDecoratedRight(child)
     override fun getBottom(child: View) = getDecoratedBottom(child)
 
-    override fun detachViewAtPosition(position: Int) = getChildAt(position).also { detachViewAt(position) }
+    override fun getAttachedViewAt(position: Int): View {
+        Log.d("LM", "getAttachedViewAt = $position")
+        require(position in 0..(childCount - 1))
+        return getChildAt(position)
+    }
+
+    override fun detachViewAtPosition(position: Int) = getChildAt(position)?.also { detachViewAt(position) }
     override fun attachViewToPosition(position: Int, view: View) = attachView(view, position)
     override fun measure(view: View, usedWidth: Int, usedHeight: Int) = measureChildWithMargins(view, usedWidth,
                                                                                                 usedHeight)

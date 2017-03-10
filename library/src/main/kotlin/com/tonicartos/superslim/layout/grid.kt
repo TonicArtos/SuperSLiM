@@ -1,8 +1,8 @@
-package com.tonicartos.superslim.internal.layout
+package com.tonicartos.superslim.layout
 
 import com.tonicartos.superslim.*
-import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.adapter.FooterStyle
+import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
@@ -10,7 +10,8 @@ class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterE
                         @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
                         @FooterStyle footerStyle: Int = SectionConfig.DEFAULT_FOOTER_STYLE,
                         paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) :
-        SectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle, paddingStart, paddingTop, paddingEnd, paddingBottom),
+        SectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle, paddingStart, paddingTop, paddingEnd,
+                      paddingBottom),
         ColumnsSectionConfigurationMixin by ColumnsConfiguration() {
     override fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
 
@@ -22,8 +23,10 @@ class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterE
     }
 }
 
-private class GridSectionState(var configuration: GridSectionConfig, oldState: SectionState? = null) : SectionState(configuration, oldState),
-                                                                                                       ColumnsSectionStateMixin by ColumnsState(configuration) {
+private class GridSectionState(var configuration: GridSectionConfig, oldState: SectionState? = null) :
+        SectionState(configuration, oldState), ColumnsSectionStateMixin by ColumnsState(configuration) {
+    override fun isAtTop(layoutState: LayoutState) = GridSlm.isAtTop(this, layoutState)
+
     override fun doLayout(helper: LayoutHelper, layoutState: LayoutState) {
         resolveColumns(helper)
 
@@ -31,41 +34,51 @@ private class GridSectionState(var configuration: GridSectionConfig, oldState: S
     }
 
     override fun doFillTop(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
-    override fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun doTrimTop(scrolled: Int, helper: LayoutHelper,
+                           layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 
-    override fun doTrimBottom(helper: LayoutHelper, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun doTrimBottom(scrolled: Int, helper: LayoutHelper,
+                              layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 }
 
 private object GridSlm : SectionLayoutManager<GridSectionState> {
+    override fun isAtTop(section: GridSectionState, layoutState: LayoutState): Boolean {
+        TODO("not implemented")
+    }
+
     override fun onLayout(helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
-    override fun onTrimTop(helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun onTrimTop(scrolled: Int, helper: LayoutHelper,
+                           section: GridSectionState,
+                           layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 
-    override fun onTrimBottom(helper: LayoutHelper, section: GridSectionState, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun onTrimBottom(scrolled: Int, helper: LayoutHelper,
+                              section: GridSectionState,
+                              layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 }
 

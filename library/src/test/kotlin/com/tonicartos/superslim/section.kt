@@ -1,7 +1,7 @@
 package com.tonicartos.superslim
 
 import com.tonicartos.superslim.internal.SectionState
-import com.tonicartos.superslim.internal.layout.LinearSectionConfig
+import com.tonicartos.superslim.layout.LinearSectionConfig
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.sameInstance

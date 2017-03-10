@@ -1,76 +1,111 @@
 package com.tonicartos.superslim.internal.layout
 
+import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
-import com.tonicartos.superslim.SectionConfig
-import com.tonicartos.superslim.SectionConfig.Companion.GUTTER_AUTO
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
-import com.tonicartos.superslim.internal.SectionState.PaddingLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
-import com.tonicartos.superslim.use
+import com.tonicartos.superslim.internal.SectionState.PaddingLayoutState
 
 internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
+    override fun isAtTop(section: SectionState, layoutState: LayoutState): Boolean {
+        val state = layoutState as PaddingLayoutState
+        return state.overdraw == 0 && state.paddingTop > 0 || section.atTop
+    }
+
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         val state = layoutState as PaddingLayoutState
-        var y = -state.overdraw
-        if (helper.moreToLayout(0, section)) {
-            section.layoutContent(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
-            y += section.height
+        state.paddingTop = helper.paddingTop
+
+        if (section.atTop) {
+            state.overdraw = 0
+            Log.d("PADDING", "at top")
+        } else {
+            Log.d("PADDING", "not at top")
+            state.overdraw = state.paddingTop
         }
+        var y = state.paddingTop - state.overdraw
+
+        section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
+        y += section.height + helper.paddingBottom
+
         state.tailPosition = 0
         state.tailPosition = 0
         state.bottom = y
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState) : Int {
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         val state = layoutState as PaddingLayoutState
+        state.paddingTop = helper.paddingTop
 
+        var toFill = dy
         // How much distance left to fill.
-        val toFill = dy - state.overdraw
-
-        if (toFill > 0) {
-            // Fill space starting at overdraw.
-            val y = -state.overdraw
-            val filled = section.fillContentTop(toFill, section.leftGutter(), y,
-                                                helper.layoutWidth - section.rightGutter(), helper)
-            // Update partial state and compute dy filled.
-            state.overdraw += filled
-        }
-        val filled = Math.min(dy, state.overdraw)
+        var filled = section.fillTop(toFill, section.leftGutter(), state.paddingTop - state.overdraw,
+                                     helper.layoutWidth - section.rightGutter(), helper)
+        Log.d("PADDING", "filled = $filled, state = $state")
+        toFill -= filled
+        filled += Math.min(toFill, state.overdraw)
+        if (state.overdraw > 0) state.overdraw -= Math.min(toFill, state.overdraw)
 
         // Update state
-        state.overdraw -= filled
-        state.bottom += filled
         state.headPosition = 0
         state.tailPosition = 0
+        state.bottom += filled
         return filled
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        // Always add paddingBottom to bottom of section. We never scroll through it unlike paddingTop so this is a
+        // simple and easy way to manage it. The padding just has to be removed when calling through to the section to
+        // continue filling content, and then re-added once done.
+        Log.d("onFillTop", "limit = ${helper.layoutLimit}, state = $layoutState")
         val state = layoutState as PaddingLayoutState
+        state.paddingTop = helper.paddingTop
 
-        var filled = (state.bottom - helper.layoutLimit).takeIf { it > 0} ?: 0
+        val paddingBottom = helper.paddingBottom
+        val actualBottom = state.bottom - paddingBottom
+        var filled = (actualBottom - helper.layoutLimit).takeIf { it > 0 } ?: 0
         var toFill = dy - filled
         if (toFill > 0) {
-            section.fillContentBottom(toFill, section.leftGutter(), state.bottom,
-                                      helper.layoutWidth - section.rightGutter(), helper).let {
+            section.fillBottom(toFill, section.leftGutter(), actualBottom,
+                               helper.layoutWidth - section.rightGutter(), helper).let {
                 toFill -= it
                 filled += it
                 state.bottom += it
             }
         }
 
-        state.bottom += filled
         state.headPosition = 0
         state.tailPosition = 0
         return Math.min(dy, filled)
     }
 
-    override fun onTrimTop(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
+    override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        Log.d("PADDING", "onTrimTop")
+        val state = layoutState as PaddingLayoutState
+        var filled = 0
+        if (state.overdraw < state.paddingTop) {
+            filled = Math.min(scrolled, state.paddingTop - state.overdraw)
+            state.overdraw += filled
+        }
 
+        val removed = section.trimTop(scrolled - filled, helper, 0)
+        if (helper.numViews == 0) {
+            state.headPosition = -1
+            state.tailPosition = -1
+        }
+        state.bottom -= removed
+        return removed
     }
 
-    override fun onTrimBottom(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-
+    override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
+                              layoutState: LayoutState): Int {
+        Log.d("PADDING", "onTrimBottom")
+        val removed = section.trimBottom(scrolled, helper, 0)
+        if (helper.numViews == 0) {
+            layoutState.headPosition = -1
+            layoutState.tailPosition = -1
+        }
+        return removed
     }
 }

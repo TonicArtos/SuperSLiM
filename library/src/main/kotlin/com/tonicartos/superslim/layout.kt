@@ -1,5 +1,6 @@
 package com.tonicartos.superslim
 
+import android.util.Log
 import android.view.View
 import com.tonicartos.superslim.internal.BaseLayoutHelper
 import com.tonicartos.superslim.internal.RootLayoutHelper
@@ -7,6 +8,12 @@ import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 
 interface SectionLayoutManager<in T : SectionState> {
+
+    /**
+     * Check if the section is at the top.
+     */
+    fun isAtTop(section: T, layoutState: LayoutState): Boolean
+
     /**
      * Layout the section. Layout pass may be pre, post, or normal.
      *
@@ -25,7 +32,7 @@ interface SectionLayoutManager<in T : SectionState> {
      * @param section Section to fill.
      * @param layoutState In/out layout state.
      *
-     * @return How much of dy left to fill.
+     * @return How much filled. Valid values are 0 to dy.
      */
     fun onFillTop(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
 
@@ -37,16 +44,33 @@ interface SectionLayoutManager<in T : SectionState> {
      * @param helper Layout helper.
      * @param section Section to fill.
      * @param layoutState In/out layout state.
+     *
+     * @return How much filled. Valid values are 0 to dy.
      */
     fun onFillBottom(dy: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
 
-    fun onTrimTop(helper: LayoutHelper, section: T, layoutState: LayoutState)
-    fun onTrimBottom(helper: LayoutHelper, section: T, layoutState: LayoutState)
+    /**
+     * Remove views managed by this SectionLayoutManager that are before 0. Remember to update layoutState values accordingly.
+     *
+     * @return Height removed from section.
+     */
+    fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
+
+    /**
+     * Remove views managed by this SectionLayoutManager that are after [LayoutHelper.layoutLimit]. Remember to update
+     * state values appropriately.
+     *
+     * @return Height removed from section.
+     */
+    fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: T, layoutState: LayoutState): Int
 }
 
-class LayoutHelper private constructor(private var root: RootLayoutHelper) : BaseLayoutHelper by root {
+class LayoutHelper private constructor(private var root: RootLayoutHelper,
+                                       private var tellParentViewsChangedBy: (Int) -> Unit) :
+        BaseLayoutHelper by root {
     internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                         viewsBefore: Int, layoutState: LayoutState) : this(root) {
+                         viewsBefore: Int, layoutState: LayoutState, tellParentViewsChanged: (Int) -> Unit) :
+            this(root, tellParentViewsChanged) {
         offset.x = x
         offset.y = y
         this.width = width
@@ -68,18 +92,31 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
     internal var paddingBottom = 0
         private set
 
-    private var viewsBefore = 0
+    internal var viewsBefore = 0
+        private set
+
     private lateinit var layoutState: LayoutState
+
     var numViews: Int
         get() = layoutState.numViews
-        set(value) {
-            layoutState.numViews = value
+        private set(value) {
+            viewsChangedBy(value - layoutState.numViews)
         }
 
+    internal fun viewsChangedBy(delta: Int) {
+        Log.d("AAA", "delta = $delta")
+        layoutState.numViews += delta
+        tellParentViewsChangedBy(delta)
+    }
+
     private fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
-                                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper =
-            root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
-                                         paddingTop, paddingBottom, viewsBefore, layoutState)
+                                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper
+            = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
+                                           paddingTop, paddingBottom, viewsBefore, layoutState, this::viewsChangedBy)
+
+    internal fun release() {
+        root.releaseSubsectionHelper(this)
+    }
 
     internal inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                                 viewsBefore: Int, layoutState: LayoutState,
@@ -90,12 +127,9 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         return r
     }
 
-    internal fun release() {
-        root.releaseSubsectionHelper(this)
-    }
-
     internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper {
+                        viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit)
+            : LayoutHelper {
         this.root = root
         offset.x = x
         offset.y = y
@@ -105,6 +139,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         this.paddingBottom = paddingBottom
         this.viewsBefore = viewsBefore
         this.layoutState = layoutState
+        this.tellParentViewsChangedBy = tellParentViewsChangedBy
         return this
     }
 
@@ -141,11 +176,13 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
 
     internal fun getFooter(section: SectionState): Child? {
         return if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
-            section.getDisappearingHeader(this)
+            section.getDisappearingFooter(this)
         } else {
-            section.getHeader(this)
+            section.getFooter(this)
         }
     }
+
+    fun getUnfinishedChild(position: Int, section: SectionState) = section.getNonFinalChildAt(this, position)
 
     fun getChild(currentPosition: Int, section: SectionState): Child? {
         if (currentPosition < section.numChildren) {
@@ -186,6 +223,18 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         return false
     }
 
+    override fun getView(position: Int) = root.getView(position)
+
+    override fun removeView(child: View) {
+        root.removeView(child)
+        numViews -= 1
+    }
+
+    override fun removeViewAt(position: Int) {
+        root.removeViewAt(position - viewsBefore)
+        numViews -= 1
+    }
+
     override fun addView(child: View) {
         root.addView(child)
         numViews += 1
@@ -193,6 +242,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
 
     override fun addView(child: View, index: Int) {
         if (index == -1) return addView(child)
+        Log.d("HELPER", "index = $index, viewsBefore = $viewsBefore")
         root.addView(child, viewsBefore + index)
         numViews += 1
     }
@@ -208,17 +258,19 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper) : Bas
         numViews += 1
     }
 
+    override fun getAttachedViewAt(position: Int) = root.getAttachedViewAt(viewsBefore + position)
+
     override fun attachViewToPosition(position: Int, view: View) {
         numViews += 1
         root.attachViewToPosition(viewsBefore + position, view)
     }
 
-    override fun detachViewAtPosition(position: Int): View {
+    override fun detachViewAtPosition(position: Int): View? {
         numViews -= 1
         return root.detachViewAtPosition(viewsBefore + position)
     }
 
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace(
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n${root})".replace(
             "\n", "\n\t")
 
     private data class Offset(var x: Int = 0, var y: Int = 0)

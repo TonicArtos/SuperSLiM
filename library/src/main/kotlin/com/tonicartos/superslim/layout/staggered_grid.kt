@@ -1,4 +1,4 @@
-package com.tonicartos.superslim.internal.layout
+package com.tonicartos.superslim.layout
 
 import com.tonicartos.superslim.*
 import com.tonicartos.superslim.adapter.FooterStyle
@@ -25,8 +25,12 @@ class StaggeredGridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER
     }
 }
 
-class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldState: SectionState? = null) :
+private class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldState: SectionState? = null) :
         SectionState(configuration, oldState), ColumnsSectionStateMixin by ColumnsState(configuration) {
+    override fun isAtTop(layoutState: LayoutState): Boolean {
+        return StaggeredGridSlm.isAtTop(this, layoutState)
+    }
+
     override fun doLayout(helper: LayoutHelper, layoutState: LayoutState) {
         resolveColumns(helper)
 
@@ -34,43 +38,53 @@ class StaggeredGridSection(var configuration: StaggeredGridSectionConfig, oldSta
     }
 
     override fun doFillTop(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun doFillBottom(dy: Int, helper: LayoutHelper, layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
-    override fun doTrimTop(helper: LayoutHelper, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun doTrimTop(scrolled: Int, helper: LayoutHelper,
+                           layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 
-    override fun doTrimBottom(helper: LayoutHelper, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun doTrimBottom(scrolled: Int, helper: LayoutHelper,
+                              layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 }
 
 private object StaggeredGridSlm : SectionLayoutManager<StaggeredGridSection> {
+    override fun isAtTop(section: StaggeredGridSection, layoutState: LayoutState): Boolean {
+        TODO("not implemented")
+    }
+
     override fun onLayout(helper: LayoutHelper, section: StaggeredGridSection, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: StaggeredGridSection,
                            layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: StaggeredGridSection,
                               layoutState: LayoutState): Int {
-        throw UnsupportedOperationException()
+        TODO("not implemented")
     }
 
-    override fun onTrimTop(helper: LayoutHelper, section: StaggeredGridSection, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun onTrimTop(scrolled: Int, helper: LayoutHelper,
+                           section: StaggeredGridSection,
+                           layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 
-    override fun onTrimBottom(helper: LayoutHelper, section: StaggeredGridSection, layoutState: LayoutState) {
-        throw UnsupportedOperationException()
+    override fun onTrimBottom(scrolled: Int, helper: LayoutHelper,
+                              section: StaggeredGridSection,
+                              layoutState: LayoutState): Int {
+        TODO("not implemented")
     }
 }
 

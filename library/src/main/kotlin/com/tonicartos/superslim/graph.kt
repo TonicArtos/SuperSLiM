@@ -1,7 +1,7 @@
 package com.tonicartos.superslim
 
-import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.adapter.FooterStyle
+import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
 inline fun <T : Child, R> T.use(block: T.() -> R): R {
@@ -19,6 +19,7 @@ inline fun <T : Child, R> T.use(block: T.() -> R): R {
     }
 }
 
+// TODO: Make TrimChild version which wraps a section or attached view.
 interface Child {
     companion object {
         const val INVALID = 0
@@ -28,6 +29,8 @@ interface Child {
     }
 
     fun done()
+
+    val numViews get() = 1
 
     /**
      * True if the child is being removed in this layout.
@@ -51,7 +54,7 @@ interface Child {
      * left, top, and right, however will ignore bottom and may fill any remaining space to the bottom of the viewable
      * area.
      */
-    fun layout(left: Int, top: Int, right: Int, bottom: Int)
+    fun layout(left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int = 0)
 
     /**
      * Fill distance dy at top of the child. The child will attempt to extend into this space; only if it is a section.
@@ -64,7 +67,9 @@ interface Child {
      *
      * @return How much of dy filled.
      */
-    fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
+    fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int = 0): Int
+
+    fun trimTop(scrolled: Int, helper: LayoutHelper, numViewsBefore: Int): Int
 
     /**
      * Fill distance dy at bottom of the child. The child will attempt to extend into this space; only if it is a section.
@@ -77,7 +82,10 @@ interface Child {
      *
      * @return How much of dy filled.
      */
-    fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int): Int
+    fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int = 0): Int
+
+    fun trimBottom(scrolled: Int, helper: LayoutHelper, numViewsBefore: Int): Int
+
 
     val width: Int
     val height: Int

@@ -1,7 +1,7 @@
 package com.tonicartos.superslim.adapter
 
 import com.tonicartos.superslim.SectionConfig
-import com.tonicartos.superslim.internal.layout.LinearSectionConfig
+import com.tonicartos.superslim.layout.LinearSectionConfig
 import java.util.*
 
 sealed class Node {
