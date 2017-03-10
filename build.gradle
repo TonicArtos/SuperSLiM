@@ -2,9 +2,9 @@
 
 buildscript {
     ext {
-        kotlin_version = '1.1.0-rc-91'
-        build_tools_version = '23.0.3'
-        supportlib_version = '23.4.0'
+        kotlin_version = '1.1.0'
+        build_tools_version = '25.0.2'
+        supportlib_version = '25.2.0'
         rxbinding_version = '0.4.0'
         anko_version = '0.9.1'
         compile_sdk = 25
@@ -20,11 +20,23 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:2.3.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
+    }
+}
+
+task createTestResources << {
+    def mockMakerFile = new File("$projectDir/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker")
+    if (System.env.MOCK_MAKER != null) {
+        logger.info("Using MockMaker ${System.env.MOCK_MAKER}")
+        mockMakerFile.parentFile.mkdirs()
+        mockMakerFile.createNewFile()
+        mockMakerFile.write(System.env.MOCK_MAKER)
+    } else {
+        logger.info("Using default MockMaker")
     }
 }
 
