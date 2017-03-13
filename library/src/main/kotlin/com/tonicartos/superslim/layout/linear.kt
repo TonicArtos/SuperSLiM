@@ -72,30 +72,30 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         layoutState.tailPosition = currentPosition - 1
     }
 
-    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState,
-                           layoutState: LayoutState): Int {
-        // How much distance left to fill.
-        var dyRemaining = dy - layoutState.overdraw
-        if (dyRemaining <= 0) {
-            layoutState.overdraw -= dy
-            return dy
+    override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {
+        if (layoutState.headPosition < 0) {
+            layoutState.headPosition = section.numChildren
+            layoutState.tailPosition = section.numChildren - 1
         }
-        // Where we are filling at.
+
+        var dyRemaining = dy
+        var currentPos = layoutState.headPosition
         var y = -layoutState.overdraw
 
-        var currentPos = layoutState.headPosition
-
-        // Try filling the current child. Ignore if off the bottom.
-        if (currentPos < section.numChildren) {
-            // Only try to fill a non-final child (subsection).
+        // Fill leading children
+        if (0 <= currentPos && currentPos < section.numChildren) {
             helper.getUnfinishedChild(currentPos, section)?.use {
                 measure()
+                // Different from fillBottom because overscroll hides the excess from section height.
                 fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y).let {
                     y -= it
                     dyRemaining -= it
                 }
             }
         }
+
+        // Fill using overdraw
+        dyRemaining -= layoutState.overdraw
 
         // Fill remaining dy with remaining content.
         while (dyRemaining > 0 && currentPos > 0) {
@@ -211,17 +211,19 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                               layoutState: LayoutState): Int {
-        var removed = 0
+        var removedHeight = 0
         while (layoutState.tailPosition >= layoutState.headPosition) {
             var doNext = false
             helper.getUnfinishedChild(layoutState.tailPosition, section)?.use {
-                removed = trimBottom(scrolled, helper, helper.numViews - numViews)
+                removedHeight += trimBottom(scrolled, helper, helper.numViews - numViews)
                 doNext = numViews == 0
+                Log.d("LINEAR Bottom", "Trimmed child: removed = $removedHeight")
             } ?: helper.getAttachedViewAt(helper.numViews - 1).let {
                 if (helper.getTop(it) > helper.layoutLimit) {
-                    removed = it.height
+                    Log.d("LINEAR Bottom", "top = ${helper.getTop(it)}, limit = ${helper.layoutLimit}")
+                    removedHeight += it.height
                     helper.removeView(it)
-                    Log.d("LINEAR", "Removed child.")
+                    Log.d("LINEAR Bottom", "Removed child: removed = $removedHeight")
                     doNext = true
                 }
             }
@@ -236,7 +238,8 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             layoutState.headPosition = -1
             layoutState.tailPosition = -1
         }
-        layoutState.bottom -= removed
-        return removed
+        layoutState.bottom -= removedHeight
+        Log.d("LINEAR Bottom", "state = $layoutState")
+        return removedHeight
     }
 }

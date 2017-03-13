@@ -113,7 +113,6 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      * @return Actual distance scrolled.
      */
     private fun scrollTowardsTop(dy: Int, helper: RootLayoutHelper): Int {
-        return 0
         val scrolled = Math.min(dy, fillTop(dy, helper))
         Log.d("scrollUp", "dy = $dy, scroll by = $scrolled")
 
@@ -129,12 +128,10 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     private fun fillTop(dy: Int, helper: RootLayoutHelper) = root.fillTop(dy, helper)
     private fun fillBottom(dy: Int, helper: RootLayoutHelper) = root.fillBottom(dy, helper)
     private fun trimTop(scrolled: Int, helper: RootLayoutHelper)
-            = root.trimTop(scrolled, helper, helper.basePaddingLeft,
-                           helper.basePaddingTop, helper.layoutWidth - helper.basePaddingRight)
+            = root.trimTop(scrolled, helper, helper.basePaddingLeft, 0, helper.layoutWidth - helper.basePaddingRight)
 
     private fun trimBottom(scrolled: Int, helper: RootLayoutHelper)
-            = root.trimBottom(scrolled, helper, helper.basePaddingLeft,
-                              helper.basePaddingTop, helper.layoutWidth - helper.basePaddingRight)
+            = root.trimBottom(scrolled, helper, helper.basePaddingLeft, 0, helper.layoutWidth - helper.basePaddingRight)
 
     /*************************
      * Scheduling section changes
@@ -858,8 +855,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 }
             }
 
-    internal fun trimTop(scrolled: Int, rootHelper: RootLayoutHelper,
-                         left: Int, top: Int, right: Int) {
+    internal fun trimTop(scrolled: Int, rootHelper: RootLayoutHelper, left: Int, top: Int, right: Int) {
         layoutState.babushka { state ->
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
@@ -870,8 +866,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal fun trimBottom(scrolled: Int, rootHelper: RootLayoutHelper,
-                            left: Int, top: Int, right: Int) {
+    internal fun trimBottom(scrolled: Int, rootHelper: RootLayoutHelper, left: Int, top: Int, right: Int) {
         layoutState.babushka { state ->
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
