@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.layout
 
-import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -125,8 +124,6 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         if (layoutState.headPosition < 0) {
             layoutState.headPosition = 0
         }
-        Log.d("fillBottom entry",
-              "limit = ${helper.layoutLimit}, dy = $dy, section = ${section.toString()}, state = $layoutState")
 
         // Must fill section children first.
         var filled = 0
@@ -137,7 +134,6 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 filled += fillBottom(dy, 0, layoutState.bottom - height, measuredWidth, measuredHeight,
                                      helper.numViews - numViews)
                 layoutState.bottom += height - before
-                Log.d("fillBottom unfinished", "filled = $filled, state = $layoutState")
             }
         }
 
@@ -146,7 +142,6 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         if (filled == 0) {
             excess = layoutState.bottom - helper.layoutLimit
             excess = if (excess > 0) excess else 0
-            Log.d("fillBottom Excess", "excess = $excess, state = $layoutState")
         }
 
         // Fill in remaining space
@@ -158,12 +153,10 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
                                      layoutState.bottom + measuredHeight, helper.numViews)
                 layoutState.tailPosition += 1
                 layoutState.bottom += height
-                Log.d("fillBottom Next", "filled = $filled, state = $layoutState")
             }
         }
 
         filled += excess
-        Log.d("fillBottom Exit", "filled = $filled, state = $layoutState")
 
         return filled
     }
@@ -171,26 +164,22 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                            layoutState: LayoutState): Int {
         var removedHeight = 0
-        Log.d("trimTop", "scrolled = $scrolled")
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false
             helper.getUnfinishedChild(layoutState.headPosition, section)?.use {
                 removedHeight += trimTop(scrolled, helper, 0)
                 childRemoved = numViews == 0
                 // Don't adjust overdraw because section children don't report drawing into the area.
-                Log.d("trimTop U", "removed = $removedHeight")
             } ?: helper.getAttachedViewAt(0).let {
                 if (helper.getBottom(it) < 0) {
                     helper.removeView(it)
                     removedHeight += Math.max(0, it.height - layoutState.overdraw)
                     layoutState.overdraw = Math.max(0, layoutState.overdraw - it.height)
-                    Log.d("trimTop R", "removed = $removedHeight")
                     childRemoved = true
                 } else if (helper.getTop(it) < 0) {
                     val before = layoutState.overdraw
                     layoutState.overdraw = -helper.getTop(it)
                     removedHeight += layoutState.overdraw - before
-                    Log.d("trimTop K", "removed = $removedHeight, state = $layoutState")
                 }
             }
 
@@ -217,13 +206,10 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             helper.getUnfinishedChild(layoutState.tailPosition, section)?.use {
                 removedHeight += trimBottom(scrolled, helper, helper.numViews - numViews)
                 doNext = numViews == 0
-                Log.d("LINEAR Bottom", "Trimmed child: removed = $removedHeight")
             } ?: helper.getAttachedViewAt(helper.numViews - 1).let {
                 if (helper.getTop(it) > helper.layoutLimit) {
-                    Log.d("LINEAR Bottom", "top = ${helper.getTop(it)}, limit = ${helper.layoutLimit}")
                     removedHeight += it.height
                     helper.removeView(it)
-                    Log.d("LINEAR Bottom", "Removed child: removed = $removedHeight")
                     doNext = true
                 }
             }
@@ -239,7 +225,6 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             layoutState.tailPosition = -1
         }
         layoutState.bottom -= removedHeight
-        Log.d("LINEAR Bottom", "state = $layoutState")
         return removedHeight
     }
 }
