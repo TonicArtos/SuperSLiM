@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.layout
 
+import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -121,6 +122,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
      */
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState,
                               layoutState: LayoutState): Int {
+        Log.d("LINEAR", "dy = $dy, state = $layoutState")
         if (layoutState.headPosition < 0) {
             layoutState.headPosition = 0
         }
@@ -138,7 +140,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         }
 
         // Check to see if we have to handle excess.
-        var excess =0
+        var excess = 0
         if (filled == 0) {
             excess = layoutState.bottom - helper.layoutLimit
             excess = if (excess > 0) excess else 0
@@ -158,11 +160,14 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
         filled += excess
 
+        Log.d("LINEAR", "filled = $filled")
         return filled
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                            layoutState: LayoutState): Int {
+        if (helper.numViews == 0) return 0
+        Log.d("LINEAR TRIM", "numViews = ${helper.numViews}")
         var removedHeight = 0
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false

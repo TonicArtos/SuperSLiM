@@ -31,19 +31,20 @@ internal object DoNothingSlm : SectionLayoutManager<SectionState> {
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: SectionState.LayoutState): Int {
-        val filled = section.fillBottom(0, section.leftGutter(), layoutState.bottom,
+        Log.d("NOOP", "fillBottom")
+        val filled = section.fillBottom(dy, section.leftGutter(), layoutState.bottom - section.height,
                                         helper.layoutWidth - section.rightGutter(), helper)
         layoutState.bottom = section.height
         layoutState.headPosition = 0
         layoutState.tailPosition = 0
-        return Math.min(dy, filled)
+        return filled
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState,
                            layoutState: SectionState.LayoutState)
-            = section.trimTop(scrolled, helper, 0).also { layoutState.bottom = section.height }
+            = section.trimTop(scrolled, helper).also { layoutState.bottom = section.height }
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: SectionState.LayoutState)
-            = section.trimBottom(scrolled, helper, 0).also { layoutState.bottom = section.height }
+            = section.trimBottom(scrolled, helper).also { layoutState.bottom = section.height }
 }

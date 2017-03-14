@@ -1,11 +1,13 @@
 package com.tonicartos.superslim.internal.layout
 
 import android.util.Log
-import android.view.View
-import com.tonicartos.superslim.*
+import com.tonicartos.superslim.LayoutHelper
+import com.tonicartos.superslim.SectionConfig
+import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.FooterLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
+import com.tonicartos.superslim.use
 
 private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
@@ -42,20 +44,19 @@ internal object FooterLayoutManager : SectionLayoutManager<SectionState> {
 private interface BaseFlm : SectionLayoutManager<SectionState> {
     override fun isAtTop(section: SectionState, layoutState: LayoutState) = section.atTop
 }
+
 private object InlineFlm : BaseFlm {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
         Log.d("INLINE FLM", "layout")
         val state = layoutState as FooterLayoutState
         var y = -state.overdraw
 
-        if (state.headPosition == 0) {
+        if (state.headPosition <= 0) {
             if (helper.moreToLayout(0, section)) {
                 section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
-
                 y += section.height
                 helper.filledArea += section.height
-                state.tailPosition = 1
-            } else {
+                state.headPosition = 0
                 state.tailPosition = 0
             }
         }
@@ -71,6 +72,8 @@ private object InlineFlm : BaseFlm {
                 y += height
                 helper.filledArea += height
                 state.state = ADDED
+                if (state.headPosition < 0) state.headPosition = 1
+                state.tailPosition = 1
             }
         } else {
             state.state = ABSENT
@@ -80,11 +83,14 @@ private object InlineFlm : BaseFlm {
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        if (layoutState.headPosition < 0) {
+            layoutState.headPosition = 2
+        }
         val state = layoutState as FooterLayoutState
 
         var toFill = dy - state.overdraw
 
-        if (state.headPosition < 0) {
+        if (state.headPosition > 1) {
             helper.getFooter(section)?.use {
                 addToRecyclerView()
                 measure()
@@ -111,95 +117,94 @@ private object InlineFlm : BaseFlm {
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        Log.d("FOOTER", "dy = $dy, state = $layoutState")
         val state = layoutState as FooterLayoutState
+        if (state.headPosition < 0) state.headPosition = 0
 
-        var filled = (state.bottom - helper.layoutLimit).takeIf { it > 0 } ?: 0
-        var toFill = dy - filled
-
-        if (toFill > 0 && state.headPosition < 1) {
-            section.fillBottom(toFill, section.leftGutter(), state.bottom,
-                               helper.layoutWidth - section.rightGutter(), helper).let {
-                toFill -= it
-                filled += it
-                state.bottom += it
-            }
-            state.headPosition = 0
+        return if (state.state == ADDED) {
+            (state.bottom - helper.layoutLimit).takeIf { it > 0 } ?: 0
+        } else {
+            // Must fill section children first.
+            val before = section.height
+            var filled = section.fillBottom(dy, section.leftGutter(), state.bottom - section.height,
+                                            helper.layoutWidth - section.rightGutter(), helper)
+            Log.d("FOOTER", "filled = $filled")
+            state.bottom += section.height - before
             state.tailPosition = 0
-        }
-        if (toFill > 0) {
-            helper.getFooter(section)?.use {
-                addToRecyclerView()
-                measure()
-                fillBottom(toFill, 0, state.bottom, measuredWidth, measuredHeight, helper.numViews).let {
-                    toFill -= it
-                    filled += it
-                    state.bottom += it
-                }
-                state.state = ADDED
-                state.tailPosition = 1
-            }
-        }
 
-        return filled
+            // Add footer
+            if (filled < dy) {
+                helper.getFooter(section)?.use {
+                    Log.d("FOOTER ADD", "add footer")
+                    addToRecyclerView()
+                    measure()
+                    filled += fillBottom(dy - filled, 0, state.bottom, measuredWidth, state.bottom + measuredHeight,
+                                         helper.numViews)
+                    state.bottom += height
+                    state.state = ADDED
+                    state.tailPosition = 1
+                }
+            }
+
+            filled
+        }
     }
 
-    override fun onTrimTop(scrolled: Int, helper: LayoutHelper,
-                           section: SectionState,
-                           layoutState: LayoutState): Int {
+    override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
+        Log.d("FOOTER TRIM", "state = ${layoutState}")
         if (helper.numViews == 0) return 0
 
         val state = layoutState as FooterLayoutState
-        var removed = section.trimTop(scrolled, helper, 0)
+        var removedHeight = if (state.headPosition == 0) section.trimTop(scrolled, helper, 0) else 0
         if (section.numViews == 0) {
             state.headPosition = 1
         }
-        if (state.state == ADDED) {
-            val footer = helper.getAttachedViewAt(helper.numViews - 1)
-            if (helper.getBottom(footer) < 0) {
-                removed += footer.height
-                helper.removeView(footer)
-                state.overdraw = 0
-                state.tailPosition = 0
-                state.state = ABSENT
-            } else if (helper.getTop(footer) < 0) {
-                val before = state.overdraw
-                state.overdraw = helper.getTop(footer)
-                removed += before - state.overdraw
-                state.bottom -= removed
-                return removed
+        if (helper.numViews == 1 && state.state == ADDED) {
+            helper.getAttachedViewAt(helper.numViews - 1).let {
+                if (helper.getBottom(it) < 0) {
+                    helper.removeView(it)
+                    removedHeight += Math.max(0, it.height - state.overdraw)
+                    layoutState.overdraw = Math.max(0, layoutState.overdraw - it.height)
+                    state.tailPosition = 0
+                    state.state = ABSENT
+                } else if (helper.getTop(it) < 0) {
+                    val before = state.overdraw
+                    state.overdraw = -helper.getTop(it)
+                    removedHeight += state.overdraw - before
+                }
             }
         }
         if (helper.numViews == 0) {
             state.headPosition = -1
             state.tailPosition = -1
         }
-        state.bottom -= removed
-        return removed
+        state.bottom -= removedHeight
+        return removedHeight
     }
 
-    override fun onTrimBottom(scrolled: Int, helper: LayoutHelper,
-                              section: SectionState,
+    override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
         if (helper.numViews == 0) return 0
 
         val state = layoutState as FooterLayoutState
-        var removed = 0
+        var removedHeight = 0
         if (state.state == ADDED) {
-            val footer = helper.getAttachedViewAt(helper.numViews - 1)
-            if (helper.getTop(footer) > helper.layoutLimit) {
-                removed += footer.height
-                helper.removeView(footer)
-                state.tailPosition = 0
-                state.state = ABSENT
+            helper.getAttachedViewAt(helper.numViews - 1).let {
+                if (helper.getTop(it) > helper.layoutLimit) {
+                    removedHeight += it.height
+                    helper.removeView(it)
+                    state.tailPosition = 0
+                    state.state = ABSENT
+                }
             }
         }
-        removed += section.trimBottom(scrolled - removed, helper, if (state.state == ADDED) 1 else 0)
+        removedHeight += section.trimBottom(scrolled - removedHeight, helper, 0)
         if (helper.numViews == 0) {
             state.headPosition = -1
             state.headPosition = -1
         }
-        state.bottom -= removed
-        return removed
+        state.bottom -= removedHeight
+        return removedHeight
     }
 }
 

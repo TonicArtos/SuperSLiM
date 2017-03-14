@@ -11,7 +11,7 @@ import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import com.tonicartos.superslim.internal.layout.PaddingLayoutManager
 import java.util.*
 
-private const val ENABLE_FOOTER = false
+private const val ENABLE_FOOTER = true
 private const val ENABLE_HEADER = false
 private const val ENABLE_PADDING = false
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
