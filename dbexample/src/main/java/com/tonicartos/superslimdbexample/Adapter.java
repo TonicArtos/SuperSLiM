@@ -48,11 +48,6 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
         updateGraph();
     }
 
-    public void toggle() {
-        getSection(0).toggleChildren();
-        getSection(1).toggleChildren();
-    }
-
     private void reset() {
     }
 
@@ -91,19 +86,19 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
-        protected final TextView mTextView;
+        final TextView mTextView;
 
-        protected final Adapter mAdapter;
+        final Adapter mAdapter;
 
         protected String name;
 
-        public ViewHolder(View itemView, Adapter adapter) {
+        ViewHolder(View itemView, Adapter adapter) {
             super(itemView);
             mTextView = (TextView) itemView.findViewById(R.id.text);
             mAdapter = adapter;
         }
 
-        public static ViewHolder make(Adapter adapter, ViewGroup viewGroup, int viewType) {
+        static ViewHolder make(Adapter adapter, ViewGroup viewGroup, int viewType) {
             LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
             switch (viewType) {
                 case VIEW_TYPE_COUNTRY_VIEW:
@@ -115,13 +110,19 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
                 case VIEW_TYPE_SUBREGION_HEADER:
                     return new SubregionViewHolder(
                             inflater.inflate(R.layout.subregion_header, viewGroup, false), adapter);
+                case VIEW_TYPE_REGION_FOOTER:
+                    return new RegionViewHolder(
+                            inflater.inflate(R.layout.region_header, viewGroup, false), adapter);
+                case VIEW_TYPE_SUBREGION_FOOTER:
+                    return new RegionViewHolder(
+                            inflater.inflate(R.layout.subregion_header, viewGroup, false), adapter);
                 default:
                     throw new RuntimeException("Unknown view type " + viewType);
 
             }
         }
 
-        public void bind(Item item) {
+        void bind(Item item) {
             Object data = item.getData();
             assert data != null;
             name = data.toString();
@@ -131,7 +132,7 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private static class ClickableHolder extends ViewHolder implements View.OnClickListener {
 
-        public ClickableHolder(View view, Adapter adapter) {
+        ClickableHolder(View view, Adapter adapter) {
             super(view, adapter);
             view.setOnClickListener(this);
         }
@@ -146,7 +147,7 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private static class RegionViewHolder extends ClickableHolder {
 
-        public RegionViewHolder(View itemView, Adapter adapter) {
+        RegionViewHolder(View itemView, Adapter adapter) {
             super(itemView, adapter);
         }
 
@@ -165,7 +166,7 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private static class SubregionViewHolder extends ClickableHolder {
 
-        public SubregionViewHolder(View itemView, Adapter adapter) {
+        SubregionViewHolder(View itemView, Adapter adapter) {
             super(itemView, adapter);
         }
 
@@ -184,7 +185,7 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private static class CountryViewHolder extends ClickableHolder {
 
-        public CountryViewHolder(View itemView, Adapter adapter) {
+        CountryViewHolder(View itemView, Adapter adapter) {
             super(itemView, adapter);
         }
 
