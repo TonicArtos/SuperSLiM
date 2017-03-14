@@ -38,8 +38,8 @@ sealed class Node {
         itemManager = null
     }
 
-    abstract class ItemNode : Node {
-        constructor() {
+    abstract class ItemNode : Node() {
+        init {
             itemCount = 1
         }
     }
@@ -53,13 +53,11 @@ sealed class Node {
  * binding or to lookup data elsewhere.
  */
 open class Item(val type: Int = 0, val data: Any? = null) : Node.ItemNode() {
-    internal override fun insertItemsToAdapter() {
-        parent?.contract?.notifySectionItemsInserted(parent!!, positionInParent, positionInAdapter, 1)
+    override fun insertItemsToAdapter() {
         itemManager?.insert(positionInAdapter, this)
     }
 
-    internal override fun removeItemsFromAdapter() {
-        parent?.contract?.notifySectionItemsRemoved(parent!!, positionInParent, positionInAdapter, 1)
+    override fun removeItemsFromAdapter() {
         itemManager?.remove(positionInAdapter)
     }
 }
@@ -109,7 +107,6 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             if (value == null) {
                 field?.let {
                     it.removeItemsFromAdapter()
-                    contract?.notifySectionHeaderRemoved(this)
                     totalItemsChanged(-1)
                     children.forEach { child -> child.peersItemsBeforeThis -= 1 }
                     field = null
@@ -122,8 +119,8 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
                 itemManager?.set(positionInAdapter, value)
             } else {
                 itemManager?.insert(positionInAdapter, value)
-                contract?.notifySectionHeaderInserted(this)
                 children.forEach { it.peersItemsBeforeThis += 1 }
+                footer?.let { it.peersItemsBeforeThis += 1 }
                 totalItemsChanged(1)
             }
             field = value
@@ -134,19 +131,16 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             if (value == null) {
                 field?.let {
                     it.removeItemsFromAdapter()
-                    contract?.notifySectionFooterRemoved(this, itemCount - 1)
                     totalItemsChanged(-1)
                     field = null
                 }
                 return
             }
-            initChild(0, value)
-            value.peersItemsBeforeThis = itemCount
+            initChild(childCount, value)
             if (field != null) {
                 itemManager?.set(positionInAdapter, value)
             } else {
                 itemManager?.insert(positionInAdapter, value)
-                contract?.notifySectionFooterInserted(this, itemCount)
                 totalItemsChanged(1)
             }
             field = value
@@ -188,7 +182,6 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         val footerCount = if (footer == null) 0 else 1
         val numItemsToRemove = itemCount - headerCount - footerCount
         itemManager?.removeRange(positionInAdapter + headerCount + footerCount, numItemsToRemove)
-        contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + headerCount + footerCount, numItemsToRemove)
         for (it in children) {
             it.reset()
         }
@@ -211,7 +204,6 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
 
         header?.let {
             itemManager?.insert(positionInAdapter, it)
-            contract?.notifySectionHeaderInserted(this)
         }
 
         if (!collapsed) {
@@ -220,6 +212,10 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
                 child.insertItemsToAdapter()
             }
         }
+
+        footer?.let {
+            itemManager?.insert(positionInAdapter + itemCount - 1, it)
+        }
     }
 
     override fun removeItemsFromAdapter() {
@@ -227,12 +223,6 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         id = -1
 
         itemManager?.removeRange(positionInAdapter, itemCount)
-        if (header == null) {
-            contract?.notifySectionItemsRemoved(this, 0, positionInAdapter, itemCount)
-        } else {
-            contract?.notifySectionHeaderRemoved(this)
-            contract?.notifySectionItemsRemoved(this, 0, positionInAdapter + 1, itemCount)
-        }
     }
 
     /****************************************************
@@ -246,13 +236,11 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
     override val childCount: Int get() = children.size
 
     private fun initChild(position: Int, child: Node) {
-        val numItemsBeforeChild =
-                if (position > 0) {
-                    val prior = children[position - 1]
-                    prior.peersItemsBeforeThis + prior.itemCount
-                } else {
-                    if (header == null) 0 else 1
-                }
+        val numItemsBeforeChild = when {
+            position > 0   -> children[position - 1].let { it.peersItemsBeforeThis + it.itemCount }
+            header == null -> 0
+            else           -> 1
+        }
         child.init(position, numItemsBeforeChild, this, itemManager)
     }
 
@@ -427,7 +415,7 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         if (change == 0) return
 
         itemCount += change
-        footer?.let { it.peersItemsBeforeThis += change}
+        footer?.let { it.peersItemsBeforeThis += change }
         parent?.totalItemsChangedInChild(positionInParent, change)
     }
 
@@ -497,32 +485,4 @@ internal class GraphImpl() : Graph, SectionContract {
     //    override fun notifySectionMoved(section: Section, toParent: Section, toPosition: Int) {
     //        scw?.notifySectionMoved(section, toParent, toPosition)
     //    }
-
-    override fun notifySectionHeaderInserted(section: Section) {
-        contract?.notifySectionHeaderInserted(section)
-    }
-
-    override fun notifySectionHeaderRemoved(section: Section) {
-        contract?.notifySectionHeaderRemoved(section)
-    }
-
-    override fun notifySectionFooterInserted(section: Section, positionStart: Int) {
-        contract?.notifySectionFooterInserted(section, positionStart)
-    }
-
-    override fun notifySectionFooterRemoved(section: Section, positionStart: Int) {
-        contract?.notifySectionFooterRemoved(section, positionStart)
-    }
-
-    override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
-        contract?.notifySectionItemsInserted(section, positionStart, adapterPositionStart, itemCount)
-    }
-
-    override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int) {
-        contract?.notifySectionItemsRemoved(section, positionStart, adapterPositionStart, itemCount)
-    }
-
-    override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section, toPosition: Int, toAdapterPosition: Int) {
-        contract?.notifySectionItemsMoved(fromSection, fromPosition, fromAdapterPosition, toSection, toPosition, toAdapterPosition)
-    }
 }

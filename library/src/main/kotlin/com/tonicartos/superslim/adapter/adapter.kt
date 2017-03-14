@@ -16,15 +16,17 @@ interface Graph {
 }
 
 abstract class SuperSlimAdapter<ID : Comparable<ID>, VH : RecyclerView.ViewHolder>
-private constructor(private val graph: GraphImpl, private val itemManager: ItemManager) : RecyclerView.Adapter<VH>(),
-                                                                                          AdapterContract<ID>,
-                                                                                          Graph by graph {
+private constructor(internal val graph: GraphImpl, internal val itemManager: ItemManager,
+                    private val adapterContract: AdapterContractImpl<ID>) : RecyclerView.Adapter<VH>(),
+                                                                            AdapterContract<ID> by adapterContract,
+                                                                            Graph by graph {
     init {
         graph.init(itemManager)
         itemManager.init(this)
+        adapterContract.init(this)
     }
 
-    constructor() : this(GraphImpl(), ItemManager())
+    constructor() : this(GraphImpl(), ItemManager(), AdapterContractImpl())
 
     abstract fun onBindViewHolder(holder: VH, item: Item)
     final override fun onBindViewHolder(holder: VH, position: Int) {
@@ -35,60 +37,10 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
     final override fun getItemViewType(position: Int) = itemManager[position].type
 
     /****************************************************
-     * Adapter contract
-     ****************************************************/
-
-    override fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager) {
-        if (graph.contract != null) throw OnlySupportsOneRecyclerViewException()
-        val contract = DataChangeContract(this, layoutManager)
-        graph.contract = contract
-    }
-
-    override fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager) {
-        graph.contract = null
-    }
-
-
-    override fun getRoot() = graph.root.configuration
-
-    override fun setRootId(id: Int) {
-        graph.root.id = id
-    }
-
-    override fun populateRoot(out: SectionData) {
-        out.adapterPosition = 0
-        out.hasHeader = false
-        out.itemCount = graph.root.itemCount
-        out.childCount = graph.root.childCount
-        out.subsectionsById = graph.root.subsections.map { it.id }
-    }
-
-
-    override fun getSections() = sectionLookup.mapValues { it.value.configuration }
-
-    override fun setSectionIds(idMap: Map<*, Int>) {
-        idMap.forEach {
-            val section = sectionLookup[it.key] ?: throw IllegalArgumentException(
-                    "unknown id \"${it.key}\" for section lookup")
-            section.id = it.value
-        }
-    }
-
-    override fun populateSection(data: Pair<*, SectionData>) {
-        val section = sectionLookup[data.first] ?: throw IllegalArgumentException(
-                "unknown id \"${data.first}\" for section lookup")
-        data.second.adapterPosition = section.positionInAdapter
-        data.second.hasHeader = section.header != null
-        data.second.itemCount = section.itemCount
-        data.second.childCount = section.childCount
-        data.second.subsectionsById = section.subsections.map { it.id }
-    }
-
-    /****************************************************
      * Section registry
      ****************************************************/
 
-    private val sectionLookup = HashMap<ID, Section>()
+    internal val sectionLookup = HashMap<ID, Section>()
 
     fun getSectionWithId(id: ID): Section? = sectionLookup[id]
 
@@ -139,21 +91,74 @@ private constructor(private val graph: GraphImpl, private val itemManager: ItemM
     }
 }
 
+private class AdapterContractImpl<ID : Comparable<ID>> : AdapterContract<ID> {
+    private lateinit var adapter: SuperSlimAdapter<ID, *>
+
+    fun init(adapter: SuperSlimAdapter<ID, *>) {
+        this.adapter = adapter
+    }
+
+    override fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager) {
+        if (adapter.graph.contract != null) throw OnlySupportsOneRecyclerViewException()
+        val contract = DataChangeContract(adapter, layoutManager)
+        adapter.graph.contract = contract
+    }
+
+    override fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager) {
+        adapter.graph.contract = null
+    }
+
+
+    override fun getRoot() = adapter.graph.root.configuration
+
+    override fun setRootId(id: Int) {
+        adapter.graph.root.id = id
+    }
+
+    override fun populateRoot(out: SectionData) {
+        out.adapterPosition = 0
+        out.hasHeader = false
+        out.itemCount = adapter.graph.root.itemCount
+        out.childCount = adapter.graph.root.childCount
+        out.subsectionsById = adapter.graph.root.subsections.map { it.id }
+    }
+
+    override fun getSections() = adapter.sectionLookup.mapValues { it.value.configuration }
+
+    override fun setSectionIds(idMap: Map<*, Int>) {
+        idMap.forEach {
+            val section = adapter.sectionLookup[it.key] ?: throw IllegalArgumentException(
+                    "unknown id \"${it.key}\" for section lookup")
+            section.id = it.value
+        }
+    }
+
+    override fun populateSection(data: Pair<*, SectionData>) {
+        val section = adapter.sectionLookup[data.first] ?: throw IllegalArgumentException(
+                "unknown id \"${data.first}\" for section lookup")
+        data.second.adapterPosition = section.positionInAdapter
+        data.second.hasHeader = section.header != null
+        data.second.itemCount = section.itemCount
+        data.second.childCount = section.childCount
+        data.second.subsectionsById = section.subsections.map { it.id }
+    }
+
+    override fun getData(position: Int): AdapterContract.Data {
+        val item = adapter.itemManager[position]
+        val parent = item.parent!!
+        return AdapterContract.data.pack(parent.id, item.positionInParent, when (item) {
+            parent.header -> AdapterContract.Data.HEADER
+            parent.footer -> AdapterContract.Data.FOOTER
+            else          -> AdapterContract.Data.OTHER
+        })
+    }
+}
+
+
 internal interface SectionContract {
     fun notifySectionInserted(section: Section): Int
     fun notifySectionRemoved(section: Section)
     fun notifySectionUpdated(section: Section)
-
-    fun notifySectionHeaderInserted(section: Section)
-    fun notifySectionHeaderRemoved(section: Section)
-
-    fun notifySectionFooterInserted(section: Section, positionStart: Int)
-    fun notifySectionFooterRemoved(section: Section, positionStart: Int)
-
-    fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int, itemCount: Int)
-    fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int, toSection: Section,
-                                toPosition: Int, toAdapterPosition: Int)
 }
 
 private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
@@ -175,38 +180,6 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
         if (section.itemCount > 0) {
             adapter.notifyItemRangeChanged(section.positionInAdapter, section.itemCount)
         }
-    }
-
-    final override fun notifySectionHeaderInserted(section: Section) {
-        layoutManager.notifySectionHeaderAdded(section.id, section.positionInAdapter)
-    }
-
-    final override fun notifySectionHeaderRemoved(section: Section) {
-        layoutManager.notifySectionHeaderRemoved(section.id, section.positionInAdapter)
-    }
-
-    final override fun notifySectionFooterInserted(section: Section, positionStart: Int) {
-        layoutManager.notifySectionFooterAdded(section.id, positionStart, section.positionInAdapter)
-    }
-
-    final override fun notifySectionFooterRemoved(section: Section, positionStart: Int) {
-        layoutManager.notifySectionFooterRemoved(section.id, positionStart, section.positionInAdapter)
-    }
-
-    final override fun notifySectionItemsInserted(section: Section, positionStart: Int, adapterPositionStart: Int,
-                                                  itemCount: Int) {
-        layoutManager.notifySectionItemsAdded(section.id, positionStart, adapterPositionStart, itemCount)
-    }
-
-    final override fun notifySectionItemsRemoved(section: Section, positionStart: Int, adapterPositionStart: Int,
-                                                 itemCount: Int) {
-        layoutManager.notifySectionItemsRemoved(section.id, positionStart, adapterPositionStart, itemCount)
-    }
-
-    final override fun notifySectionItemsMoved(fromSection: Section, fromPosition: Int, fromAdapterPosition: Int,
-                                               toSection: Section, toPosition: Int, toAdapterPosition: Int) {
-        layoutManager.notifySectionItemsMoved(fromSection.parent!!.id, fromPosition, fromAdapterPosition,
-                                              toSection.parent!!.id, toPosition, toAdapterPosition)
     }
 }
 

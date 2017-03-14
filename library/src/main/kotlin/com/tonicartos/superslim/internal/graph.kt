@@ -190,51 +190,36 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     /*************************
      * Item events
      *************************/
-    fun addItems(eventSectionData: EventSectionData, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events",
-                                              "addItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
-        val section = sectionIndex[eventSectionData.section]
-        when {
-            eventSectionData.action and EventSectionData.HEADER > 0 -> {
-                if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add header operation.")
-                section.addHeader()
-            }
-            eventSectionData.action and EventSectionData.FOOTER > 0 -> {
-                if (itemCount > 1) throw IllegalArgumentException("Expected item count of 1 for add footer operation.")
-                section.addFooter()
-            }
-            else                                                    -> {
-                section.addItems(eventSectionData.start, itemCount)
-            }
-        }
+    fun addHeader(sectionId: Int) {
+        sectionIndex[sectionId].addHeader()
     }
 
-    fun removeItems(eventSectionData: EventSectionData, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events",
-                                              "removeItems(event = $eventSectionData, positionStart = $positionStart, itemCount = $itemCount)")
-        val section = sectionIndex[eventSectionData.section]
-        when {
-            eventSectionData.action and EventSectionData.HEADER > 0 -> {
-                if (itemCount > 1) throw IllegalArgumentException(
-                        "Expected item count of 1 for remove header operation.")
-                section.removeHeader()
-            }
-            eventSectionData.action and EventSectionData.FOOTER > 0 -> {
-                if (itemCount > 1) throw IllegalArgumentException(
-                        "Expected item count of 1 for remove footer operation.")
-                section.removeFooter()
-            }
-            else                                                    -> {
-                section.removeItems(positionStart, itemCount)
-            }
-        }
+    fun removeHeader(sectionId: Int) {
+        sectionIndex[sectionId].removeHeader()
     }
 
-    fun moveItems(eventSectionData: EventSectionData, from: Int, to: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DC events",
-                                              "moveItem(eventData = $eventSectionData, from = $from, to = $to)")
-        sectionIndex[eventSectionData.fromSection].removeItems(from, 1)
-        sectionIndex[eventSectionData.toSection].addItems(eventSectionData.to, 1)
+    fun addFooter(sectionId: Int) {
+        sectionIndex[sectionId].addFooter()
+    }
+
+    fun removeFooter(sectionId: Int) {
+        sectionIndex[sectionId].removeFooter()
+    }
+
+    fun addItems(sectionId: Int, childStart: Int, itemCount: Int) {
+        if (itemCount == 0) return
+        sectionIndex[sectionId].addItems(childStart, itemCount)
+    }
+
+    fun removeItems(sectionId: Int, childStart: Int, itemCount: Int) {
+        if (itemCount == 0) return
+        sectionIndex[sectionId].removeItems(childStart, itemCount)
+    }
+
+    fun moveItems(fromSection: Int, toSection: Int, from: Int, to: Int, itemCount: Int) {
+        if (itemCount == 0) return
+        sectionIndex[fromSection].removeItems(from, itemCount)
+        sectionIndex[toSection].addItems(to, itemCount)
     }
 
     override fun toString(): String {

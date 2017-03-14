@@ -21,8 +21,39 @@ internal interface AdapterContract<ID> {
     fun setSectionIds(idMap: Map<*, Int>)
     fun populateSection(data: Pair<*, SectionData>)
 
+    fun getData(position: Int): Data
+
     fun onLayoutManagerAttached(layoutManager: SuperSlimLayoutManager)
     fun onLayoutManagerDetached(layoutManager: SuperSlimLayoutManager)
+
+    companion object {
+        val data: Data = DataImpl(0, 0, Data.OTHER)
+    }
+
+    interface Data {
+        companion object {
+            const val HEADER = 0
+            const val FOOTER = 1
+            const val OTHER = 2
+        }
+
+        val section: Int
+        val position: Int
+        val isHeader: Boolean
+        val isFooter: Boolean
+        fun pack(section: Int, position: Int, type: Int): Data
+    }
+
+    private class DataImpl(override var section: Int, override var position: Int, var type: Int) : Data {
+        override val isHeader get() = type == Data.HEADER
+        override val isFooter get() = type == Data.FOOTER
+        override fun pack(section: Int, position: Int, type: Int): Data {
+            this.section = section
+            this.position = position
+            this.type = type
+            return this
+        }
+    }
 }
 
 class SectionData {
@@ -34,17 +65,18 @@ class SectionData {
     internal var subsections = emptyList<SectionState>()
 }
 
-class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWriteLayoutHelper {
+class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, ReadWriteLayoutHelper,
+                                 ItemManagement by ItemManager() {
     @JvmOverloads @Suppress("unused")
     constructor(@Suppress("unused_parameter") context: Context, @Orientation orientation: Int = VERTICAL,
-                reverseLayout: Boolean = false, stackFromEnd: Boolean = false) {
+                reverseLayout: Boolean = false, stackFromEnd: Boolean = false) : this() {
         this.orientation = orientation
         this.reverseLayout = reverseLayout
         this.stackFromEnd = stackFromEnd
     }
 
     @Suppress("unused")
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int) {
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, defStyleRes: Int) : this() {
         val properties = getProperties(context, attrs, defStyleAttr, defStyleRes)
         properties ?: return
         orientation = properties.orientation
@@ -76,7 +108,11 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
         Log.d("LM", "add view to index = $index")
         super.addView(child, index)
     }
+
+
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+        applyChanges(adapterContract!!, graph!!, recycler)
+
         pendingSavedState?.let {
             if (state.itemCount == 0) {
                 removeAndRecycleAllViews(recycler)
@@ -334,7 +370,6 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      ****************************************************/
 
     private var graph: GraphManager? = null
-    private val itemChangeHelper = ItemChangeHelper()
 
     /*************************
      * Section changes from adapter
@@ -348,8 +383,8 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * @param[config] Section configuration.
      */
     fun notifySectionAdded(parent: Int, position: Int, config: SectionConfig): Int {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs",
-                                               "notifySectionAdded(parent: $parent, position: $position, config: $config)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm",
+                                               "sectionAdded(parent: $parent, position: $position, config: $config)")
         // Always copy the config as soon as it enters this domain.
         return graph!!.sectionAdded(parent, position, config.copy())
     }
@@ -359,7 +394,7 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * becomes invalid.
      */
     fun notifySectionRemoved(section: Int, parent: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(section: $section, parent: $parent)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm", "sectionAdded(section: $section, parent: $parent)")
         graph!!.queueSectionRemoved(section, parent)
     }
 
@@ -373,57 +408,9 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      * It may be necessary to notify changes for at least one item in the section.
      */
     fun notifySectionUpdated(section: Int, config: SectionConfig) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm-DCs", "notifySectionAdded(section: $section, config: $config)")
+        if (ENABLE_NOTIFICATION_LOGGING) Log.d("SSlm", "sectionAdded(section: $section, config: $config)")
         // Always copy the config as soon as it enters this domain.
         graph!!.queueSectionUpdated(section, config.copy())
-    }
-
-    /*************************
-     * Section item changes from adapter
-     *************************/
-
-    fun notifySectionHeaderAdded(section: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionHeaderAdded(section: $section, position: $adapterPosition)")
-        itemChangeHelper.queueSectionHeaderAdded(section, 0, adapterPosition)
-    }
-
-    fun notifySectionHeaderRemoved(section: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionHeaderRemoved(section: $section, position: $adapterPosition)")
-        itemChangeHelper.queueSectionHeaderRemoved(section, 0, adapterPosition)
-    }
-
-    fun notifySectionFooterAdded(section: Int, start: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionFooterAdded(section: $section, position: $adapterPosition)")
-        itemChangeHelper.queueSectionFooterAdded(section, start, adapterPosition)
-    }
-
-    fun notifySectionFooterRemoved(section: Int, start: Int, adapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionFooterRemoved(section: $section, position: $adapterPosition)")
-        itemChangeHelper.queueSectionFooterRemoved(section, start, adapterPosition)
-    }
-
-    fun notifySectionItemsAdded(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionItemsAdded(section: $section, positionStart: $start, itemCount: $itemCount)")
-        itemChangeHelper.queueSectionItemsAdded(section, start, startAdapterPosition, itemCount)
-    }
-
-    fun notifySectionItemsRemoved(section: Int, start: Int, startAdapterPosition: Int, itemCount: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionItemsRemoved(section: $section, positionStart: $start, itemCount: $itemCount)")
-        itemChangeHelper.queueSectionItemsRemoved(section, start, startAdapterPosition, itemCount)
-    }
-
-    fun notifySectionItemsMoved(fromSection: Int, from: Int, fromAdapterPosition: Int, toSection: Int, to: Int,
-                                toAdapterPosition: Int) {
-        if (ENABLE_NOTIFICATION_LOGGING) Log.d("Sslm-DCs",
-                                               "notifySectionItemsMoved(fromSection: $fromSection, from: $from, toSection: $toSection, to: $to)")
-        itemChangeHelper.queueSectionItemsMoved(fromSection, from, fromAdapterPosition, toSection, to,
-                                                toAdapterPosition)
     }
 
     /*************************
@@ -431,25 +418,18 @@ class SuperSlimLayoutManager : RecyclerView.LayoutManager, ManagerHelper, ReadWr
      *************************/
 
     override fun onItemsAdded(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs",
-                                              "onItemsAdded(position: $positionStart, itemCount: $itemCount)")
-        val event = itemChangeHelper.pullAddEventData(positionStart, itemCount)
-        graph!!.addItems(event, positionStart, itemCount)
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm", "itemsAdded(position: $positionStart, itemCount: $itemCount)")
+        addItems(positionStart, itemCount)
     }
 
-    var bugCount = 0
-
     override fun onItemsRemoved(recyclerView: RecyclerView?, positionStart: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs",
-                                              "onItemsRemoved(position: $positionStart, itemCount: $itemCount)")
-        val event = itemChangeHelper.pullRemoveEventData(positionStart, itemCount)
-        graph!!.removeItems(event, positionStart, itemCount)
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm", "itemsRemoved(position: $positionStart, itemCount: $itemCount)")
+        removeItems(positionStart, itemCount)
     }
 
     override fun onItemsMoved(recyclerView: RecyclerView?, from: Int, to: Int, itemCount: Int) {
-        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm-DCs", "onItemsMoved(from: $from, to: $to, itemCount: $itemCount)")
-        val event = itemChangeHelper.pullMoveEventData(from, to)
-        graph!!.moveItems(event, from, to)
+        if (ENABLE_ITEM_CHANGE_LOGGING) Log.d("Sslm", "itemsMoved(from: $from, to: $to, itemCount: $itemCount)")
+        moveItems(from, to, itemCount)
     }
 
     /*************************
