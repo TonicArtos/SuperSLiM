@@ -4,8 +4,7 @@ buildscript {
     ext {
         kotlin_version = '1.1.1'
         build_tools_version = '25.0.2'
-        supportlib_version = '25.2.0'
-        rxbinding_version = '0.4.0'
+        supportlib_version = '25.3.0'
         anko_version = '0.9.1'
         compile_sdk = 25
         target_sdk = 25
