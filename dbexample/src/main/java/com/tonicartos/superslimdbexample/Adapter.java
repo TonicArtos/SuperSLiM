@@ -22,6 +22,10 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
     private final static int VIEW_TYPE_COUNTRY_VIEW = 3;
 
+    private final static int VIEW_TYPE_REGION_FOOTER = 4;
+
+    private final static int VIEW_TYPE_SUBREGION_FOOTER = 5;
+
     private Cursor mCursor;
 
     Adapter() {
@@ -79,7 +83,11 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
                     mCursor.moveToNext();
                 }
+                subregionSection.setFooter(
+                        new Item(VIEW_TYPE_SUBREGION_FOOTER, subregionSection.getChildCount() + " countries"));
             }
+            regionSection.setFooter(
+                    new Item(VIEW_TYPE_REGION_FOOTER, regionSection.getChildCount() + " sub-regions"));
             addSection(regionSection);
         }
     }
