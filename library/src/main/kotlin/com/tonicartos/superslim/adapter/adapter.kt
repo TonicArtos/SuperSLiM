@@ -47,8 +47,6 @@ private constructor(internal val graph: GraphImpl, internal val itemManager: Ite
     @JvmOverloads fun createSection(id: ID, header: Item? = null, footer: Item? = null,
                                     config: SectionConfig = LinearSectionConfig()): Section {
         val section = Section()
-        config.headerStyle = SectionConfig.HEADER_INLINE
-        config.footerStyle = SectionConfig.FOOTER_INLINE
         section.header = header
         section.footer = footer
         section.configuration = config
