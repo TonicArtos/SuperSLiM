@@ -32,13 +32,14 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         helperPool.release(helper)
     }
 
-    private var layoutLimitExtension: Int = 0
-    override val layoutLimit: Int
-        get() = config.layoutLimit + layoutLimitExtension
+    private var layoutLimitExtension = 0
+    override val layoutLimit get() = config.layoutLimit + layoutLimitExtension
 
     override fun addIgnoredHeight(ignoredHeight: Int) {
         layoutLimitExtension += ignoredHeight
     }
+
+    override var fillBottomEdge = 0
 
     override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n"
             .replace("\n", "\n\t")
@@ -180,6 +181,7 @@ internal interface ReadLayoutHelper {
      * **Warning**: This value can change, and as such, should not be stored.
      */
     val layoutLimit: Int
+    var fillBottomEdge: Int
 }
 
 internal interface WriteLayoutHelper {

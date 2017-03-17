@@ -316,6 +316,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
      * ReadWriteLayoutHelper implementation
      ****************************************************/
 
+    override var fillBottomEdge = 0
     override val layoutLimit get() = height
     override val layoutWidth get() = width
 
