@@ -10,7 +10,9 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
                                 val recycler: RecyclerHelper, val state: StateHelper) :
         BaseLayoutHelper, ManagerHelper by manager, ReadWriteLayoutHelper by config, RecyclerHelper by recycler,
         StateHelper by state {
-    private var helperPool = LayoutHelperPool()
+    companion object {
+        private var helperPool = LayoutHelperPool()
+    }
 
     internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                          viewsBefore: Int, layoutState: LayoutState,
@@ -50,7 +52,8 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
                     LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
                                  tellParentViewsChangedBy)
                 } else {
-                    pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState, tellParentViewsChangedBy)
+                    pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
+                                            tellParentViewsChangedBy)
                 }
 
         fun release(helper: LayoutHelper) {

@@ -1,6 +1,5 @@
 package com.tonicartos.superslim
 
-import android.util.Log
 import android.view.View
 import com.tonicartos.superslim.internal.BaseLayoutHelper
 import com.tonicartos.superslim.internal.RootLayoutHelper
@@ -66,8 +65,7 @@ interface SectionLayoutManager<in T : SectionState> {
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper,
-                                       private var tellParentViewsChangedBy: (Int) -> Unit) :
-        BaseLayoutHelper by root {
+                                       private var tellParentViewsChangedBy: (Int) -> Unit) : BaseLayoutHelper {
     internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
                          viewsBefore: Int, layoutState: LayoutState, tellParentViewsChanged: (Int) -> Unit) :
             this(root, tellParentViewsChanged) {
@@ -82,6 +80,44 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     /*************************
      * Init stuff
+     *************************/
+
+    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
+                        viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit)
+            : LayoutHelper {
+        this.root = root
+        offset.x = x
+        offset.y = y
+        this.width = width
+        filledArea = 0
+        this.paddingTop = paddingTop
+        this.paddingBottom = paddingBottom
+        this.viewsBefore = viewsBefore
+        this.layoutState = layoutState
+        this.tellParentViewsChangedBy = tellParentViewsChangedBy
+        return this
+    }
+
+    private fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper
+            = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
+                                           paddingTop, paddingBottom, viewsBefore, layoutState, this::viewsChangedBy)
+
+    internal fun release() {
+        root.releaseSubsectionHelper(this)
+    }
+
+    internal inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
+                                                viewsBefore: Int, layoutState: LayoutState,
+                                                block: (LayoutHelper) -> T): T {
+        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState)
+        val r = block(helper)
+        helper.release()
+        return r
+    }
+
+    /*************************
+     * layout stuff
      *************************/
 
     private var offset = Offset()
@@ -104,53 +140,17 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         }
 
     internal fun viewsChangedBy(delta: Int) {
-        Log.d("AAA", "delta = $delta")
         layoutState.numViews += delta
         tellParentViewsChangedBy(delta)
     }
 
-    private fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
-                                        viewsBefore: Int, layoutState: LayoutState): LayoutHelper
-            = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
-                                           paddingTop, paddingBottom, viewsBefore, layoutState, this::viewsChangedBy)
+    override val layoutWidth get() = width
+    override val layoutLimit get() = root.layoutLimit - offset.y
 
-    internal fun release() {
-        root.releaseSubsectionHelper(this)
-    }
-
-    internal inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
-                                                viewsBefore: Int, layoutState: LayoutState,
-                                                block: (LayoutHelper) -> T): T {
-        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState)
-        val r = block(helper)
-        helper.release()
-        return r
-    }
-
-    internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                        viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit)
-            : LayoutHelper {
-        this.root = root
-        offset.x = x
-        offset.y = y
-        this.width = width
-        filledArea = 0
-        this.paddingTop = paddingTop
-        this.paddingBottom = paddingBottom
-        this.viewsBefore = viewsBefore
-        this.layoutState = layoutState
-        this.tellParentViewsChangedBy = tellParentViewsChangedBy
-        return this
-    }
-
-    /*************************
-     * layout stuff
-     *************************/
-
-    override val layoutWidth: Int
-        get() = width
-    override val layoutLimit: Int
-        get() = root.layoutLimit - offset.y
+    override fun getLeft(child: View) = root.getLeft(child) - offset.x
+    override fun getRight(child: View) = root.getRight(child) - offset.x
+    override fun getTop(child: View) = root.getTop(child) - offset.y
+    override fun getBottom(child: View) = root.getBottom(child) - offset.y
 
     override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
                         marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
@@ -236,13 +236,12 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     }
 
     override fun addView(child: View) {
-        root.addView(child)
-        numViews += 1
+        addView(child, numViews)
     }
 
     override fun addView(child: View, index: Int) {
-        if (index == -1) return addView(child)
-        Log.d("HELPER", "index = $index, viewsBefore = $viewsBefore")
+        if (index == -1) return addView(child, numViews)
+        require(numViews in 0..numViews)
         root.addView(child, viewsBefore + index)
         numViews += 1
     }
@@ -274,4 +273,40 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
             "\n", "\n\t")
 
     private data class Offset(var x: Int = 0, var y: Int = 0)
+
+    /********************************************************
+     * Delegated stuff
+     *******************************************************/
+
+    override fun addIgnoredHeight(ignoredHeight: Int) = root.addIgnoredHeight(ignoredHeight)
+
+    override val supportsPredictiveItemAnimations get() = root.supportsPredictiveItemAnimations
+    override val isPreLayout: Boolean get() = root.isPreLayout
+    override val willRunPredictiveAnimations: Boolean get() = root.willRunPredictiveAnimations
+    override val itemCount get() = root.itemCount
+    override val hasTargetScrollPosition get() = root.hasTargetScrollPosition
+    override val targetScrollPosition get() = root.targetScrollPosition
+    override val scrap get() = root.scrap
+    override val basePaddingLeft get() = root.basePaddingLeft
+    override val basePaddingTop get() = root.basePaddingTop
+    override val basePaddingRight get() = root.basePaddingRight
+    override val basePaddingBottom get() = root.basePaddingBottom
+    override fun getTransformedPaddingLeft(sectionConfig: SectionConfig) = root.getTransformedPaddingLeft(sectionConfig)
+    override fun getTransformedPaddingTop(sectionConfig: SectionConfig) = root.getTransformedPaddingTop(sectionConfig)
+    override fun getTransformedPaddingRight(sectionConfig: SectionConfig)
+            = root.getTransformedPaddingRight(sectionConfig)
+
+    override fun getTransformedPaddingBottom(sectionConfig: SectionConfig)
+            = root.getTransformedPaddingBottom(sectionConfig)
+
+    override fun getMeasuredWidth(child: View) = root.getMeasuredWidth(child)
+    override fun getMeasuredHeight(child: View) = root.getMeasuredHeight(child)
+    override var fillBottomEdge get() = root.fillBottomEdge
+        set(value) {
+            root.fillBottomEdge = value
+        }
+
+    override fun offsetChildrenVertical(dy: Int) = root.offsetChildrenVertical(dy)
+    override fun offsetChildrenHorizontal(dx: Int) = root.offsetChildrenHorizontal(dx)
+
 }
