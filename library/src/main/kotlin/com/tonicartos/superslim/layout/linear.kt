@@ -121,20 +121,33 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
      */
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: LinearSectionState,
                               layoutState: LayoutState): Int {
-        Log.d("LINEAR", "dy = $dy, state = $layoutState")
         if (layoutState.headPosition < 0) {
             layoutState.headPosition = 0
         }
 
+        var y = layoutState.bottom
         // Must fill section children first.
         var filled = 0
         if (layoutState.tailPosition >= 0) {
-            helper.getUnfinishedChild(layoutState.tailPosition, section)?.use {
-                measure()
-                val before = height
-                filled += fillBottom(dy, 0, layoutState.bottom - height, measuredWidth, measuredHeight,
-                                     helper.numViews - numViews)
-                layoutState.bottom += height - before
+            // Must handle case where not just the trailing child needs updating.
+            var stepBackHeight = 0
+            var stepBackViews = 0
+            for (position in layoutState.tailPosition downTo 0) {
+                helper.getUnfinishedChild(position, section)?.use {
+                    measure()
+
+                    val before = height
+                    val fill = fillBottom(dy, 0, y - stepBackHeight - height, measuredWidth, 0,
+                                          helper.numViews - stepBackViews - numViews)
+                    if (position == layoutState.tailPosition) {
+                        y += height - before
+                        filled += fill
+                    }
+
+                    stepBackHeight += height
+                    stepBackViews += numViews
+                }
+                if (y - stepBackHeight < helper.layoutLimit - helper.fillBottomEdge) break
             }
         }
 
@@ -150,23 +163,22 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             helper.getChild(layoutState.tailPosition + 1, section)?.use {
                 addToRecyclerView()
                 measure()
-                filled += fillBottom(dy - filled, 0, layoutState.bottom, measuredWidth,
-                                     layoutState.bottom + measuredHeight, helper.numViews)
+                filled += fillBottom(dy - filled, 0, y, measuredWidth, y + measuredHeight, helper.numViews)
                 layoutState.tailPosition += 1
-                layoutState.bottom += height
+                y += height
             }
         }
 
         filled += excess
 
-        Log.d("LINEAR", "filled = $filled")
-        return filled
+        layoutState.bottom = y
+
+        return Math.min(dy, filled)
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                            layoutState: LayoutState): Int {
         if (helper.numViews == 0) return 0
-        Log.d("LINEAR TRIM", "numViews = ${helper.numViews}")
         var removedHeight = 0
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false
