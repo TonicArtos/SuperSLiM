@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.layout
 
-import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -140,10 +139,10 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         }
 
         // Check to see if we have to handle excess.
-        var excess = 0
-        if (filled == 0) {
-            excess = layoutState.bottom - helper.layoutLimit
-            excess = if (excess > 0) excess else 0
+        val excess = if (layoutState.tailPosition >= 0 && filled == 0) {
+            Math.max(0, layoutState.bottom - helper.layoutLimit)
+        } else {
+            0
         }
 
         // Fill in remaining space
