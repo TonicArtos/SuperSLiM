@@ -178,7 +178,7 @@ private object InlineHlm : BaseHlm {
                 return removed
             }
         }
-        removed += section.trimTop(scrolled, helper, if (state.state == ADDED) 1 else 0)
+        removed += section.trimTop(scrolled, 0, helper, if (state.state == ADDED) 1 else 0)
         if (helper.numViews == 0) {
             state.tailPosition = -1
             state.headPosition = -1
@@ -194,7 +194,7 @@ private object InlineHlm : BaseHlm {
 
         val state = layoutState as HeaderLayoutState
         var removed = 0
-        removed += section.trimBottom(scrolled, helper, if (state.state == ADDED) 1 else 0)
+        removed += section.trimBottom(scrolled, 0, helper, if (state.state == ADDED) 1 else 0)
         if (section.numViews == 0) {
             state.tailPosition = 0
         }

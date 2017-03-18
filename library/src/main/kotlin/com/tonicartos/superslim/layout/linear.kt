@@ -132,7 +132,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             // Must handle case where not just the trailing child needs updating.
             var stepBackHeight = 0
             var stepBackViews = 0
-            for (position in layoutState.tailPosition downTo 0) {
+            for (position in layoutState.tailPosition downTo layoutState.headPosition) {
                 helper.getUnfinishedChild(position, section)?.use {
                     measure()
 
@@ -147,7 +147,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
                     stepBackHeight += height
                     stepBackViews += numViews
                 }
-                if (y - stepBackHeight < helper.layoutLimit - helper.fillBottomEdge) break
+                if (y - stepBackHeight <= helper.layoutLimit - helper.stickyEndInset) break
             }
         }
 
@@ -183,7 +183,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false
             helper.getUnfinishedChild(layoutState.headPosition, section)?.use {
-                removedHeight += trimTop(scrolled, helper, 0)
+                removedHeight += trimTop(scrolled, 0, helper)
                 childRemoved = numViews == 0
                 // Don't adjust overdraw because section children don't report drawing into the area.
             } ?: helper.getAttachedViewAt(0).let {
@@ -217,23 +217,27 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                               layoutState: LayoutState): Int {
         var removedHeight = 0
-        while (layoutState.tailPosition >= layoutState.headPosition) {
-            var doNext = false
-            helper.getUnfinishedChild(layoutState.tailPosition, section)?.use {
-                removedHeight += trimBottom(scrolled, helper, helper.numViews - numViews)
-                doNext = numViews == 0
-            } ?: helper.getAttachedViewAt(helper.numViews - 1).let {
-                if (helper.getTop(it) > helper.layoutLimit) {
-                    removedHeight += it.height
-                    helper.removeView(it)
-                    doNext = true
+        var y = layoutState.bottom
+        // Trim child sections back to before the sticky edge. Remove child views after the limit. Track tail position.
+        var stepBackViews = 0
+        for (position in layoutState.tailPosition downTo layoutState.headPosition) {
+            helper.getUnfinishedChild(position, section)?.use {
+                y -= height
+                removedHeight += trimBottom(scrolled, y, helper, helper.numViews - stepBackViews - numViews)
+                stepBackViews += numViews
+                if (numViews == 0) layoutState.tailPosition -= 1
+            } ?: helper.getAttachedViewAt(helper.numViews - 1).let { child ->
+                y -= child.height
+                stepBackViews += 1
+                if (helper.getTop(child) > helper.layoutLimit) {
+                    removedHeight += child.height
+                    helper.removeView(child)
+                    layoutState.tailPosition -= 1
+                    stepBackViews -= 1
                 }
             }
-
-            if (doNext) {
-                layoutState.tailPosition -= 1
-            } else
-                break
+            // Go until marker before sticky edge.
+            if (y < helper.layoutLimit - helper.stickyEndInset) break
         }
 
         if (helper.numViews == 0) {

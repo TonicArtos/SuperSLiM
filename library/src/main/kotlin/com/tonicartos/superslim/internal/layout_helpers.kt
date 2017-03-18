@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.internal
 
+import android.graphics.drawable.InsetDrawable
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import com.tonicartos.superslim.LayoutHelper
@@ -39,7 +40,8 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         layoutLimitExtension += ignoredHeight
     }
 
-    override var fillBottomEdge = 0
+    override var stickyStartInset = 0
+    override var stickyEndInset = 0
 
     override fun toString(): String = "RootHelper(ignoredHeight = $layoutLimitExtension, layoutLimit = $layoutLimit, layoutWidth = $layoutWidth, \nconfig = $config,\nstate = $state)\n"
             .replace("\n", "\n\t")
@@ -181,7 +183,22 @@ internal interface ReadLayoutHelper {
      * **Warning**: This value can change, and as such, should not be stored.
      */
     val layoutLimit: Int
-    var fillBottomEdge: Int
+    var stickyStartInset: Int
+    var stickyEndInset: Int
+}
+
+internal inline fun <R> ReadLayoutHelper.insetStickyStart(inset: Int, block: () -> R): R {
+    stickyStartInset += inset
+    val r = block()
+    stickyStartInset -= inset
+    return r
+}
+
+internal inline fun <R> ReadLayoutHelper.insetStickyEnd(inset: Int, block: () -> R): R {
+    stickyEndInset += inset
+    val r = block()
+    stickyEndInset -= inset
+    return r
 }
 
 internal interface WriteLayoutHelper {

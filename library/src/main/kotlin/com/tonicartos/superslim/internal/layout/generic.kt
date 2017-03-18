@@ -42,9 +42,9 @@ internal object DoNothingSlm : SectionLayoutManager<SectionState> {
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState,
                            layoutState: SectionState.LayoutState)
-            = section.trimTop(scrolled, helper).also { layoutState.bottom = section.height }
+            = section.trimTop(scrolled, 0, helper).also { layoutState.bottom = section.height }
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: SectionState.LayoutState)
-            = section.trimBottom(scrolled, helper).also { layoutState.bottom = section.height }
+            = section.trimBottom(scrolled, 0, helper).also { layoutState.bottom = section.height }
 }

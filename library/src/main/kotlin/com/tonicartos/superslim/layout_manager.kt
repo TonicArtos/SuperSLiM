@@ -91,7 +91,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
 
         private const val ENABLE_NOTIFICATION_LOGGING = false
         private const val ENABLE_ITEM_CHANGE_LOGGING = false
-        private const val ENABLE_LAYOUT_LOGGING = true
+        private const val ENABLE_LAYOUT_LOGGING = false
     }
 
     override fun generateDefaultLayoutParams(): RecyclerView.LayoutParams? {
@@ -105,7 +105,6 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
     private val stateHelper = StateWrapper()
 
     override fun addView(child: View, index: Int) {
-        Log.d("LM", "add view to index = $index")
         super.addView(child, index)
     }
 
@@ -312,11 +311,8 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
             field
         }
 
-    /****************************************************
-     * ReadWriteLayoutHelper implementation
-     ****************************************************/
-
-    override var fillBottomEdge = 0
+    override var stickyStartInset = 0
+    override var stickyEndInset = 0
     override val layoutLimit get() = height
     override val layoutWidth get() = width
 
@@ -338,7 +334,6 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
     override fun getBottom(child: View) = getDecoratedBottom(child)
 
     override fun getAttachedViewAt(position: Int): View {
-        Log.d("LM", "getAttachedViewAt = $position")
         require(position in 0..(childCount - 1))
         return getChildAt(position)
     }

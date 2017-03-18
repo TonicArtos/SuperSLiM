@@ -69,7 +69,7 @@ interface Child {
      */
     fun fillTop(dy: Int, left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int = 0): Int
 
-    fun trimTop(scrolled: Int, helper: LayoutHelper, numViewsBefore: Int): Int
+    fun trimTop(scrolled: Int, top: Int, helper: LayoutHelper, numViewsBefore: Int = 0): Int
 
     /**
      * Fill distance dy at bottom of the child. The child will attempt to extend into this space; only if it is a section.
@@ -84,7 +84,7 @@ interface Child {
      */
     fun fillBottom(dy: Int, left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int = 0): Int
 
-    fun trimBottom(scrolled: Int, helper: LayoutHelper, numViewsBefore: Int): Int
+    fun trimBottom(scrolled: Int, top: Int, helper: LayoutHelper, numViewsBefore: Int = 0): Int
 
 
     val width: Int

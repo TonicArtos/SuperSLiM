@@ -301,9 +301,13 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     override fun getMeasuredWidth(child: View) = root.getMeasuredWidth(child)
     override fun getMeasuredHeight(child: View) = root.getMeasuredHeight(child)
-    override var fillBottomEdge get() = root.fillBottomEdge
+    override var stickyStartInset get() = root.stickyStartInset
         set(value) {
-            root.fillBottomEdge = value
+            root.stickyStartInset = value
+        }
+    override var stickyEndInset get() = root.stickyEndInset
+        set(value) {
+            root.stickyEndInset = value
         }
 
     override fun offsetChildrenVertical(dy: Int) = root.offsetChildrenVertical(dy)

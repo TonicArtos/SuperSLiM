@@ -89,7 +89,7 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
             state.overdraw += filled
         }
 
-        val removed = section.trimTop(scrolled - filled, helper, 0)
+        val removed = section.trimTop(scrolled - filled, 0, helper, 0)
         if (helper.numViews == 0) {
             state.headPosition = -1
             state.tailPosition = -1
@@ -101,7 +101,7 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
         Log.d("PADDING", "onTrimBottom")
-        val removed = section.trimBottom(scrolled, helper, 0)
+        val removed = section.trimBottom(scrolled, 0, helper, 0)
         if (helper.numViews == 0) {
             layoutState.headPosition = -1
             layoutState.tailPosition = -1
