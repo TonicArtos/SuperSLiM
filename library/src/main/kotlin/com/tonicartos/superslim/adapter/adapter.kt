@@ -44,8 +44,8 @@ private constructor(internal val graph: GraphImpl, internal val itemManager: Ite
 
     fun getSectionWithId(id: ID): Section? = sectionLookup[id]
 
-    @JvmOverloads fun createSection(id: ID, header: Item? = null, footer: Item? = null,
-                                    config: SectionConfig = LinearSectionConfig()): Section {
+    @JvmOverloads
+    fun createSection(id: ID, config: SectionConfig, header: Item? = null, footer: Item? = null): Section {
         val section = Section()
         section.header = header
         section.footer = footer
@@ -53,6 +53,10 @@ private constructor(internal val graph: GraphImpl, internal val itemManager: Ite
         registerSection(id, section)
         return section
     }
+
+    @JvmOverloads
+    fun createSection(id: ID, header: Item? = null, footer: Item? = null): Section
+            = createSection(id, LinearSectionConfig(), header, footer)
 
     /**
      * Register a [section] to [id]. Descendant sections will be registered if [cascade] is true.
@@ -242,19 +246,3 @@ internal class Registration<ID : Comparable<ID>>(val id: ID, val manager: SuperS
 
 class OnlySupportsOneRecyclerViewException : RuntimeException(
         "SuperSLiM currently only supports a single recycler view per adapter.")
-
-@IntDef(SectionConfig.HEADER_END.toLong(),
-        SectionConfig.HEADER_STICKY.toLong(),
-        SectionConfig.HEADER_INLINE.toLong(),
-        SectionConfig.HEADER_START.toLong(),
-        SectionConfig.HEADER_END.toLong())
-@Retention(AnnotationRetention.SOURCE)
-annotation class HeaderStyle
-
-@IntDef(SectionConfig.FOOTER_END.toLong(),
-        SectionConfig.FOOTER_STICKY.toLong(),
-        SectionConfig.FOOTER_INLINE.toLong(),
-        SectionConfig.FOOTER_START.toLong(),
-        SectionConfig.FOOTER_END.toLong())
-@Retention(AnnotationRetention.SOURCE)
-annotation class FooterStyle
