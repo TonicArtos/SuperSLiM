@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.internal.layout
 
-import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -48,35 +47,34 @@ private interface BaseHlm : SectionLayoutManager<SectionState> {
 
 private object InlineHlm : BaseHlm {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        Log.d("INLINE HLM", "layout")
         val state = layoutState as HeaderLayoutState
         var y = -state.overdraw
         if (state.headPosition <= 0) {
             helper.getHeader(section)?.use { footer ->
-                Log.d("Header", "add header")
                 footer.addToRecyclerView()
                 footer.measure()
                 footer.layout(0, y, footer.measuredWidth, y + footer.measuredHeight)
                 if (helper.isPreLayout && footer.isRemoved) {
                     helper.addIgnoredHeight(footer.height)
                 }
-                Log.d("Header", "numViews = $footer.numViews")
                 y += footer.height
                 helper.filledArea += footer.height
                 state.state = ADDED
+                state.headPosition = 0
+                state.tailPosition = 0
             }
         } else {
             state.state = ABSENT
+            state.headPosition = 1
         }
 
-        section.layout(helper, section.leftGutter{0}, y, helper.layoutWidth - section.rightGutter{0},
+        section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 },
                        if (state.state == ADDED) 1 else 0)
         y += section.height
-        if (state.state == ABSENT) state.headPosition = 1
-        state.tailPosition = if (section.height == 0) 0 else 1
+        helper.filledArea += section.height
+        if (section.numViews > 0) state.tailPosition = 1
 
         state.bottom = y
-        Log.d("SADFASDF", "height = $y")
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -88,8 +86,8 @@ private object InlineHlm : BaseHlm {
         if (toFill > 0 && state.headPosition > 0) {
             if (state.headPosition == 1 || state.headPosition < 0) {
                 // Fill content
-                section.fillTop(toFill, section.leftGutter{0}, -state.overdraw,
-                                helper.layoutWidth - section.rightGutter{0}, helper).let {
+                section.fillTop(toFill, section.leftGutter { 0 }, -state.overdraw,
+                                helper.layoutWidth - section.rightGutter { 0 }, helper).let {
                     state.overdraw += it
                     toFill -= it
                     state.tailPosition = 1
@@ -101,7 +99,8 @@ private object InlineHlm : BaseHlm {
                     helper.getHeader(section)?.use { footer ->
                         footer.addToRecyclerView()
                         footer.measure()
-                        footer.fillTop(toFill, 0, -state.overdraw - footer.measuredHeight, footer.measuredWidth, -state.overdraw)
+                        footer.fillTop(toFill, 0, -state.overdraw - footer.measuredHeight, footer.measuredWidth,
+                                       -state.overdraw)
                     }?.let {
                         state.overdraw += it
                         toFill -= it
@@ -122,78 +121,61 @@ private object InlineHlm : BaseHlm {
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         val state = layoutState as HeaderLayoutState
 
-        var filled = (state.bottom - helper.layoutLimit).takeIf { it > 0 } ?: 0
-        var toFill = dy - filled
-        // Add header if room.
-        if (toFill > 0 && state.headPosition <= 0) {
-            helper.getHeader(section)?.use { footer ->
-                footer.addToRecyclerView()
-                footer.measure()
-                footer.fillBottom(toFill, 0, state.bottom, footer.measuredWidth, footer.measuredHeight)
-            }?.let {
-                toFill -= it
-                filled += it
-                state.headPosition = 0
-                state.tailPosition = 0
-                state.bottom += it
+        var filled = if (state.tailPosition == 0) Math.max(0, state.bottom - helper.layoutLimit) else 0
+        if (state.headPosition < 0) {
+            helper.getHeader(section)?.use { header ->
+                header.addToRecyclerView()
+                header.measure()
+                filled += header.fillBottom(dy, 0, -state.overdraw, header.measuredWidth,
+                                            -state.overdraw + header.measuredHeight)
+                state.bottom += header.height
                 state.state = ADDED
+                state.headPosition = 0
             }
         }
 
-        // Fill content if room.
-        if (toFill > 0) {
-            section.fillBottom(toFill, section.leftGutter{0}, state.bottom, helper.layoutWidth - section.rightGutter{0},
-                               helper, if (state.state == ADDED) 1 else 0).let {
-                toFill -= it
-                filled += it
-                state.bottom += it
-                if (state.state == ABSENT) state.headPosition = 1
-                state.tailPosition = 1
-            }
-        }
-
-        return filled
+        val before = section.height
+        filled += section.fillBottom(dy - filled, section.leftGutter { 0 }, state.bottom - section.height,
+                                     helper.layoutWidth - section.rightGutter { 0 }, helper,
+                                     if (state.state == ADDED) 1 else 0)
+        state.bottom += section.height - before
+        state.tailPosition = 1
+        return Math.min(dy, filled)
     }
 
-    override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState,
-                           layoutState: LayoutState): Int {
-        Log.d("HEADER", "onTrimTop")
-        Log.d("header", "layoutState = $layoutState")
+    override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         if (helper.numViews == 0) return 0
 
         val state = layoutState as HeaderLayoutState
-        var removed = 0
+        var removedHeight = 0
+        var contentTop = 0
         if (state.state == ADDED) {
             helper.getAttachedViewAt(0) { header ->
-                Log.d("header", "top = ${header.top}, bottom = ${header.bottom}")
                 if (header.bottom < 0) {
-                    removed += header.height
                     header.remove()
-                    state.overdraw = 0
+                    removedHeight += Math.max(0, header.height - state.overdraw)
+                    state.overdraw = Math.max(0, state.overdraw - header.height)
                     state.headPosition = 1
                     state.state = ABSENT
                 } else if (header.top < 0) {
-                    Log.d("header", "top = ${header.top}")
                     val before = state.overdraw
-                    state.overdraw = header.top
-                    removed += before - state.overdraw
-                    state.bottom -= removed
-                    return removed
+                    state.overdraw = -header.top
+                    removedHeight += state.overdraw - before
+                    contentTop = header.bottom
                 }
             }
         }
-        removed += section.trimTop(scrolled, 0, helper, if (state.state == ADDED) 1 else 0)
+        removedHeight += section.trimTop(scrolled, contentTop, helper, if (state.state == ADDED) 1 else 0)
         if (helper.numViews == 0) {
-            state.tailPosition = -1
+            state.headPosition = -1
             state.headPosition = -1
         }
-        state.bottom -= removed
-        return removed
+        state.bottom -= removedHeight
+        return removedHeight
     }
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
-        Log.d("HEADER", "onTrimBottom")
         if (helper.numViews == 0) return 0
 
         val state = layoutState as HeaderLayoutState
