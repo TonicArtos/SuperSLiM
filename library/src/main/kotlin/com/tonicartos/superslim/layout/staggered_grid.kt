@@ -18,7 +18,7 @@ class StaggeredGridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER
     override fun onMakeSection(oldState: SectionState?): SectionState = StaggeredGridSection(this, oldState)
 
     override fun onCopy(): StaggeredGridSectionConfig {
-        val copy = StaggeredGridSectionConfig(gutterStart, gutterEnd, headerStyle)
+        val copy = StaggeredGridSectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle)
         copy.numColumns = numColumns
         copy.columnWidth = columnWidth
         return copy

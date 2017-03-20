@@ -19,7 +19,7 @@ class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
     override fun onMakeSection(oldState: SectionState?): SectionState = LinearSectionState(this, oldState)
 
     override fun onCopy(): LinearSectionConfig {
-        return LinearSectionConfig(gutterStart, gutterEnd, headerStyle)
+        return LinearSectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle)
     }
 }
 

@@ -16,7 +16,7 @@ class GridSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER, gutterE
     override fun onMakeSection(oldState: SectionState?): SectionState = GridSectionState(this, oldState)
 
     override fun onCopy(): GridSectionConfig {
-        val copy = GridSectionConfig(gutterStart, gutterEnd, headerStyle)
+        val copy = GridSectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle)
         copy.numColumns = numColumns
         copy.columnWidth = columnWidth
         return copy

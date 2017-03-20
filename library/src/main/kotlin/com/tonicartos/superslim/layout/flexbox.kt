@@ -19,7 +19,7 @@ class FlexboxSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
     override fun onMakeSection(oldState: SectionState?): SectionState = FlexboxSectionState(this, oldState)
 
     override fun onCopy(): FlexboxSectionConfig {
-        return FlexboxSectionConfig(gutterStart, gutterEnd, headerStyle)
+        return FlexboxSectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle)
     }
 }
 
