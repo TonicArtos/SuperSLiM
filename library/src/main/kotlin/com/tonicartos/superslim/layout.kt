@@ -1,6 +1,7 @@
 package com.tonicartos.superslim
 
 import android.view.View
+import com.tonicartos.superslim.internal.AttachedView
 import com.tonicartos.superslim.internal.BaseLayoutHelper
 import com.tonicartos.superslim.internal.RootLayoutHelper
 import com.tonicartos.superslim.internal.SectionState
@@ -147,10 +148,10 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     override val layoutWidth get() = width
     override val layoutLimit get() = root.layoutLimit - offset.y
 
-    override fun getLeft(child: View) = root.getLeft(child) - offset.x
-    override fun getRight(child: View) = root.getRight(child) - offset.x
-    override fun getTop(child: View) = root.getTop(child) - offset.y
-    override fun getBottom(child: View) = root.getBottom(child) - offset.y
+    override fun getLeft(child: View): Int = root.getLeft(child) - offset.x
+    override fun getRight(child: View): Int = root.getRight(child) - offset.x
+    override fun getTop(child: View): Int = root.getTop(child) - offset.y
+    override fun getBottom(child: View): Int = root.getBottom(child) - offset.y
 
     override fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int,
                         marginLeft: Int, marginTop: Int, marginRight: Int, marginBottom: Int) {
@@ -206,21 +207,11 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     }
 
     private val SectionState.hasDisappearedItemsToLayOut: Boolean get() {
-        for (scrap in scrap) {
-            if (scrap in this) {
-                return true
-            }
-        }
-        return false
+        return scrap.any { it in this }
     }
 
     internal fun scrapHasPosition(position: Int): Boolean {
-        for (scrap in scrap) {
-            if (scrap.layoutPosition == position) {
-                return true
-            }
-        }
-        return false
+        return scrap.any { it.layoutPosition == position }
     }
 
     override fun getView(position: Int) = root.getView(position)
@@ -257,7 +248,11 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         numViews += 1
     }
 
-    override fun getAttachedViewAt(position: Int) = root.getAttachedViewAt(viewsBefore + position)
+    override fun getAttachedRawView(position: Int) = root.getAttachedRawView(viewsBefore + position)
+
+    fun getAttachedViewAt(position: Int) = AttachedView.wrap(getAttachedRawView(position), this)
+    inline fun <R> getAttachedViewAt(position: Int, block: (AttachedView) -> R): R
+            = getAttachedViewAt(position).let { view -> block(view).also { view.done() } }
 
     override fun attachViewToPosition(position: Int, view: View) {
         numViews += 1
@@ -269,7 +264,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         return root.detachViewAtPosition(viewsBefore + position)
     }
 
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n${root})".replace(
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace(
             "\n", "\n\t")
 
     private data class Offset(var x: Int = 0, var y: Int = 0)
@@ -299,8 +294,8 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     override fun getTransformedPaddingBottom(sectionConfig: SectionConfig)
             = root.getTransformedPaddingBottom(sectionConfig)
 
-    override fun getMeasuredWidth(child: View) = root.getMeasuredWidth(child)
-    override fun getMeasuredHeight(child: View) = root.getMeasuredHeight(child)
+    override fun getMeasuredWidth(child: View): Int = root.getMeasuredWidth(child)
+    override fun getMeasuredHeight(child: View): Int = root.getMeasuredHeight(child)
     override var stickyStartInset get() = root.stickyStartInset
         set(value) {
             root.stickyStartInset = value
@@ -312,5 +307,6 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     override fun offsetChildrenVertical(dy: Int) = root.offsetChildrenVertical(dy)
     override fun offsetChildrenHorizontal(dx: Int) = root.offsetChildrenHorizontal(dx)
-
+    override fun offsetHorizontal(view: View, dx: Int) = root.offsetHorizontal(view, dx)
+    override fun offsetVertical(view: View, dy: Int) = root.offsetVertical(view, dy)
 }

@@ -26,7 +26,7 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
         }
         var y = state.paddingTop - state.overdraw
 
-        section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
+        section.layout(helper, section.leftGutter{0}, y, helper.layoutWidth - section.rightGutter{0})
         y += section.height + helper.paddingBottom
 
         state.tailPosition = 0
@@ -40,8 +40,8 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
 
         var toFill = dy
         // How much distance left to fill.
-        var filled = section.fillTop(toFill, section.leftGutter(), state.paddingTop - state.overdraw,
-                                     helper.layoutWidth - section.rightGutter(), helper)
+        var filled = section.fillTop(toFill, section.leftGutter{0}, state.paddingTop - state.overdraw,
+                                     helper.layoutWidth - section.rightGutter{0}, helper)
         Log.d("PADDING", "filled = $filled, state = $state")
         toFill -= filled
         filled += Math.min(toFill, state.overdraw)
@@ -67,8 +67,8 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
         var filled = (actualBottom - helper.layoutLimit).takeIf { it > 0 } ?: 0
         var toFill = dy - filled
         if (toFill > 0) {
-            section.fillBottom(toFill, section.leftGutter(), actualBottom,
-                               helper.layoutWidth - section.rightGutter(), helper).let {
+            section.fillBottom(toFill, section.leftGutter{0}, actualBottom,
+                               helper.layoutWidth - section.rightGutter{0}, helper).let {
                 toFill -= it
                 filled += it
                 state.bottom += it

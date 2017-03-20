@@ -497,13 +497,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * a time.
      */
     private val layoutState = Stack<LayoutState>()
-
-    internal val height: Int
-        get() = layoutState.peek().bottom //let { it.bottom - it.overdraw }
-
-    internal val numViews: Int
-        get() = layoutState.peek().numViews
-
+    internal val height get() = layoutState.peek().bottom
+    internal val numViews get() = layoutState.peek().numViews
     internal fun resetLayout() {
         layoutState.forEach { it.reset() }
         subsections.forEach { it.resetLayout() }
@@ -1166,13 +1161,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    @Suppress("nothing_to_inline")
-    internal inline fun rightGutter(autoWidth: Int = 0) =
-            if (baseConfig.gutterRight == GUTTER_AUTO) autoWidth else baseConfig.gutterRight
+    internal inline fun rightGutter(autoWidth: () -> Int)
+            = if (baseConfig.gutterRight == GUTTER_AUTO) autoWidth() else baseConfig.gutterRight
 
-    @Suppress("nothing_to_inline")
-    internal inline fun leftGutter(autoWidth: Int = 0) =
-            if (baseConfig.gutterLeft == GUTTER_AUTO) autoWidth else baseConfig.gutterLeft
+    internal inline fun leftGutter(autoWidth: () -> Int)
+            = if (baseConfig.gutterLeft == GUTTER_AUTO) autoWidth() else baseConfig.gutterLeft
 }
 
 internal abstract class ChildInternal(var helper: LayoutHelper) : Child {

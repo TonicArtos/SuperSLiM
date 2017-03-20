@@ -1,6 +1,5 @@
 package com.tonicartos.superslim.internal
 
-import android.graphics.drawable.InsetDrawable
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import com.tonicartos.superslim.LayoutHelper
@@ -161,6 +160,31 @@ internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
     fun getTransformedPaddingBottom(sectionConfig: SectionConfig): Int
 }
 
+class AttachedView private constructor(private var view: View, private var helper: LayoutHelper) {
+    companion object {
+        private val pool = ArrayList<AttachedView>()
+        internal fun wrap(view: View, helper: LayoutHelper) = if (pool.size >= 1) pool.removeAt(0).apply {
+            this.view = view
+            this.helper = helper
+        } else AttachedView(view, helper)
+    }
+
+    fun done() {
+        pool.add(this)
+    }
+
+    val left get() = helper.getLeft(this.view)
+    val top get() = helper.getTop(this.view)
+    val right get() = helper.getRight(this.view)
+    val bottom get() = helper.getBottom(this.view)
+    val width get() = helper.getMeasuredWidth(this.view)
+    val height get() = helper.getMeasuredHeight(this.view)
+
+    fun remove() = helper.removeView(this.view)
+    fun offsetTopAndBottom(offset: Int) = helper.offsetVertical(this.view, offset)
+    fun offsetLeftAndRight(offset: Int) = helper.offsetHorizontal(this.view, offset)
+}
+
 internal interface ReadLayoutHelper {
     fun getLeft(child: View): Int
     fun getTop(child: View): Int
@@ -169,7 +193,7 @@ internal interface ReadLayoutHelper {
     fun getMeasuredWidth(child: View): Int
     fun getMeasuredHeight(child: View): Int
 
-    fun getAttachedViewAt(position: Int): View
+    fun getAttachedRawView(position: Int): View
 
     /**
      * Width of the layout area.
@@ -206,6 +230,8 @@ internal interface WriteLayoutHelper {
     fun layout(view: View, left: Int, top: Int, right: Int, bottom: Int, marginLeft: Int = 0, marginTop: Int = 0,
                marginRight: Int = 0, marginBottom: Int = 0)
 
+    fun offsetVertical(view: View, dy: Int)
+    fun offsetHorizontal(view: View, dx: Int)
     fun offsetChildrenVertical(dy: Int)
     fun offsetChildrenHorizontal(dx: Int)
 }

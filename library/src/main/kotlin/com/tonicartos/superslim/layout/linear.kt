@@ -55,15 +55,15 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         var y = -layoutState.overdraw
 
         while (helper.moreToLayout(currentPosition, section)) {
-            helper.getChild(currentPosition, section)?.use {
-                addToRecyclerView()
-                measure()
-                layout(0, y, measuredWidth, y + measuredHeight, helper.numViews)
-                if (helper.isPreLayout && isRemoved) {
-                    helper.addIgnoredHeight(height)
+            helper.getChild(currentPosition, section)?.use { child ->
+                child.addToRecyclerView()
+                child.measure()
+                child.layout(0, y, child.measuredWidth, y + child.measuredHeight, helper.numViews)
+                if (helper.isPreLayout && child.isRemoved) {
+                    helper.addIgnoredHeight(child.height)
                 }
-                y += height
-                helper.filledArea += height
+                y += child.height
+                helper.filledArea += child.height
                 currentPosition += 1
             } ?: break
         }
@@ -83,10 +83,10 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
         // Fill leading children
         if (0 <= currentPos && currentPos < section.numChildren) {
-            helper.getUnfinishedChild(currentPos, section)?.use {
-                measure()
+            helper.getUnfinishedChild(currentPos, section)?.use { child ->
+                child.measure()
                 // Different from fillBottom because overscroll hides the excess from section height.
-                fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y).let {
+                child.fillTop(dyRemaining, 0, y - child.measuredHeight, child.measuredWidth, y).let {
                     y -= it
                     dyRemaining -= it
                 }
@@ -99,10 +99,10 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         // Fill remaining dy with remaining content.
         while (dyRemaining > 0 && currentPos > 0) {
             currentPos -= 1
-            helper.getChild(currentPos, section)?.use {
-                addToRecyclerView(0)
-                measure()
-                fillTop(dyRemaining, 0, y - measuredHeight, measuredWidth, y).let {
+            helper.getChild(currentPos, section)?.use { child ->
+                child.addToRecyclerView(0)
+                child.measure()
+                child.fillTop(dyRemaining, 0, y - child.measuredHeight, child.measuredWidth, y).let {
                     y -= it
                     dyRemaining -= it
                 }
@@ -133,19 +133,19 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
             var stepBackHeight = 0
             var stepBackViews = 0
             for (position in layoutState.tailPosition downTo layoutState.headPosition) {
-                helper.getUnfinishedChild(position, section)?.use {
-                    measure()
+                helper.getUnfinishedChild(position, section)?.use { child ->
+                    child.measure()
 
-                    val before = height
-                    val fill = fillBottom(dy, 0, y - stepBackHeight - height, measuredWidth, 0,
-                                          helper.numViews - stepBackViews - numViews)
+                    val before = child.height
+                    val fill = child.fillBottom(dy, 0, y - stepBackHeight - child.height, child.measuredWidth, 0,
+                                                helper.numViews - stepBackViews - child.numViews)
                     if (position == layoutState.tailPosition) {
-                        y += height - before
+                        y += child.height - before
                         filled += fill
                     }
 
-                    stepBackHeight += height
-                    stepBackViews += numViews
+                    stepBackHeight += child.height
+                    stepBackViews += child.numViews
                 }
                 if (y - stepBackHeight <= helper.layoutLimit - helper.stickyEndInset) break
             }
@@ -160,12 +160,13 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
         // Fill in remaining space
         while (filled + excess < dy && layoutState.tailPosition + 1 < section.numChildren) {
-            helper.getChild(layoutState.tailPosition + 1, section)?.use {
-                addToRecyclerView()
-                measure()
-                filled += fillBottom(dy - filled, 0, y, measuredWidth, y + measuredHeight, helper.numViews)
+            helper.getChild(layoutState.tailPosition + 1, section)?.use { child ->
+                child.addToRecyclerView()
+                child.measure()
+                filled += child.fillBottom(dy - filled, 0, y, child.measuredWidth, y + child.measuredHeight,
+                                           helper.numViews)
                 layoutState.tailPosition += 1
-                y += height
+                y += child.height
             }
         }
 
@@ -182,19 +183,19 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         var removedHeight = 0
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false
-            helper.getUnfinishedChild(layoutState.headPosition, section)?.use {
-                removedHeight += trimTop(scrolled, 0, helper)
-                childRemoved = numViews == 0
+            helper.getUnfinishedChild(layoutState.headPosition, section)?.use { child ->
+                removedHeight += child.trimTop(scrolled, 0, helper)
+                childRemoved = child.numViews == 0
                 // Don't adjust overdraw because section children don't report drawing into the area.
-            } ?: helper.getAttachedViewAt(0).let {
-                if (helper.getBottom(it) < 0) {
-                    helper.removeView(it)
-                    removedHeight += Math.max(0, it.height - layoutState.overdraw)
-                    layoutState.overdraw = Math.max(0, layoutState.overdraw - it.height)
+            } ?: helper.getAttachedViewAt(0) { child ->
+                if (child.bottom < 0) {
+                    child.remove()
+                    removedHeight += Math.max(0, child.height - layoutState.overdraw)
+                    layoutState.overdraw = Math.max(0, layoutState.overdraw - child.height)
                     childRemoved = true
-                } else if (helper.getTop(it) < 0) {
+                } else if (child.top < 0) {
                     val before = layoutState.overdraw
-                    layoutState.overdraw = -helper.getTop(it)
+                    layoutState.overdraw = -child.top
                     removedHeight += layoutState.overdraw - before
                 }
             }
@@ -221,17 +222,17 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
         // Trim child sections back to before the sticky edge. Remove child views after the limit. Track tail position.
         var stepBackViews = 0
         for (position in layoutState.tailPosition downTo layoutState.headPosition) {
-            helper.getUnfinishedChild(position, section)?.use {
-                y -= height
-                removedHeight += trimBottom(scrolled, y, helper, helper.numViews - stepBackViews - numViews)
-                stepBackViews += numViews
-                if (numViews == 0) layoutState.tailPosition -= 1
-            } ?: helper.getAttachedViewAt(helper.numViews - 1).let { child ->
+            helper.getUnfinishedChild(position, section)?.use { child ->
+                y -= child.height
+                removedHeight += child.trimBottom(scrolled, y, helper, helper.numViews - stepBackViews - child.numViews)
+                stepBackViews += child.numViews
+                if (child.numViews == 0) layoutState.tailPosition -= 1
+            } ?: helper.getAttachedViewAt(helper.numViews - 1) { child ->
                 y -= child.height
                 stepBackViews += 1
-                if (helper.getTop(child) > helper.layoutLimit) {
+                if (child.top > helper.layoutLimit) {
                     removedHeight += child.height
-                    helper.removeView(child)
+                    child.remove()
                     layoutState.tailPosition -= 1
                     stepBackViews -= 1
                 }

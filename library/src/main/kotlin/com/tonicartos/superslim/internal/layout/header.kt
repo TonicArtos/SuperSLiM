@@ -1,10 +1,13 @@
 package com.tonicartos.superslim.internal.layout
 
 import android.util.Log
-import com.tonicartos.superslim.*
+import com.tonicartos.superslim.LayoutHelper
+import com.tonicartos.superslim.SectionConfig
+import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.HeaderLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
+import com.tonicartos.superslim.use
 
 private const val ABSENT = 1 shl 0
 private const val ADDED = 1 shl 1
@@ -49,24 +52,24 @@ private object InlineHlm : BaseHlm {
         val state = layoutState as HeaderLayoutState
         var y = -state.overdraw
         if (state.headPosition <= 0) {
-            helper.getHeader(section)?.use {
+            helper.getHeader(section)?.use { footer ->
                 Log.d("Header", "add header")
-                addToRecyclerView()
-                measure()
-                layout(0, y, measuredWidth, y + measuredHeight)
-                if (helper.isPreLayout && isRemoved) {
-                    helper.addIgnoredHeight(height)
+                footer.addToRecyclerView()
+                footer.measure()
+                footer.layout(0, y, footer.measuredWidth, y + footer.measuredHeight)
+                if (helper.isPreLayout && footer.isRemoved) {
+                    helper.addIgnoredHeight(footer.height)
                 }
-                Log.d("Header", "numViews = $numViews")
-                y += height
-                helper.filledArea += height
+                Log.d("Header", "numViews = $footer.numViews")
+                y += footer.height
+                helper.filledArea += footer.height
                 state.state = ADDED
             }
         } else {
             state.state = ABSENT
         }
 
-        section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter(),
+        section.layout(helper, section.leftGutter{0}, y, helper.layoutWidth - section.rightGutter{0},
                        if (state.state == ADDED) 1 else 0)
         y += section.height
         if (state.state == ABSENT) state.headPosition = 1
@@ -85,8 +88,8 @@ private object InlineHlm : BaseHlm {
         if (toFill > 0 && state.headPosition > 0) {
             if (state.headPosition == 1 || state.headPosition < 0) {
                 // Fill content
-                section.fillTop(toFill, section.leftGutter(), -state.overdraw,
-                                helper.layoutWidth - section.rightGutter(), helper).let {
+                section.fillTop(toFill, section.leftGutter{0}, -state.overdraw,
+                                helper.layoutWidth - section.rightGutter{0}, helper).let {
                     state.overdraw += it
                     toFill -= it
                     state.tailPosition = 1
@@ -95,10 +98,10 @@ private object InlineHlm : BaseHlm {
 
                 // Fill header if there is space left.
                 if (toFill > 0) {
-                    helper.getHeader(section)?.use {
-                        addToRecyclerView()
-                        measure()
-                        fillTop(toFill, 0, -state.overdraw - measuredHeight, measuredWidth, -state.overdraw)
+                    helper.getHeader(section)?.use { footer ->
+                        footer.addToRecyclerView()
+                        footer.measure()
+                        footer.fillTop(toFill, 0, -state.overdraw - footer.measuredHeight, footer.measuredWidth, -state.overdraw)
                     }?.let {
                         state.overdraw += it
                         toFill -= it
@@ -123,10 +126,10 @@ private object InlineHlm : BaseHlm {
         var toFill = dy - filled
         // Add header if room.
         if (toFill > 0 && state.headPosition <= 0) {
-            helper.getHeader(section)?.use {
-                addToRecyclerView()
-                measure()
-                fillBottom(toFill, 0, state.bottom, measuredWidth, measuredHeight)
+            helper.getHeader(section)?.use { footer ->
+                footer.addToRecyclerView()
+                footer.measure()
+                footer.fillBottom(toFill, 0, state.bottom, footer.measuredWidth, footer.measuredHeight)
             }?.let {
                 toFill -= it
                 filled += it
@@ -139,7 +142,7 @@ private object InlineHlm : BaseHlm {
 
         // Fill content if room.
         if (toFill > 0) {
-            section.fillBottom(toFill, section.leftGutter(), state.bottom, helper.layoutWidth - section.rightGutter(),
+            section.fillBottom(toFill, section.leftGutter{0}, state.bottom, helper.layoutWidth - section.rightGutter{0},
                                helper, if (state.state == ADDED) 1 else 0).let {
                 toFill -= it
                 filled += it
@@ -161,21 +164,22 @@ private object InlineHlm : BaseHlm {
         val state = layoutState as HeaderLayoutState
         var removed = 0
         if (state.state == ADDED) {
-            val header = helper.getAttachedViewAt(0)
-            Log.d("header", "top = ${helper.getTop(header)}, bottom = ${helper.getBottom(header)}")
-            if (helper.getBottom(header) < 0) {
-                removed += header.height
-                helper.removeView(header)
-                state.overdraw = 0
-                state.headPosition = 1
-                state.state = ABSENT
-            } else if (helper.getTop(header) < 0) {
-                Log.d("header", "top = ${helper.getTop(header)}")
-                val before = state.overdraw
-                state.overdraw = helper.getTop(header)
-                removed += before - state.overdraw
-                state.bottom -= removed
-                return removed
+            helper.getAttachedViewAt(0) { header ->
+                Log.d("header", "top = ${header.top}, bottom = ${header.bottom}")
+                if (header.bottom < 0) {
+                    removed += header.height
+                    header.remove()
+                    state.overdraw = 0
+                    state.headPosition = 1
+                    state.state = ABSENT
+                } else if (header.top < 0) {
+                    Log.d("header", "top = ${header.top}")
+                    val before = state.overdraw
+                    state.overdraw = header.top
+                    removed += before - state.overdraw
+                    state.bottom -= removed
+                    return removed
+                }
             }
         }
         removed += section.trimTop(scrolled, 0, helper, if (state.state == ADDED) 1 else 0)
@@ -199,13 +203,14 @@ private object InlineHlm : BaseHlm {
             state.tailPosition = 0
         }
         if (state.state == ADDED) {
-            val header = helper.getAttachedViewAt(0)
-            if (helper.getTop(header) > helper.layoutLimit) {
-                removed += header.height
-                helper.removeView(header)
-                state.headPosition = -1
-                state.tailPosition = -1
-                state.state = ABSENT
+            helper.getAttachedViewAt(0) { header ->
+                if (header.top > helper.layoutLimit) {
+                    removed += header.height
+                    header.remove()
+                    state.headPosition = -1
+                    state.tailPosition = -1
+                    state.state = ABSENT
+                }
             }
         }
         if (helper.numViews == 0) {

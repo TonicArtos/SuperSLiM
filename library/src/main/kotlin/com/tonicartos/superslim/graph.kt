@@ -4,7 +4,7 @@ import com.tonicartos.superslim.adapter.FooterStyle
 import com.tonicartos.superslim.adapter.HeaderStyle
 import com.tonicartos.superslim.internal.SectionState
 
-inline fun <T : Child, R> T.use(block: T.() -> R): R {
+inline fun <T : Child, R> T.use(block: (T) -> R): R {
     var done = false
     try {
         return block(this)
@@ -186,18 +186,6 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
         const val HEADER_END = 1 shl 3
 
         /**
-         * Float header above the content. Content starts at the same top edge as the header. Floating headers are
-         * always sticky in the same way as HEADER_STICKY.
-         */
-        const val HEADER_FLOAT = 1 shl 4
-
-        /**
-         * Header is placed at the tail of the section. If sticky, it will stick to the bottom edge rather than the
-         * top. Combines with all other options.
-         */
-        const val HEADER_TAIL = 1 shl 5
-
-        /**
          * Footer is positioned at the head of the section content. Content starts below the footer. Sticky footers
          * stick to the top of the layout area until the entire area has scrolled off the screen. Use FOOTER_INLINE for
          * a footer style which is otherwise the same without the sticky property.
@@ -221,18 +209,6 @@ abstract class SectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
          * Gutter footers are always sticky.
          */
         const val FOOTER_END = 1 shl 3
-
-        /**
-         * Float footer above the content. Content starts at the same top edge as the footer. Floating footers are
-         * always sticky in the same way as FOOTER_STICKY.
-         */
-        const val FOOTER_FLOAT = 1 shl 4
-
-        /**
-         * Footer is placed at the tail of the section. If sticky, it will stick to the bottom edge rather than the
-         * top. Combines with all other options.
-         */
-        const val FOOTER_TAIL = 1 shl 5
 
         const val GUTTER_AUTO = -1
 

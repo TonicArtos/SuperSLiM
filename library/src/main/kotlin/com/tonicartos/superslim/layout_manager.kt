@@ -65,7 +65,7 @@ class SectionData {
     internal var subsections = emptyList<SectionState>()
 }
 
-class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, ReadWriteLayoutHelper,
+class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, ConfigHelper,
                                  ItemManagement by ItemManager() {
     @JvmOverloads @Suppress("unused")
     constructor(@Suppress("unused_parameter") context: Context, @Orientation orientation: Int = VERTICAL,
@@ -139,6 +139,9 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
         graph?.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
     }
 
+    override fun offsetHorizontal(view: View, dx: Int) = view.offsetLeftAndRight(dx)
+    override fun offsetVertical(view: View, dy: Int) = view.offsetTopAndBottom(dy)
+
     /****************************************************
      * Scrolling
      ****************************************************/
@@ -147,17 +150,15 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
 
     override fun canScrollHorizontally() = orientation == HORIZONTAL
 
-    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        val scrolled = graph?.scrollBy(dy, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
-                                                            stateHelper.wrap(state))) ?: 0
-        return scrolled
-    }
+    override fun scrollVerticallyBy(dy: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State)
+            = configHelper.scrollBy(dy, recycler, state)
 
-    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State): Int {
-        val scrolled = graph?.scrollBy(dx, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
-                                                            stateHelper.wrap(state))) ?: 0
-        return scrolled
-    }
+    override fun scrollHorizontallyBy(dx: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State)
+            = configHelper.scrollBy(dx, recycler, state)
+
+    override fun scrollBy(d: Int, recycler: RecyclerView.Recycler, state: RecyclerView.State)
+            = graph?.scrollBy(d, RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler),
+                                                  stateHelper.wrap(state))) ?: 0
 
     override fun scrollToPosition(position: Int) {
         graph?.apply {
@@ -299,7 +300,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
 
     //TODO: Test configuration setup.
     private var configChanged = true
-    private var configHelper: ReadWriteLayoutHelper = this
+    private var configHelper: ConfigHelper = this
         get() = field.takeUnless { configChanged } ?: let {
             // Build chain of configuration transformations.
             field = this
@@ -326,14 +327,14 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Re
     override fun getTransformedPaddingRight(sectionConfig: SectionConfig): Int = sectionConfig.paddingRight
     override fun getTransformedPaddingBottom(sectionConfig: SectionConfig): Int = sectionConfig.paddingBottom
 
-    override fun getMeasuredHeight(child: View) = getDecoratedMeasuredHeight(child)
-    override fun getMeasuredWidth(child: View) = getDecoratedMeasuredWidth(child)
-    override fun getLeft(child: View) = getDecoratedLeft(child)
-    override fun getTop(child: View) = getDecoratedTop(child)
-    override fun getRight(child: View) = getDecoratedRight(child)
-    override fun getBottom(child: View) = getDecoratedBottom(child)
+    override fun getMeasuredHeight(child: View): Int = getDecoratedMeasuredHeight(child)
+    override fun getMeasuredWidth(child: View): Int = getDecoratedMeasuredWidth(child)
+    override fun getLeft(child: View): Int = getDecoratedLeft(child)
+    override fun getTop(child: View): Int = getDecoratedTop(child)
+    override fun getRight(child: View): Int = getDecoratedRight(child)
+    override fun getBottom(child: View): Int = getDecoratedBottom(child)
 
-    override fun getAttachedViewAt(position: Int): View {
+    override fun getAttachedRawView(position: Int): View {
         require(position in 0..(childCount - 1))
         return getChildAt(position)
     }

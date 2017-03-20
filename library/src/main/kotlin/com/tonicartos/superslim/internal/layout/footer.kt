@@ -1,12 +1,9 @@
 package com.tonicartos.superslim.internal.layout
 
-import android.util.Log
-import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
+import com.tonicartos.superslim.internal.AttachedView
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.FooterLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
@@ -46,9 +43,9 @@ internal object FooterLayoutManager : SectionLayoutManager<SectionState> {
             = selectFooterLayout(section).onTrimBottom(scrolled, helper, section, layoutState)
 
     private fun selectFooterLayout(section: SectionState): SectionLayoutManager<SectionState> {
-        return DoNothingSlm.takeUnless { section.hasFooter } ?: when (section.baseConfig.headerStyle) {
-            SectionConfig.HEADER_INLINE                          -> inlineFlm
-            SectionConfig.HEADER_START, SectionConfig.HEADER_END -> gutterFlm
+        return DoNothingSlm.takeUnless { section.hasFooter } ?: when (section.baseConfig.footerStyle) {
+            SectionConfig.FOOTER_INLINE                          -> inlineFlm
+            SectionConfig.FOOTER_START, SectionConfig.FOOTER_END -> gutterFlm
             else                                                 -> stickyFlm
         }
     }
@@ -60,13 +57,12 @@ private interface BaseFlm : SectionLayoutManager<SectionState> {
 
 private object inlineFlm : BaseFlm {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        Log.d("INLINE FLM", "layout")
         val state = layoutState as FooterLayoutState
         var y = -state.overdraw
 
         if (state.headPosition <= 0) {
             if (helper.moreToLayout(0, section)) {
-                section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
+                section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 })
                 y += section.height
                 helper.filledArea += section.height
                 state.headPosition = 0
@@ -75,15 +71,15 @@ private object inlineFlm : BaseFlm {
         }
 
         if (y < helper.layoutLimit) {
-            helper.getFooter(section)?.use {
-                addToRecyclerView()
-                measure()
-                layout(0, y, measuredWidth, y + measuredHeight, helper.numViews)
-                if (helper.isPreLayout && isRemoved) {
-                    helper.addIgnoredHeight(height)
+            helper.getFooter(section)?.use { footer ->
+                footer.addToRecyclerView()
+                footer.measure()
+                footer.layout(0, y, footer.measuredWidth, y + footer.measuredHeight, helper.numViews)
+                if (helper.isPreLayout && footer.isRemoved) {
+                    helper.addIgnoredHeight(footer.height)
                 }
-                y += height
-                helper.filledArea += height
+                y += footer.height
+                helper.filledArea += footer.height
                 state.state = ADDED
                 if (state.headPosition < 0) state.headPosition = 1
                 state.tailPosition = 1
@@ -104,10 +100,11 @@ private object inlineFlm : BaseFlm {
         var toFill = dy - state.overdraw
 
         if (state.headPosition > 1) {
-            helper.getFooter(section)?.use {
-                addToRecyclerView()
-                measure()
-                val filled = fillTop(toFill, 0, -state.overdraw - measuredHeight, measuredWidth, -state.overdraw)
+            helper.getFooter(section)?.use { footer ->
+                footer.addToRecyclerView()
+                footer.measure()
+                val filled = footer.fillTop(toFill, 0, -state.overdraw - footer.measuredHeight, footer.measuredWidth,
+                                            -state.overdraw)
                 state.overdraw += filled
                 toFill -= filled
                 state.state = ADDED
@@ -117,8 +114,8 @@ private object inlineFlm : BaseFlm {
         }
 
         if (toFill > 0) {
-            val filled = section.fillTop(toFill, section.leftGutter(), -state.overdraw,
-                                         helper.layoutWidth - section.rightGutter(), helper)
+            val filled = section.fillTop(toFill, section.leftGutter { 0 }, -state.overdraw,
+                                         helper.layoutWidth - section.rightGutter { 0 }, helper)
             state.overdraw += filled
             toFill -= filled
             state.headPosition = 0
@@ -130,7 +127,6 @@ private object inlineFlm : BaseFlm {
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        Log.d("FOOTER", "dy = $dy, state = $layoutState")
         val state = layoutState as FooterLayoutState
         if (state.headPosition < 0) state.headPosition = 0
 
@@ -139,21 +135,19 @@ private object inlineFlm : BaseFlm {
         } else {
             // Must fill section children first.
             val before = section.height
-            var filled = section.fillBottom(dy, section.leftGutter(), state.bottom - section.height,
-                                            helper.layoutWidth - section.rightGutter(), helper)
-            Log.d("FOOTER", "filled = $filled")
+            var filled = section.fillBottom(dy, section.leftGutter { 0 }, state.bottom - section.height,
+                                            helper.layoutWidth - section.rightGutter { 0 }, helper)
             state.bottom += section.height - before
             state.tailPosition = 0
 
             // Add footer
             if (filled < dy) {
-                helper.getFooter(section)?.use {
-                    Log.d("FOOTER ADD", "add footer")
-                    addToRecyclerView()
-                    measure()
-                    filled += fillBottom(dy - filled, 0, state.bottom, measuredWidth, state.bottom + measuredHeight,
-                                         helper.numViews)
-                    state.bottom += height
+                helper.getFooter(section)?.use { footer ->
+                    footer.addToRecyclerView()
+                    footer.measure()
+                    filled += footer.fillBottom(dy - filled, 0, state.bottom, footer.measuredWidth,
+                                                state.bottom + footer.measuredHeight, helper.numViews)
+                    state.bottom += footer.height
                     state.state = ADDED
                     state.tailPosition = 1
                 }
@@ -164,22 +158,22 @@ private object inlineFlm : BaseFlm {
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        Log.d("FOOTER TRIM", "state = ${layoutState}")
         if (helper.numViews == 0) return 0
 
         val state = layoutState as FooterLayoutState
         var removedHeight = if (state.headPosition == 0) section.trimTop(scrolled, 0, helper, 0) else 0
         if (helper.numViews == 1 && state.state == ADDED) {
-            helper.getAttachedViewAt(helper.numViews - 1).let {
-                if (helper.getBottom(it) < 0) {
-                    helper.removeView(it)
-                    removedHeight += Math.max(0, it.height - state.overdraw)
-                    layoutState.overdraw = Math.max(0, layoutState.overdraw - it.height)
+            helper.getAttachedViewAt(helper.numViews - 1) { footer ->
+                if (footer.bottom < 0) {
+                    footer.remove()
+                    val height = footer.height
+                    removedHeight += Math.max(0, height - state.overdraw)
+                    layoutState.overdraw = Math.max(0, layoutState.overdraw - height)
                     state.tailPosition = 0
                     state.state = ABSENT
-                } else if (helper.getTop(it) < 0) {
+                } else if (footer.top < 0) {
                     val before = state.overdraw
-                    state.overdraw = -helper.getTop(it)
+                    state.overdraw = -footer.top
                     removedHeight += state.overdraw - before
                 }
             }
@@ -199,10 +193,10 @@ private object inlineFlm : BaseFlm {
         val state = layoutState as FooterLayoutState
         var removedHeight = 0
         if (state.state == ADDED) {
-            helper.getAttachedViewAt(helper.numViews - 1).let {
-                if (helper.getTop(it) > helper.layoutLimit) {
-                    removedHeight += it.height
-                    helper.removeView(it)
+            helper.getAttachedViewAt(helper.numViews - 1) { footer ->
+                if (footer.top > helper.layoutLimit) {
+                    removedHeight += footer.height
+                    footer.remove()
                     state.tailPosition = 0
                     state.state = ABSENT
                 }
@@ -220,42 +214,42 @@ private object inlineFlm : BaseFlm {
 
 private object stickyFlm : BaseFlm by inlineFlm {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        Log.d("STICKY FLM", "layout")
         val state = layoutState as FooterLayoutState
         var y = -state.overdraw
 
-        helper.getFooter(section)?.use {
-            addToRecyclerView()
-            measure()
-            helper.stickyEndInset += measuredHeight
+        helper.getFooter(section)?.use { footer ->
+            footer.addToRecyclerView()
+            footer.measure()
 
-            if (state.headPosition <= 0) {
-                if (helper.moreToLayout(0, section)) {
-                    section.layout(helper, section.leftGutter(), y, helper.layoutWidth - section.rightGutter())
-                    y += section.height
-                    helper.filledArea += section.height
-                    state.headPosition = 0
-                    state.tailPosition = 0
+            helper.insetStickyEnd(footer.measuredHeight) {
+                if (state.headPosition <= 0) {
+                    if (helper.moreToLayout(0, section)) {
+                        section.layout(helper, section.leftGutter { 0 }, y,
+                                       helper.layoutWidth - section.rightGutter { 0 })
+                        y += section.height
+                        helper.filledArea += section.height
+                        state.headPosition = 0
+                        state.tailPosition = 0
+                    }
                 }
             }
 
-            helper.stickyEndInset -= measuredHeight
             // Detect and adjust positioning to sticky or not.
-            var bottom = y + measuredHeight
+            var bottom = y + footer.measuredHeight
             val limit = helper.layoutLimit - helper.stickyEndInset
             val floatOffset = if (bottom > limit) limit - bottom else 0
             bottom += floatOffset
 
-            layout(0, bottom - measuredHeight, measuredWidth, bottom, helper.numViews)
+            footer.layout(0, bottom - footer.measuredHeight, footer.measuredWidth, bottom, helper.numViews)
 
             // 100% floating footer has 0 height.
-            val floatAdjustedHeight = Math.max(0, height + floatOffset)
-            if (helper.isPreLayout && isRemoved) helper.addIgnoredHeight(floatAdjustedHeight)
+            val floatAdjustedHeight = Math.max(0, footer.height + floatOffset)
+            if (helper.isPreLayout && footer.isRemoved) helper.addIgnoredHeight(floatAdjustedHeight)
             helper.filledArea += floatAdjustedHeight
             state.state = FLOATING
             if (state.headPosition < 0) state.headPosition = 1
             state.tailPosition = 1
-            y += height
+            y += footer.height
             if (y < helper.layoutLimit) {
                 state.state = ADDED
             }
@@ -265,46 +259,41 @@ private object stickyFlm : BaseFlm by inlineFlm {
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        Log.d("FOOTER", "dy = $dy, state = $layoutState, helper = $helper")
         val state = layoutState as FooterLayoutState
         if (state.headPosition < 0) state.headPosition = 0
 
-
         if (state.state == ABSENT) {
-            helper.getFooter(section)?.use {
-                Log.d("FOOTER ADD", "add footer")
-                addToRecyclerView()
-                measure()
-                fillBottom(dy, 0, state.bottom, measuredWidth, state.bottom + measuredHeight, helper.numViews)
+            helper.getFooter(section)?.use { footer ->
+                footer.addToRecyclerView()
+                footer.measure()
+                footer.fillBottom(dy, 0, state.bottom, footer.measuredWidth, state.bottom + footer.measuredHeight,
+                                  helper.numViews)
                 state.state = FLOATING
                 state.tailPosition = 1
-                state.bottom = measuredHeight
+                state.bottom = footer.measuredHeight
             }
         }
 
-        val footer = helper.getAttachedViewAt(helper.numViews - 1)
-//        if (state.state == ADDED && helper.getBottom(footer) == state.bottom) {
-//            return 0
-//        }
+        return Math.min(dy, helper.getAttachedViewAt(helper.numViews - 1) { footer ->
+            var filled = helper.insetStickyEnd(footer.height) {
+                val before = section.height
+                val fill = section.fillBottom(dy, section.leftGutter { 0 }, 0,
+                                              helper.layoutWidth - section.rightGutter { 0 },
+                                              helper)
+                state.bottom += section.height - before
+                fill
+            }
 
-        var filled = helper.insetStickyEnd(footer.height) {
-            val before = section.height
-            val fill = section.fillBottom(dy, section.leftGutter(), 0, helper.layoutWidth - section.rightGutter(),
-                                          helper)
-            state.bottom += section.height - before
-            fill
-        }
+            if (state.state != ADDED && filled < dy) {
+                filled += footer.height
+                state.tailPosition = 1
+                state.state = ADDED
+            }
 
-        if (state.state != ADDED && filled < dy) {
-            filled += footer.height
-            state.tailPosition = 1
-            state.state = ADDED
-            Log.d("FOOTER", "Floating footer inserted.")
-        }
-
-        val offset = calculateStickyFooterOffset(footer, helper, state, dy)
-        footer.offsetTopAndBottom(offset)
-        return Math.min(dy, filled)
+            val offset = calculateStickyFooterOffset(footer, helper, state, dy)
+            footer.offsetTopAndBottom(offset)
+            filled
+        })
     }
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
@@ -312,24 +301,24 @@ private object stickyFlm : BaseFlm by inlineFlm {
         if (helper.numViews == 0) return 0
         val state = layoutState as FooterLayoutState
         if (state.state == ABSENT) throw IllegalStateException("Missing footer in trim operation.")
-        val footer = helper.getAttachedViewAt(helper.numViews - 1)
-        Log.d("FOOTER TRIM", "footer = ${((footer as LinearLayout).getChildAt(0) as TextView).text}")
+        val removedHeight = helper.getAttachedViewAt(helper.numViews - 1) { footer ->
+            // Trim content.
+            var removedHeight = helper.insetStickyEnd(footer.height) { section.trimBottom(scrolled, 0, helper) }
+            if (section.numViews == 0) state.headPosition = 1
 
-        // Trim content.
-        var removedHeight = helper.insetStickyEnd(footer.height) { section.trimBottom(scrolled, 0, helper) }
-        if (section.numViews == 0) state.headPosition = 1
+            // Adjust footer.
+            val offset = calculateStickyFooterOffset(footer, helper, state)
+            footer.offsetTopAndBottom(offset)
 
-        // Adjust footer.
-        val offset = calculateStickyFooterOffset(footer, helper, state)
-        footer.offsetTopAndBottom(offset)
-
-        // Trim and update state.
-        if (helper.getTop(footer) > helper.layoutLimit) {
-            removedHeight += footer.height
-            helper.removeView(footer)
-            state.state = ABSENT
-        } else if (helper.getBottom(footer) <= state.bottom - footer.height) {
-            state.state = FLOATING
+            // Trim and update state.
+            if (footer.top > helper.layoutLimit) {
+                removedHeight += footer.height
+                footer.remove()
+                state.state = ABSENT
+            } else if (footer.bottom <= state.bottom - footer.height) {
+                state.state = FLOATING
+            }
+            removedHeight
         }
 
         if (helper.numViews == 0) {
@@ -340,9 +329,9 @@ private object stickyFlm : BaseFlm by inlineFlm {
         return removedHeight
     }
 
-    private fun calculateStickyFooterOffset(footer: View, helper: LayoutHelper, state: FooterLayoutState,
+    private fun calculateStickyFooterOffset(footer: AttachedView, helper: LayoutHelper, state: FooterLayoutState,
                                             stickyEdgeFudge: Int = 0): Int {
-        val bottom = helper.getBottom(footer)
+        val bottom = footer.bottom
         val stickyEdge = helper.layoutLimit - helper.stickyEndInset + stickyEdgeFudge
 
         var offset = if (stickyEdge >= state.bottom) state.bottom - bottom else stickyEdge - bottom
@@ -351,18 +340,63 @@ private object stickyFlm : BaseFlm by inlineFlm {
         val newTop = bottom - footer.height + offset
         if (newTop < 0) offset -= newTop
 
-        Log.d("FOOTER",
-              "offset = $offset, bottom = $bottom, dy = $stickyEdgeFudge, y = $state.bottom, stickyEdge = $stickyEdge, layoutLimit = ${helper.layoutLimit}, stickyEndInset = ${helper.stickyEndInset}")
-
         return offset
     }
 }
+
+// TODO: Gutter integration between footers and headers. Gutter needs to be applied by Hlms and Flms, however Flm needs to know how much has already been applied. Effect of all applications is max of all, not sum. So for pass do max calculation and save to section state. Inset only by abs delta. Saved gutter gets reset for each entry into section for Plm.
+
+// TODO: Gutter footers and headers need to not have space in the section for them, unless the section is smaller than them.
+
+// TODO: Support footers with layout_height = match_parent.
 
 private object gutterFlm : BaseFlm {
     override fun isAtTop(section: SectionState, layoutState: LayoutState) = section.atTop
 
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        TODO("not implemented")
+        val state = layoutState as FooterLayoutState
+        var y = -state.overdraw
+
+        helper.getFooter(section)?.use { footer ->
+            footer.addToRecyclerView()
+            val isLeft = section.baseConfig.footerStyle == SectionConfig.FOOTER_START
+            val autoGutterWidth = if (isLeft) section.leftGutter { 0 } else section.rightGutter { 0 }
+            footer.measure(
+                    if (autoGutterWidth == SectionConfig.GUTTER_AUTO) 0 else helper.layoutWidth - autoGutterWidth)
+
+            if (state.headPosition <= 0) {
+                if (helper.moreToLayout(0, section)) {
+                    section.layout(helper, section.leftGutter { footer.measuredWidth }, y,
+                                   helper.layoutWidth - section.rightGutter { footer.measuredWidth })
+                    y += section.height
+                    helper.filledArea += section.height
+                    state.headPosition = 0
+                    state.tailPosition = 0
+                }
+            }
+
+            // Detect and adjust positioning to sticky or not.
+            var bottom = y + footer.measuredHeight
+            val limit = helper.layoutLimit - helper.stickyEndInset
+            val floatOffset = if (bottom > limit) limit - bottom else 0
+            bottom += floatOffset
+
+            footer.layout(0, bottom - footer.measuredHeight, footer.measuredWidth, bottom, helper.numViews)
+
+            // 100% floating footer has 0 height.
+            val floatAdjustedHeight = Math.max(0, footer.height + floatOffset)
+            if (helper.isPreLayout && footer.isRemoved) helper.addIgnoredHeight(floatAdjustedHeight)
+            helper.filledArea += floatAdjustedHeight
+            state.state = FLOATING
+            if (state.headPosition < 0) state.headPosition = 1
+            state.tailPosition = 1
+            y += footer.height
+            if (y < helper.layoutLimit) {
+                state.state = ADDED
+            }
+        }
+
+        state.bottom = y
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {

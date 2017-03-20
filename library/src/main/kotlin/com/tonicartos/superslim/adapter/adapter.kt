@@ -66,7 +66,7 @@ private constructor(internal val graph: GraphImpl, internal val itemManager: Ite
             // If there are any descendants
             section.subsections.forEach { subsection ->
                 @Suppress("UNCHECKED_CAST")
-                var reusableRegistration = subsection.registration as? Registration<ID>
+                val reusableRegistration = subsection.registration as? Registration<ID>
                 if (reusableRegistration == null) {
                     // Can't understand registration, and since it can't be used, ditch it.
                     subsection.registration = null
@@ -161,11 +161,11 @@ internal interface SectionContract {
 
 private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
                                  val layoutManager: SuperSlimLayoutManager) : SectionContract {
-    final override fun notifySectionInserted(
+    override fun notifySectionInserted(
             section: Section): Int = layoutManager.notifySectionAdded(section.parent!!.id, section.positionInParent,
                                                                       section.configuration)
 
-    final override fun notifySectionRemoved(section: Section) {
+    override fun notifySectionRemoved(section: Section) {
         layoutManager.notifySectionRemoved(section.id, section.parent!!.id)
     }
 
@@ -173,7 +173,7 @@ private class DataChangeContract(val adapter: SuperSlimAdapter<*, *>,
     //    layoutManager.notifySectionMoved(section.id, section.parent!!.id, section.positionInParent, toParent.id, toPosition)
     //}
 
-    final override fun notifySectionUpdated(section: Section) {
+    override fun notifySectionUpdated(section: Section) {
         layoutManager.notifySectionUpdated(section.id, section.configuration)
         if (section.itemCount > 0) {
             adapter.notifyItemRangeChanged(section.positionInAdapter, section.itemCount)
@@ -247,9 +247,7 @@ class OnlySupportsOneRecyclerViewException : RuntimeException(
         SectionConfig.HEADER_STICKY.toLong(),
         SectionConfig.HEADER_INLINE.toLong(),
         SectionConfig.HEADER_START.toLong(),
-        SectionConfig.HEADER_END.toLong(),
-        SectionConfig.HEADER_FLOAT.toLong(),
-        SectionConfig.HEADER_TAIL.toLong())
+        SectionConfig.HEADER_END.toLong())
 @Retention(AnnotationRetention.SOURCE)
 annotation class HeaderStyle
 
@@ -257,8 +255,6 @@ annotation class HeaderStyle
         SectionConfig.FOOTER_STICKY.toLong(),
         SectionConfig.FOOTER_INLINE.toLong(),
         SectionConfig.FOOTER_START.toLong(),
-        SectionConfig.FOOTER_END.toLong(),
-        SectionConfig.FOOTER_FLOAT.toLong(),
-        SectionConfig.FOOTER_TAIL.toLong())
+        SectionConfig.FOOTER_END.toLong())
 @Retention(AnnotationRetention.SOURCE)
 annotation class FooterStyle
