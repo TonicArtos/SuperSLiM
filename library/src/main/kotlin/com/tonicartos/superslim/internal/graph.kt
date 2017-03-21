@@ -11,7 +11,7 @@ import com.tonicartos.superslim.internal.layout.PaddingLayoutManager
 import java.util.*
 
 private const val ENABLE_FOOTER = true
-private const val ENABLE_HEADER = false
+private const val ENABLE_HEADER = true
 private const val ENABLE_PADDING = false
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
 
@@ -357,10 +357,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 = section.doFillTop(dy, helper, this)
 
         open internal fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = section.doTrimTop(scrolled, helper, this)
+                = if (numViews == 0) 0 else section.doTrimTop(scrolled, helper, this)
 
         open internal fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = section.doTrimBottom(scrolled, helper, this)
+                = if (numViews == 0) 0 else section.doTrimBottom(scrolled, helper, this)
 
         open internal fun layout(helper: LayoutHelper, section: SectionState) {
             section.doLayout(helper, this)
@@ -411,10 +411,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 = PaddingLayoutManager.onFillTop(dy, helper, section, this)
 
         override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
 
         override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
 
         override fun toString() = "Padding ${super.toString()}"
     }
@@ -439,10 +439,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 = HeaderLayoutManager.onFillTop(dy, helper, section, this)
 
         override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = HeaderLayoutManager.onTrimTop(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimTop(scrolled, helper, section, this)
 
         override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = HeaderLayoutManager.onTrimBottom(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimBottom(scrolled, helper, section, this)
 
         override fun toString() = "Header ${super.toString()}"
     }
@@ -467,10 +467,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 = FooterLayoutManager.onFillTop(dy, helper, section, this)
 
         override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = FooterLayoutManager.onTrimTop(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else FooterLayoutManager.onTrimTop(scrolled, helper, section, this)
 
         override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = FooterLayoutManager.onTrimBottom(scrolled, helper, section, this)
+                = if (numViews == 0) 0 else FooterLayoutManager.onTrimBottom(scrolled, helper, section, this)
 
         override fun toString() = "Footer ${super.toString()}"
     }

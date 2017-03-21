@@ -179,7 +179,6 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: LinearSectionState,
                            layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
         var removedHeight = 0
         while (layoutState.headPosition <= layoutState.tailPosition) {
             var childRemoved = false

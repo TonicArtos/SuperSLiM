@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.internal.layout
 
+import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
@@ -79,40 +80,29 @@ private object InlineHlm : BaseHlm {
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
         val state = layoutState as HeaderLayoutState
+        if (state.headPosition < 0) state.headPosition = 1
 
-        // How much distance left to fill.
-        var toFill = dy - state.overdraw
+        if (state.headPosition == 1) {
+            // Must fill section children first.
+            state.overdraw += section.fillTop(Math.max(0, dy - state.overdraw), section.leftGutter { 0 },
+                                              0, helper.layoutWidth - section.rightGutter { 0 }, helper)
+            state.tailPosition = 1
 
-        if (toFill > 0 && state.headPosition > 0) {
-            if (state.headPosition == 1 || state.headPosition < 0) {
-                // Fill content
-                section.fillTop(toFill, section.leftGutter { 0 }, -state.overdraw,
-                                helper.layoutWidth - section.rightGutter { 0 }, helper).let {
-                    state.overdraw += it
-                    toFill -= it
-                    state.tailPosition = 1
-                    state.headPosition = 1
-                }
-
-                // Fill header if there is space left.
-                if (toFill > 0) {
-                    helper.getHeader(section)?.use { footer ->
-                        footer.addToRecyclerView()
-                        footer.measure()
-                        footer.fillTop(toFill, 0, -state.overdraw - footer.measuredHeight, footer.measuredWidth,
-                                       -state.overdraw)
-                    }?.let {
-                        state.overdraw += it
-                        toFill -= it
-                        state.state = ADDED
-                        state.headPosition = 0
-                    }
+            // Fill header if there is space left.
+            if (dy - state.overdraw > 0) {
+                helper.getHeader(section)?.use { header ->
+                    header.addToRecyclerView(0)
+                    header.measure()
+                    state.overdraw += header.fillTop(dy - state.overdraw, 0,
+                                                     -state.overdraw - header.measuredHeight,
+                                                     header.measuredWidth,
+                                                     -state.overdraw)
+                    state.state = ADDED
+                    state.headPosition = 0
                 }
             }
         }
         val filled = Math.min(dy, state.overdraw)
-
-        // Update state
         state.overdraw -= filled
         state.bottom += filled
         return filled
@@ -144,8 +134,6 @@ private object InlineHlm : BaseHlm {
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
-
         val state = layoutState as HeaderLayoutState
         var removedHeight = 0
         var contentTop = 0
@@ -176,21 +164,18 @@ private object InlineHlm : BaseHlm {
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
-
         val state = layoutState as HeaderLayoutState
         var removed = 0
-        removed += section.trimBottom(scrolled, 0, helper, if (state.state == ADDED) 1 else 0)
+        removed += section.trimBottom(scrolled, state.bottom - section.height, helper,
+                                      if (state.state == ADDED) 1 else 0)
         if (section.numViews == 0) {
             state.tailPosition = 0
         }
         if (state.state == ADDED) {
             helper.getAttachedViewAt(0) { header ->
-                if (header.top > helper.layoutLimit) {
+                if (header.top >= helper.layoutLimit) {
                     removed += header.height
                     header.remove()
-                    state.headPosition = -1
-                    state.tailPosition = -1
                     state.state = ABSENT
                 }
             }

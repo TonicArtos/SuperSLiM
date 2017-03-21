@@ -119,7 +119,7 @@ private object inlineFlm : BaseFlm {
         val filled = Math.min(dy, state.overdraw)
         state.overdraw -= filled
         state.bottom += filled
-        return Math.min(dy, filled)
+        return filled
     }
 
     override fun onFillBottom(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
@@ -151,8 +151,6 @@ private object inlineFlm : BaseFlm {
     }
 
     override fun onTrimTop(scrolled: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
-
         val state = layoutState as FooterLayoutState
         var removedHeight = if (state.headPosition == 0) section.trimTop(scrolled, 0, helper, 0) else 0
         if (helper.numViews == 1 && state.state == ADDED) {
@@ -181,8 +179,6 @@ private object inlineFlm : BaseFlm {
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
-
         val state = layoutState as FooterLayoutState
         var removedHeight = 0
         if (state.state == ADDED) {
@@ -291,7 +287,6 @@ private object stickyFlm : BaseFlm by inlineFlm {
 
     override fun onTrimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState,
                               layoutState: LayoutState): Int {
-        if (helper.numViews == 0) return 0
         val state = layoutState as FooterLayoutState
         if (state.state == ABSENT) throw IllegalStateException("Missing footer in trim operation.")
         val removedHeight = helper.getAttachedViewAt(helper.numViews - 1) { footer ->

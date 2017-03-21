@@ -264,7 +264,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         return root.detachViewAtPosition(viewsBefore + position)
     }
 
-    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, root = \n$root)".replace(
+    override fun toString(): String = "SubsectionHelper($offset, width = $width, limit = $layoutLimit, views before = $viewsBefore, root = \n$root)".replace(
             "\n", "\n\t")
 
     private data class Offset(var x: Int = 0, var y: Int = 0)
