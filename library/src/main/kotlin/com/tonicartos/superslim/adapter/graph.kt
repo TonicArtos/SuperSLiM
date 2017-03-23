@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.adapter
 
+import com.tonicartos.superslim.AdapterContract
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.layout.LinearSectionConfig
 import java.util.*
@@ -96,6 +97,8 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
         set(value) {
             super.itemManager = value
             children.forEach { child -> child.itemManager = value }
+            header?.itemManager = value
+            footer?.itemManager = value
         }
 
     /*************************
@@ -138,9 +141,9 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             }
             initChild(childCount, value)
             if (field != null) {
-                itemManager?.set(positionInAdapter, value)
+                itemManager?.set(value.positionInAdapter, value)
             } else {
-                itemManager?.insert(positionInAdapter, value)
+                value.insertItemsToAdapter()
                 totalItemsChanged(1)
             }
             field = value
@@ -171,27 +174,26 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             child.insertItemsToAdapter()
             numItemsAdded += child.itemCount
         }
+        footer?.let { footer ->
+            initChild(childCount, footer)
+            footer.insertItemsToAdapter()
+            numItemsAdded += 1
+        }
         totalItemsChanged(numItemsAdded)
-        footer = collapsedFooter
-        collapsedFooter = null
         collapsed = false
     }
 
     private fun collapseChildren() {
         val headerCount = if (header == null) 0 else 1
         val footerCount = if (footer == null) 0 else 1
-        val numItemsToRemove = itemCount - headerCount - footerCount
-        itemManager?.removeRange(positionInAdapter + headerCount + footerCount, numItemsToRemove)
+        val numItemsToRemove = itemCount - headerCount
+        itemManager?.removeRange(positionInAdapter + headerCount, numItemsToRemove)
         for (it in children) {
             it.reset()
         }
         totalItemsChanged(-numItemsToRemove)
-        collapsedFooter = footer
-        removeFooter()
         collapsed = true
     }
-
-    private var collapsedFooter: Item? = null
 
     /*************************
      * Item management
@@ -211,11 +213,9 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
                 child.itemManager = itemManager
                 child.insertItemsToAdapter()
             }
+            footer?.insertItemsToAdapter()
         }
 
-        footer?.let {
-            itemManager?.insert(positionInAdapter + itemCount - 1, it)
-        }
     }
 
     override fun removeItemsFromAdapter() {
