@@ -12,7 +12,7 @@ import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import com.tonicartos.superslim.internal.layout.PaddingLayoutManager
 import java.util.*
 
-private const val ENABLE_FOOTER = false
+private const val ENABLE_FOOTER = true
 private const val ENABLE_HEADER = true
 private const val ENABLE_PADDING = false
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
@@ -67,7 +67,6 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             root.resetLayout()
             root.setLayoutPositionFromAdapter(requestedPosition)
         }
-        root.logGraph()
         root.layout(helper, 0, 0, helper.layoutWidth)
         val sectionHeight = root.height
         if (sectionHeight < helper.layoutLimit) {
