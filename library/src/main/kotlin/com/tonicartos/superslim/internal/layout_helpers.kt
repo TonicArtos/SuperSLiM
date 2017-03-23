@@ -16,13 +16,15 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
 
     internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                          viewsBefore: Int, layoutState: LayoutState,
-                                         tellParentViewsChangedBy: (Int) -> Unit)
+                                         tellParentViewsChangedBy: (Int) -> Unit,
+                                         tellParentAboutDisappearedView: (Int) -> Unit)
             = helperPool.acquire(this, left, y, right - left, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                 tellParentViewsChangedBy)
+                                 tellParentViewsChangedBy, tellParentAboutDisappearedView)
 
     inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                        viewsBefore: Int, layoutState: LayoutState, block: (LayoutHelper) -> T): T {
-        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState, {})
+        val helper = acquireSubsectionHelper(y, left, right, paddingTop, paddingBottom, viewsBefore, layoutState,
+                                             {}, {})
         val r = block(helper)
         helper.release()
         return r
@@ -49,13 +51,14 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
         private val pool = arrayListOf<LayoutHelper>()
 
         fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                    viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit) =
+                    viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit,
+                    tellParentAboutDisappearedView: (Int) -> Unit) =
                 if (pool.isEmpty()) {
                     LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                 tellParentViewsChangedBy)
+                                 tellParentViewsChangedBy, tellParentAboutDisappearedView)
                 } else {
                     pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                            tellParentViewsChangedBy)
+                                            tellParentViewsChangedBy, tellParentAboutDisappearedView)
                 }
 
         fun release(helper: LayoutHelper) {
@@ -79,6 +82,10 @@ internal class RecyclerWrapper : RecyclerHelper {
 
     override val scrap: List<RecyclerView.ViewHolder>
         get() = recycler.scrapList
+
+    override fun removeView(child: View, helper: LayoutHelper) {
+        helper.removeView(child, recycler)
+    }
 }
 
 /**
@@ -126,8 +133,7 @@ internal interface ManagerHelper {
     fun addDisappearingView(child: View)
     fun addDisappearingView(child: View, index: Int)
 
-    fun removeView(child: View)
-    fun removeViewAt(position: Int)
+    fun removeView(child: View, recycler: RecyclerView.Recycler)
 
     val supportsPredictiveItemAnimations: Boolean
 }
@@ -143,6 +149,7 @@ internal interface StateHelper {
 internal interface RecyclerHelper {
     fun getView(position: Int): View
     val scrap: List<RecyclerView.ViewHolder>
+    fun removeView(child: View, helper: LayoutHelper)
 }
 
 internal interface ReadWriteLayoutHelper : ReadLayoutHelper, WriteLayoutHelper {
@@ -180,7 +187,7 @@ class AttachedView private constructor(private var view: View, private var helpe
     val width get() = helper.getMeasuredWidth(this.view)
     val height get() = helper.getMeasuredHeight(this.view)
 
-    fun remove() = helper.removeView(this.view)
+    fun remove() = helper.removeView(this.view, helper)
     fun offsetTopAndBottom(offset: Int) = helper.offsetVertical(this.view, offset)
     fun offsetLeftAndRight(offset: Int) = helper.offsetHorizontal(this.view, offset)
 }

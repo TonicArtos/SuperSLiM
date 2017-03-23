@@ -1,12 +1,12 @@
 package com.tonicartos.superslim.internal.layout
 
-import android.util.Log
 import com.tonicartos.superslim.LayoutHelper
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.HeaderLayoutState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
+import com.tonicartos.superslim.internal.insetStickyStart
 import com.tonicartos.superslim.use
 
 private const val ABSENT = 1 shl 0
@@ -51,15 +51,14 @@ private object InlineHlm : BaseHlm {
         val state = layoutState as HeaderLayoutState
         var y = -state.overdraw
         if (state.headPosition <= 0) {
-            helper.getHeader(section)?.use { footer ->
-                footer.addToRecyclerView()
-                footer.measure()
-                footer.layout(0, y, footer.measuredWidth, y + footer.measuredHeight)
-                if (helper.isPreLayout && footer.isRemoved) {
-                    helper.addIgnoredHeight(footer.height)
-                }
-                y += footer.height
-                helper.filledArea += footer.height
+            helper.getHeader(section)?.use { header ->
+                header.addToRecyclerView()
+                header.measure()
+                header.layout(0, y, header.measuredWidth, y + header.measuredHeight)
+                if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
+                state.disappearedHeight += header.disappearedHeight
+                y += header.height
+                helper.filledArea += header.height
                 state.state = ADDED
                 state.headPosition = 0
                 state.tailPosition = 0
@@ -71,6 +70,7 @@ private object InlineHlm : BaseHlm {
 
         section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 },
                        if (state.state == ADDED) 1 else 0)
+        state.disappearedHeight += section.disappearedHeight
         y += section.height
         helper.filledArea += section.height
         if (section.numViews > 0) state.tailPosition = 1
@@ -189,9 +189,63 @@ private object InlineHlm : BaseHlm {
     }
 }
 
+// Sticky headers are always attached after content.
 private object StickyHlm : BaseHlm {
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: LayoutState) {
-        TODO("not implemented")
+        val state = layoutState as HeaderLayoutState
+        var y = -state.overdraw
+
+        helper.getHeader(section)?.use { header ->
+            header.addToRecyclerView()
+            header.measure()
+            header.layout(0, y, header.measuredWidth, y + header.measuredHeight)
+
+            if (state.headPosition <= 0) {
+                if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
+                state.disappearedHeight += header.disappearedHeight
+                y += header.height
+                helper.filledArea += header.height
+                state.state = ADDED
+                state.headPosition = 0
+                state.tailPosition = 0
+            }
+
+            helper.insetStickyStart(header.measuredHeight) {
+                section.layout(helper, section.leftGutter { 0 }, y,
+                               helper.layoutWidth - section.rightGutter { 0 })
+                state.disappearedHeight += section.disappearedHeight
+                y += section.height
+                helper.filledArea += section.height
+                state.headPosition = 0
+                state.tailPosition = 0
+            }
+
+            if (state.state == ABSENT) {
+
+            }
+
+            // Detect and adjust positioning to sticky or not.
+            var bottom = y + header.measuredHeight
+            val limit = helper.layoutLimit - helper.stickyStartInset
+            val floatOffset = if (bottom > limit) limit - bottom else 0
+            bottom += floatOffset
+
+            header.layout(0, bottom - header.measuredHeight, header.measuredWidth, bottom, helper.numViews)
+
+            // 100% floating header has 0 height.
+//            val floatAdjustedHeight = Math.max(0, header.height + floatOffset)
+            if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
+            helper.filledArea += header.height
+            state.state = FLOATING
+            if (state.headPosition < 0) state.headPosition = 1
+            state.tailPosition = 1
+            y += header.height
+            if (y < helper.layoutLimit) {
+                state.state = ADDED
+            }
+        }
+
+        state.bottom = y
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: SectionState, layoutState: LayoutState): Int {

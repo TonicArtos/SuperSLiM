@@ -1,6 +1,8 @@
 package com.tonicartos.superslim.internal
 
 import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.RecyclerView.NO_POSITION
+import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import com.tonicartos.superslim.*
@@ -10,7 +12,7 @@ import com.tonicartos.superslim.internal.layout.HeaderLayoutManager
 import com.tonicartos.superslim.internal.layout.PaddingLayoutManager
 import java.util.*
 
-private const val ENABLE_FOOTER = true
+private const val ENABLE_FOOTER = false
 private const val ENABLE_HEADER = true
 private const val ENABLE_PADDING = false
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
@@ -65,6 +67,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             root.resetLayout()
             root.setLayoutPositionFromAdapter(requestedPosition)
         }
+        root.logGraph()
         root.layout(helper, 0, 0, helper.layoutWidth)
 
         if (helper.isPreLayout) {
@@ -126,11 +129,9 @@ internal class GraphManager(adapter: AdapterContract<*>) {
 
     private fun fillTop(dy: Int, helper: RootLayoutHelper) = root.fillTop(dy, helper)
     private fun fillBottom(dy: Int, helper: RootLayoutHelper) = root.fillBottom(dy, helper)
-    private fun trimTop(scrolled: Int, helper: RootLayoutHelper)
-            = root.trimTop(scrolled, helper, 0)
-
-    private fun trimBottom(scrolled: Int, helper: RootLayoutHelper)
-            = root.trimBottom(scrolled, helper, 0)
+    private fun trimTop(scrolled: Int, helper: RootLayoutHelper) = root.trimTop(scrolled, helper)
+    private fun trimBottom(scrolled: Int, helper: RootLayoutHelper) = root.trimBottom(scrolled, helper)
+    fun postLayout() = root.postLayout()
 
     /*************************
      * Scheduling section changes
@@ -299,7 +300,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         var numViews = 0
             internal set(value) {
                 field = value
-//                Log.d("add view", "value = $value, $this")
             }
 
         /**
@@ -326,6 +326,13 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
          * Area drawn past y0 and dy.
          */
         var overdraw = 0
+
+        /**
+         * Height which will be removed from the section state after this layout pass.
+         */
+        var disappearedHeight = 0
+
+        var numDisappearedViews = 0
 
         /**
          * Reset layout state.
@@ -362,8 +369,13 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         open internal fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
                 = if (numViews == 0) 0 else section.doTrimBottom(scrolled, helper, this)
 
-        open internal fun layout(helper: LayoutHelper, section: SectionState) {
-            section.doLayout(helper, this)
+        open internal fun layout(helper: LayoutHelper, section: SectionState) = section.doLayout(helper, this)
+        internal fun postLayout() {
+            bottom -= disappearedHeight
+            disappearedHeight = 0
+            numViews -= numDisappearedViews
+            numDisappearedViews = 0
+            if (numViews == 0) reset()
         }
 
         open fun atTop(section: SectionState) = section.isAtTop(this)
@@ -497,6 +509,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * a time.
      */
     private val layoutState = Stack<LayoutState>()
+    internal val disappearedHeight get() = layoutState.peek().disappearedHeight
     internal val height get() = layoutState.peek().bottom
     internal val numViews get() = layoutState.peek().numViews
     internal fun resetLayout() {
@@ -666,7 +679,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *************************/
 
     fun layout(helper: LayoutHelper, left: Int, top: Int, right: Int, numViewsBefore: Int = 0) {
-//        Log.d("SECTION", "layout: left = $left, top = $top, right = $right, helper.viewsBefore = ${helper.viewsBefore}, viewsBefore = $numViewsBefore")
         if (totalItems == 0) {
             layoutState.peek().reset()
             return
@@ -714,7 +726,12 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
     }
 
-    internal val atTop: Boolean get() = layoutState.babushka { it.atTop(this@SectionState) }
+    internal fun postLayout() {
+        layoutState.asReversed().forEach { it.postLayout() }
+        subsections.forEach { it.postLayout() }
+    }
+
+    internal val atTop get() = layoutState.babushka { it.atTop(this@SectionState) }
 
     fun isChildAtTop(position: Int) = findAndWrap(position, { it.atTop }, { true })
 
@@ -817,9 +834,12 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         return true
     }
 
-    internal infix operator fun contains(viewHolder: RecyclerView.ViewHolder): Boolean =
-            viewHolder.layoutPosition >= positionInAdapter &&
-                    viewHolder.layoutPosition < positionInAdapter + totalItems
+    internal infix operator fun contains(viewHolder: RecyclerView.ViewHolder): Boolean {
+//        Log.d("SADFASDF", "pia = $positionInAdapter, vh pos = ${((viewHolder.itemView as LinearLayout).getChildAt(0) as TextView).text} vh lay = ${viewHolder.layoutPosition}, ss end = ${positionInAdapter + totalItems - 1}")
+        if (viewHolder.adapterPosition == NO_POSITION) return false
+        return positionInAdapter <= viewHolder.layoutPosition
+                && viewHolder.layoutPosition < positionInAdapter + totalItems
+    }
 
     /*************************
      * Scrolling
@@ -850,25 +870,23 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 }
             }
 
-    internal fun trimTop(scrolled: Int, rootHelper: RootLayoutHelper, top: Int) {
+    internal fun trimTop(scrolled: Int, rootHelper: RootLayoutHelper) {
         layoutState.babushka { state ->
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
 
-            rootHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, 0,
-                                           state) { helper ->
+            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0, state) { helper ->
                 state.trimTop(scrolled, helper, this@SectionState)
             }
         }
     }
 
-    internal fun trimBottom(scrolled: Int, rootHelper: RootLayoutHelper, top: Int) {
+    internal fun trimBottom(scrolled: Int, rootHelper: RootLayoutHelper) {
         layoutState.babushka { state ->
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
 
-            rootHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, 0,
-                                           state) { helper ->
+            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0, state) { helper ->
                 state.trimBottom(scrolled, helper, this@SectionState)
             }
         }
@@ -1039,6 +1057,12 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             hasHeader = false
         }
 
+        if (hasFooter && currentRemoveFrom + itemsRemaining >= positionInAdapter + totalItems) {
+            itemsRemoved += 1
+            itemsRemaining -= 1
+            hasFooter = false
+        }
+
         if (itemsRemaining == 0) {
             totalItems -= itemsRemoved
             return itemsBeforeSection to itemsRemoved
@@ -1166,6 +1190,12 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal inline fun leftGutter(autoWidth: () -> Int)
             = if (baseConfig.gutterLeft == GUTTER_AUTO) autoWidth() else baseConfig.gutterLeft
+
+    internal fun logGraph() {
+        Log.d("GRAPH", "$this")
+        layoutState.asReversed().forEach { Log.d("GRAPH", "$it") }
+        subsections.forEach { it.logGraph() }
+    }
 }
 
 internal abstract class ChildInternal(var helper: LayoutHelper) : Child {
@@ -1197,40 +1227,24 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
     }
 
     override val numViews get() = section.numViews
-
-    override val isRemoved: Boolean
-        get() = false
-
-    private var _measuredWidth: Int = 0
-    override val measuredWidth: Int
-        get() = _measuredWidth
-
-    override val measuredHeight: Int
-        get() = Child.INVALID
+    override val isRemoved get() = false
+    private var _measuredWidth = 0
+    override val measuredWidth get() = _measuredWidth
+    override val measuredHeight get() = Child.INVALID
 
     override fun measure(usedWidth: Int, usedHeight: Int) {
         _measuredWidth = helper.layoutWidth - usedWidth
     }
 
-    protected var _left = 0
-    override val left: Int
-        get() = _left
-
-    protected var _top = 0
-    override val top: Int
-        get() = _top
-
-    protected var _right = 0
-    override val right: Int
-        get() = _right
-
-    override val bottom: Int
-        get() = Child.INVALID
+    override var left = 0
+    override var top = 0
+    override var right = 0
+    override val bottom get() = Child.INVALID
 
     override fun layout(left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int) {
-        _left = left
-        _top = top
-        _right = right
+        this.left = left
+        this.top = top
+        this.right = right
         section.layout(helper, left, top, right, numViewsBefore)
     }
 
@@ -1250,10 +1264,9 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
         return section.trimBottom(scrolled, top, helper, numViewsBefore)
     }
 
-    override val width: Int
-        get() = _right - _left
-    override val height: Int
-        get() = section.height
+    override val width get() = right - left
+    override val height get() = section.height
+    override val disappearedHeight get() = section.disappearedHeight
 
     override fun addToRecyclerView(i: Int) {
     }
@@ -1284,26 +1297,19 @@ private open class ItemChild(var view: View, helper: LayoutHelper, var positionI
         pool.add(this)
     }
 
-    override val isRemoved: Boolean
-        get() = view.rvLayoutParams.isItemRemoved
+    override val isRemoved get() = view.rvLayoutParams.isItemRemoved
 
-    override val measuredWidth: Int
-        get() = helper.getMeasuredWidth(view)
-    override val measuredHeight: Int
-        get() = helper.getMeasuredHeight(view)
+    override val measuredWidth get() = helper.getMeasuredWidth(view)
+    override val measuredHeight get() = helper.getMeasuredHeight(view)
 
     override fun measure(usedWidth: Int, usedHeight: Int) {
         helper.measure(view, usedWidth, usedHeight)
     }
 
-    override val left: Int
-        get() = helper.getLeft(view)
-    override val top: Int
-        get() = helper.getTop(view)
-    override val right: Int
-        get() = helper.getRight(view)
-    override val bottom: Int
-        get() = helper.getBottom(view)
+    override val left get() = helper.getLeft(view)
+    override val top get() = helper.getTop(view)
+    override val right get() = helper.getRight(view)
+    override val bottom get() = helper.getBottom(view)
 
     override fun layout(left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int) {
         val m = view.rvLayoutParams
@@ -1320,10 +1326,9 @@ private open class ItemChild(var view: View, helper: LayoutHelper, var positionI
         return height
     }
 
-    override val width: Int
-        get() = helper.getMeasuredWidth(view)
-    override val height: Int
-        get() = helper.getMeasuredHeight(view)
+    override val width get() = helper.getMeasuredWidth(view)
+    override val height get() = helper.getMeasuredHeight(view)
+    override val disappearedHeight get() = 0
 
     override fun addToRecyclerView(i: Int) {
         helper.addView(view, i)
@@ -1358,6 +1363,9 @@ private class DisappearingItemChild(view: View, helper: LayoutHelper, positionIn
     override fun addToRecyclerView(i: Int) {
         helper.addDisappearingView(view, i)
     }
+
+    val isDisappeared get() = true
+    override val disappearedHeight get() = height
 }
 
 /**
@@ -1385,10 +1393,11 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
         pool.add(this)
     }
 
-    override val isRemoved: Boolean get() = false
+    override val isRemoved get() = false
     private var _measuredWidth = 0
-    override val measuredWidth: Int get() = _measuredWidth
-    override val measuredHeight: Int get() = 0
+    override val measuredWidth get() = _measuredWidth
+    override val measuredHeight get() = 0
+    override val disappearedHeight get() = 0
 
     override fun measure(usedWidth: Int, usedHeight: Int) {
         _width = helper.layoutWidth - usedWidth
@@ -1399,10 +1408,10 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
     private var _right = 0
     private var _bottom = 0
 
-    override val left: Int get() = _left
-    override val top: Int get() = _top
-    override val right: Int get() = _right
-    override val bottom: Int get() = _bottom
+    override val left get() = _left
+    override val top get() = _top
+    override val right get() = _right
+    override val bottom get() = _bottom
 
     override fun layout(left: Int, top: Int, right: Int, bottom: Int, numViewsBefore: Int) {
         _left = left
@@ -1427,8 +1436,8 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
     private var _width = 0
     private var _height = 0
 
-    override val width: Int get() = _width
-    override val height: Int get() = _height
+    override val width get() = _width
+    override val height get() = _height
 
     override fun addToRecyclerView(i: Int) {
     }

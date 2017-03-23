@@ -90,7 +90,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         const val HORIZONTAL: Int = RecyclerView.HORIZONTAL
 
         private const val ENABLE_NOTIFICATION_LOGGING = false
-        private const val ENABLE_ITEM_CHANGE_LOGGING = false
+        private const val ENABLE_ITEM_CHANGE_LOGGING = true
         private const val ENABLE_LAYOUT_LOGGING = false
     }
 
@@ -108,9 +108,11 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         super.addView(child, index)
     }
 
-
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
-        applyChanges(adapterContract!!, graph!!, recycler)
+        val adapter = adapterContract ?: return
+        val graph = graph ?: return
+
+        applyChanges(adapter, graph, recycler)
 
         pendingSavedState?.let {
             if (state.itemCount == 0) {
@@ -120,11 +122,11 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
 
             if (it.position > 0) {
                 Log.d("SavedState", "position = ${it.position}, offset = ${it.offset}")
-                graph?.requestedPosition = it.position
-                graph?.requestedPositionOffset = it.offset
+                graph.requestedPosition = it.position
+                graph.requestedPositionOffset = it.offset
             }
-        } ?: let {
-            //            Log.d("SavedSate", "Forced position to 5.")
+//        } ?: let {
+//            Log.d("SavedSate", "Forced position to 5.")
 //            graph?.requestedPosition = 5
         }
 
@@ -136,11 +138,16 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
             Log.d("Sslm-graph", "$graph")
         }
         detachAndScrapAttachedViews(recycler)
-        graph?.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+        graph.layout(RootLayoutHelper(this, configHelper, recyclerHelper.wrap(recycler), stateHelper.wrap(state)))
+        graph.postLayout()
     }
 
     override fun offsetHorizontal(view: View, dx: Int) = view.offsetLeftAndRight(dx)
     override fun offsetVertical(view: View, dy: Int) = view.offsetTopAndBottom(dy)
+
+    override fun removeView(child: View, recycler: RecyclerView.Recycler) {
+        super.removeAndRecycleView(child, recycler)
+    }
 
     /****************************************************
      * Scrolling
@@ -168,7 +175,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         }
     }
 
-    // TODO: Scroll to position with offset.
+// TODO: Scroll to position with offset.
 //    fun scrollToPositionWithOffset(position: Int, offset: Int) {
 //        graph?.apply {
 //            requestedPosition = position
@@ -177,7 +184,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
 //        }
 //    }
 
-    // TODO: Custom find views.
+// TODO: Custom find views.
 //    override fun findViewByPosition(position: Int) = graph?.findViewByPosition(position, this)
 
     /****************************************************
@@ -243,12 +250,12 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         contractAdapter(adapter)
     }
 
-    //    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
-    //        super.onDetachedFromWindow(view, recycler)
-    //        adapterContract?.onLayoutManagerDetached(this)
-    //        adapterContract = null
-    //        graph.reset()
-    //    }
+//    override fun onDetachedFromWindow(view: RecyclerView?, recycler: RecyclerView.Recycler?) {
+//        super.onDetachedFromWindow(view, recycler)
+//        adapterContract?.onLayoutManagerDetached(this)
+//        adapterContract = null
+//        graph.reset()
+//    }
 
     override fun onItemsChanged(view: RecyclerView) {
         graph = GraphManager(adapterContract ?: return)
@@ -395,9 +402,9 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         graph!!.queueSectionRemoved(section, parent)
     }
 
-    //    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
-    //        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
-    //    }
+//    fun notifySectionMoved(section: Int, fromParent: Int, fromPosition: Int, toParent: Int, toPosition: Int) {
+//        graph.queueSectionMoved(section, fromParent, fromPosition, toParent, toPosition)
+//    }
 
     /**
      * Notify that a section has been changed. This indicates a configuration change for the section. The effect is

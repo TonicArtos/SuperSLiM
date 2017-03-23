@@ -89,6 +89,7 @@ interface Child {
 
     val width: Int
     val height: Int
+    val disappearedHeight: Int
 
     /**
      * Adds child to the recycler view.

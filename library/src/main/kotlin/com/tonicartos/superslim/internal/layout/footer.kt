@@ -63,6 +63,7 @@ private object inlineFlm : BaseFlm {
         if (state.headPosition <= 0) {
             if (helper.moreToLayout(0, section)) {
                 section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 })
+                state.disappearedHeight += section.disappearedHeight
                 y += section.height
                 helper.filledArea += section.height
                 state.headPosition = 0
@@ -75,9 +76,8 @@ private object inlineFlm : BaseFlm {
                 footer.addToRecyclerView()
                 footer.measure()
                 footer.layout(0, y, footer.measuredWidth, y + footer.measuredHeight, helper.numViews)
-                if (helper.isPreLayout && footer.isRemoved) {
-                    helper.addIgnoredHeight(footer.height)
-                }
+                if (helper.isPreLayout && footer.isRemoved) helper.addIgnoredHeight(footer.height)
+                state.disappearedHeight += footer.disappearedHeight
                 y += footer.height
                 helper.filledArea += footer.height
                 state.state = ADDED
@@ -215,6 +215,7 @@ private object stickyFlm : BaseFlm by inlineFlm {
                     if (helper.moreToLayout(0, section)) {
                         section.layout(helper, section.leftGutter { 0 }, y,
                                        helper.layoutWidth - section.rightGutter { 0 })
+                        state.disappearedHeight += section.disappearedHeight
                         y += section.height
                         helper.filledArea += section.height
                         state.headPosition = 0
@@ -234,6 +235,7 @@ private object stickyFlm : BaseFlm by inlineFlm {
             // 100% floating footer has 0 height.
 //            val floatAdjustedHeight = Math.max(0, footer.height + floatOffset)
             if (helper.isPreLayout && footer.isRemoved) helper.addIgnoredHeight(footer.height)
+            state.disappearedHeight += footer.disappearedHeight
             helper.filledArea += footer.height
             state.state = FLOATING
             if (state.headPosition < 0) state.headPosition = 1

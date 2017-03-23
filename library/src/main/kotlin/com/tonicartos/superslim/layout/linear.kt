@@ -23,7 +23,7 @@ class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
     }
 }
 
-internal class LinearSectionState(val configuration: LinearSectionConfig, oldState: SectionState? = null)
+internal class LinearSectionState(configuration: LinearSectionConfig, oldState: SectionState? = null)
     : SectionState(configuration, oldState) {
     override fun isAtTop(layoutState: LayoutState)
             = LinearSlm.isAtTop(this, layoutState)
@@ -51,6 +51,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
 
     override fun onLayout(helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState) {
         if (layoutState.headPosition < 0) layoutState.headPosition = 0
+        layoutState.tailPosition = -1
         var currentPosition = layoutState.headPosition
         var y = -layoutState.overdraw
 
@@ -62,13 +63,16 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 if (helper.isPreLayout && child.isRemoved) {
                     helper.addIgnoredHeight(child.height)
                 }
+                layoutState.disappearedHeight += child.disappearedHeight
                 y += child.height
                 helper.filledArea += child.height
+                if (child.disappearedHeight < child.height) layoutState.tailPosition = currentPosition
                 currentPosition += 1
             } ?: break
         }
         layoutState.bottom = y
-        layoutState.tailPosition = currentPosition - 1
+        if (layoutState.tailPosition == -1) layoutState.headPosition = -1
+//        Log.d("Linear", "${section} --- $layoutState")
     }
 
     override fun onFillTop(dy: Int, helper: LayoutHelper, section: LinearSectionState, layoutState: LayoutState): Int {

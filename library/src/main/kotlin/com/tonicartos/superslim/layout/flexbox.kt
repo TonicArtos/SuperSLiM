@@ -23,7 +23,7 @@ class FlexboxSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
     }
 }
 
-private class FlexboxSectionState(val configuration: FlexboxSectionConfig, oldState: SectionState? = null)
+private class FlexboxSectionState(configuration: FlexboxSectionConfig, oldState: SectionState? = null)
     : SectionState(configuration, oldState) {
     override fun isAtTop(layoutState: LayoutState) = FlexboxSlm.isAtTop(this, layoutState)
 

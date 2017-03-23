@@ -16,8 +16,7 @@ internal interface ItemManagement {
 internal class ItemManager : ItemManagement {
     private val changes = ArrayList<Op>()
 
-    override fun applyChanges(adapter: AdapterContract<*>, graph: GraphManager,
-                              recycler: RecyclerView.Recycler) {
+    override fun applyChanges(adapter: AdapterContract<*>, graph: GraphManager, recycler: RecyclerView.Recycler) {
         changes.forEach { it.apply(adapter, graph, recycler) }
         changes.clear()
     }
@@ -105,28 +104,7 @@ private data class Remove(var start: Int, var count: Int) : Op {
     }
 
     override fun apply(adapter: AdapterContract<*>, graph: GraphManager, recycler: RecyclerView.Recycler) {
-        var currentSection = 0
-        var currentStart = 0
-        var currentCount = 0
-        // Handle in chunks per section.
-        for (i in start + 1 until start + count) {
-            val about = adapter.getData(recycler.convertPreLayoutPositionToPostLayout(i))
-            when {
-                about.isHeader                  -> graph.removeHeader(about.section)
-                about.isFooter                  -> graph.removeFooter(about.section)
-                about.section == currentSection -> currentCount += 1
-                else                            -> {
-                    graph.removeItems(currentSection, currentStart, currentCount)
-                    currentSection = about.section
-                    currentStart = about.position
-                    currentCount = 1
-                }
-            }
-
-            if (i == start + count - 1) {
-                graph.removeItems(currentSection, currentStart, currentCount)
-            }
-        }
+        graph.root.removeItems(start, count)
         release(this)
     }
 }

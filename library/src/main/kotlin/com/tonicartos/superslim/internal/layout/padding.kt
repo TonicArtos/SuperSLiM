@@ -28,6 +28,7 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
 
         section.layout(helper, section.leftGutter{0}, y, helper.layoutWidth - section.rightGutter{0})
         y += section.height + helper.paddingBottom
+        state.disappearedHeight += section.disappearedHeight
 
         state.tailPosition = 0
         state.tailPosition = 0

@@ -1,5 +1,6 @@
 package com.tonicartos.superslim
 
+import android.support.v7.widget.RecyclerView
 import android.view.View
 import com.tonicartos.superslim.internal.AttachedView
 import com.tonicartos.superslim.internal.BaseLayoutHelper
@@ -66,10 +67,12 @@ interface SectionLayoutManager<in T : SectionState> {
 }
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper,
-                                       private var tellParentViewsChangedBy: (Int) -> Unit) : BaseLayoutHelper {
+                                       private var tellParentViewsChangedBy: (Int) -> Unit,
+                                       private var tellParentAboutDisappearedView: (Int) -> Unit) : BaseLayoutHelper {
     internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                         viewsBefore: Int, layoutState: LayoutState, tellParentViewsChanged: (Int) -> Unit) :
-            this(root, tellParentViewsChanged) {
+                         viewsBefore: Int, layoutState: LayoutState, tellParentViewsChanged: (Int) -> Unit,
+                         tellParentAboutDisappearedView: (Int) -> Unit) :
+            this(root, tellParentViewsChanged, tellParentAboutDisappearedView) {
         offset.x = x
         offset.y = y
         this.width = width
@@ -84,7 +87,8 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
      *************************/
 
     internal fun reInit(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
-                        viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit)
+                        viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit,
+                        tellParentAboutDisappearedView: (Int) -> Unit)
             : LayoutHelper {
         this.root = root
         offset.x = x
@@ -96,13 +100,15 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         this.viewsBefore = viewsBefore
         this.layoutState = layoutState
         this.tellParentViewsChangedBy = tellParentViewsChangedBy
+        this.tellParentAboutDisappearedView = tellParentAboutDisappearedView
         return this
     }
 
     private fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                         viewsBefore: Int, layoutState: LayoutState): LayoutHelper
             = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
-                                           paddingTop, paddingBottom, viewsBefore, layoutState, this::viewsChangedBy)
+                                           paddingTop, paddingBottom, viewsBefore, layoutState,
+                                           this::viewsChangedBy, this::disappearedViewsChangedBy)
 
     internal fun release() {
         root.releaseSubsectionHelper(this)
@@ -134,15 +140,25 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     private lateinit var layoutState: LayoutState
 
-    var numViews: Int
-        get() = layoutState.numViews
+    var numViews get() = layoutState.numViews
         private set(value) {
             viewsChangedBy(value - layoutState.numViews)
+        }
+
+    var numDisappearedViews get() = layoutState.numDisappearedViews
+        private set(value) {
+            disappearedViewsChangedBy(value - layoutState.numDisappearedViews)
         }
 
     internal fun viewsChangedBy(delta: Int) {
         layoutState.numViews += delta
         tellParentViewsChangedBy(delta)
+    }
+
+    private fun disappearedViewsChangedBy(delta: Int) {
+        layoutState.numViews += delta
+        layoutState.numDisappearedViews += delta
+        tellParentAboutDisappearedView(delta)
     }
 
     override val layoutWidth get() = width
@@ -165,7 +181,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     var filledArea: Int = 0
 
-    private val willCheckForDisappearedItems = !isPreLayout && willRunPredictiveAnimations && supportsPredictiveItemAnimations
+    private val willCheckForDisappearedItems get() = !isPreLayout && willRunPredictiveAnimations && supportsPredictiveItemAnimations
 
     internal fun getHeader(section: SectionState): Child? {
         return if (filledArea >= layoutLimit && willCheckForDisappearedItems && section.hasDisappearedItemsToLayOut) {
@@ -216,13 +232,8 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     override fun getView(position: Int) = root.getView(position)
 
-    override fun removeView(child: View) {
-        root.removeView(child)
-        numViews -= 1
-    }
-
-    override fun removeViewAt(position: Int) {
-        root.removeViewAt(position - viewsBefore)
+    override fun removeView(child: View, recycler: RecyclerView.Recycler) {
+        root.removeView(child, recycler)
         numViews -= 1
     }
 
@@ -239,13 +250,13 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
 
     override fun addDisappearingView(child: View) {
         root.addDisappearingView(child)
-        numViews += 1
+        numDisappearedViews += 1
     }
 
     override fun addDisappearingView(child: View, index: Int) {
         if (index == -1) return addDisappearingView(child)
         root.addDisappearingView(child, viewsBefore + index)
-        numViews += 1
+        numDisappearedViews += 1
     }
 
     override fun getAttachedRawView(position: Int) = root.getAttachedRawView(viewsBefore + position)
@@ -272,7 +283,6 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     /********************************************************
      * Delegated stuff
      *******************************************************/
-
     override fun addIgnoredHeight(ignoredHeight: Int) = root.addIgnoredHeight(ignoredHeight)
 
     override val supportsPredictiveItemAnimations get() = root.supportsPredictiveItemAnimations
@@ -309,4 +319,5 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     override fun offsetChildrenHorizontal(dx: Int) = root.offsetChildrenHorizontal(dx)
     override fun offsetHorizontal(view: View, dx: Int) = root.offsetHorizontal(view, dx)
     override fun offsetVertical(view: View, dy: Int) = root.offsetVertical(view, dy)
+    override fun removeView(child: View, helper: LayoutHelper) = root.removeView(child, helper)
 }
