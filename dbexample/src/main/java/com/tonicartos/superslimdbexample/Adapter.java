@@ -1,8 +1,10 @@
 package com.tonicartos.superslimdbexample;
 
+import com.tonicartos.superslim.SectionConfig;
 import com.tonicartos.superslim.adapter.Item;
 import com.tonicartos.superslim.adapter.Section;
 import com.tonicartos.superslim.adapter.SuperSlimAdapter;
+import com.tonicartos.superslim.layout.LinearSectionConfig;
 
 import android.database.Cursor;
 import android.support.annotation.NonNull;
@@ -61,7 +63,10 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
         for (int i = 0; i < count; ) {
             final String currentRegionName = mCursor.getString(1);
             final Item currentRegion = new Item(VIEW_TYPE_REGION_HEADER, currentRegionName);
-            final Section regionSection = createSection(currentRegionName, currentRegion);
+            final Section regionSection = createSection(currentRegionName,
+                    new LinearSectionConfig(SectionConfig.DEFAULT_GUTTER, SectionConfig.DEFAULT_GUTTER,
+                            SectionConfig.HEADER_INLINE, SectionConfig.FOOTER_STICKY, 0, 0, 0, 0),
+                    currentRegion);
 
             while (i < count) {
                 final String region = mCursor.getString(1);
@@ -71,7 +76,10 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
 
                 final String currentSubRegionName = mCursor.getString(4);
                 final Item currentSubRegion = new Item(VIEW_TYPE_SUBREGION_HEADER, currentSubRegionName);
-                final Section subregionSection = createSection(currentSubRegionName, currentSubRegion);
+                final Section subregionSection = createSection(currentSubRegionName,
+                        new LinearSectionConfig(SectionConfig.DEFAULT_GUTTER, SectionConfig.DEFAULT_GUTTER,
+                                SectionConfig.HEADER_INLINE, SectionConfig.FOOTER_STICKY, 0, 0, 0, 0),
+                        currentSubRegion);
                 regionSection.add(subregionSection);
                 for (; i < count; i++) {
                     final String subRegion = mCursor.getString(4);
@@ -164,10 +172,10 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
             final Section section = mAdapter.getSectionWithId(name);
             if (section != null) {
                 section.toggleChildren();
-                Snackbar.make(itemView,
-                        (section.getCollapsed() ? "Collapsed region " : "Expanded region ") + mTextView
-                                .getText(),
-                        Snackbar.LENGTH_SHORT).show();
+//                Snackbar.make(itemView,
+//                        (section.getCollapsed() ? "Collapsed region " : "Expanded region ") + mTextView
+//                                .getText(),
+//                        Snackbar.LENGTH_SHORT).show();
             }
         }
     }
@@ -183,10 +191,10 @@ class Adapter extends SuperSlimAdapter<String, Adapter.ViewHolder> {
             Section section = mAdapter.getSectionWithId(name);
             if (section != null) {
                 section.toggleChildren();
-                Snackbar.make(itemView,
-                        (section.getCollapsed() ? "Collapsed subregion " : "Expanded subregion ")
-                                + mTextView.getText(),
-                        Snackbar.LENGTH_SHORT).show();
+//                Snackbar.make(itemView,
+//                        (section.getCollapsed() ? "Collapsed subregion " : "Expanded subregion ")
+//                                + mTextView.getText(),
+//                        Snackbar.LENGTH_SHORT).show();
             }
         }
     }
