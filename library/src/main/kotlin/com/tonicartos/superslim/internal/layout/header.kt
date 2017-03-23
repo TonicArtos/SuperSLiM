@@ -56,7 +56,7 @@ private object InlineHlm : BaseHlm {
                 header.measure()
                 header.layout(0, y, header.measuredWidth, y + header.measuredHeight)
                 if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
-                state.disappearedHeight += header.disappearedHeight
+                state.disappearedOrRemovedHeight += header.disappearedHeight
                 y += header.height
                 helper.filledArea += header.height
                 state.state = ADDED
@@ -70,7 +70,7 @@ private object InlineHlm : BaseHlm {
 
         section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 },
                        if (state.state == ADDED) 1 else 0)
-        state.disappearedHeight += section.disappearedHeight
+        state.disappearedOrRemovedHeight += section.disappearedHeight
         y += section.height
         helper.filledArea += section.height
         if (section.numViews > 0) state.tailPosition = 1
@@ -202,7 +202,7 @@ private object StickyHlm : BaseHlm {
 
             if (state.headPosition <= 0) {
                 if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
-                state.disappearedHeight += header.disappearedHeight
+                state.disappearedOrRemovedHeight += header.disappearedHeight
                 y += header.height
                 helper.filledArea += header.height
                 state.state = ADDED
@@ -213,7 +213,7 @@ private object StickyHlm : BaseHlm {
             helper.insetStickyStart(header.measuredHeight) {
                 section.layout(helper, section.leftGutter { 0 }, y,
                                helper.layoutWidth - section.rightGutter { 0 })
-                state.disappearedHeight += section.disappearedHeight
+                state.disappearedOrRemovedHeight += section.disappearedHeight
                 y += section.height
                 helper.filledArea += section.height
                 state.headPosition = 0

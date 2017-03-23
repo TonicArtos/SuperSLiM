@@ -104,8 +104,12 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
     private val recyclerHelper = RecyclerWrapper()
     private val stateHelper = StateWrapper()
 
-    override fun addView(child: View, index: Int) {
-        super.addView(child, index)
+    override fun addTemporaryView(child: View) {
+        addView(child)
+    }
+
+    override fun addTemporaryView(child: View, index: Int) {
+        addView(child, index)
     }
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {

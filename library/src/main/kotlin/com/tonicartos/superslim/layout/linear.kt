@@ -63,7 +63,7 @@ internal object LinearSlm : SectionLayoutManager<LinearSectionState> {
                 if (helper.isPreLayout && child.isRemoved) {
                     helper.addIgnoredHeight(child.height)
                 }
-                layoutState.disappearedHeight += child.disappearedHeight
+                layoutState.disappearedOrRemovedHeight += child.disappearedHeight
                 y += child.height
                 helper.filledArea += child.height
                 if (child.disappearedHeight < child.height) layoutState.tailPosition = currentPosition

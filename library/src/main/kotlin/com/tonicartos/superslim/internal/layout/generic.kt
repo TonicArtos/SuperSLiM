@@ -12,7 +12,7 @@ internal object DoNothingSlm : SectionLayoutManager<SectionState> {
 
     override fun onLayout(helper: LayoutHelper, section: SectionState, layoutState: SectionState.LayoutState) {
         section.layout(helper, section.leftGutter { 0 }, 0, helper.layoutWidth - section.rightGutter { 0 })
-        layoutState.disappearedHeight += section.disappearedHeight
+        layoutState.disappearedOrRemovedHeight += section.disappearedHeight
         layoutState.bottom = section.height
         layoutState.headPosition = 0
         layoutState.tailPosition = 0

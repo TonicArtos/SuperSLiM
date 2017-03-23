@@ -17,9 +17,9 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
     internal fun acquireSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                          viewsBefore: Int, layoutState: LayoutState,
                                          tellParentViewsChangedBy: (Int) -> Unit,
-                                         tellParentAboutDisappearedView: (Int) -> Unit)
+                                         tellParentAboutTemporaryView: (Int) -> Unit)
             = helperPool.acquire(this, left, y, right - left, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                 tellParentViewsChangedBy, tellParentAboutDisappearedView)
+                                 tellParentViewsChangedBy, tellParentAboutTemporaryView)
 
     inline fun <T> useSubsectionHelper(y: Int, left: Int, right: Int, paddingTop: Int, paddingBottom: Int,
                                        viewsBefore: Int, layoutState: LayoutState, block: (LayoutHelper) -> T): T {
@@ -52,13 +52,13 @@ internal class RootLayoutHelper(val manager: ManagerHelper, val config: ReadWrit
 
         fun acquire(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
                     viewsBefore: Int, layoutState: LayoutState, tellParentViewsChangedBy: (Int) -> Unit,
-                    tellParentAboutDisappearedView: (Int) -> Unit) =
+                    tellParentAboutTemporaryView: (Int) -> Unit) =
                 if (pool.isEmpty()) {
                     LayoutHelper(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                 tellParentViewsChangedBy, tellParentAboutDisappearedView)
+                                 tellParentViewsChangedBy, tellParentAboutTemporaryView)
                 } else {
                     pool.removeAt(0).reInit(root, x, y, width, paddingTop, paddingBottom, viewsBefore, layoutState,
-                                            tellParentViewsChangedBy, tellParentAboutDisappearedView)
+                                            tellParentViewsChangedBy, tellParentAboutTemporaryView)
                 }
 
         fun release(helper: LayoutHelper) {
@@ -132,6 +132,8 @@ internal interface ManagerHelper {
     fun addView(child: View, index: Int)
     fun addDisappearingView(child: View)
     fun addDisappearingView(child: View, index: Int)
+    fun addTemporaryView(child: View)
+    fun addTemporaryView(child: View, index: Int)
 
     fun removeView(child: View, recycler: RecyclerView.Recycler)
 

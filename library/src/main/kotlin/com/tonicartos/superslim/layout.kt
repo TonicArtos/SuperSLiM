@@ -68,11 +68,11 @@ interface SectionLayoutManager<in T : SectionState> {
 
 class LayoutHelper private constructor(private var root: RootLayoutHelper,
                                        private var tellParentViewsChangedBy: (Int) -> Unit,
-                                       private var tellParentAboutDisappearedView: (Int) -> Unit) : BaseLayoutHelper {
+                                       private var tellParentAboutTemporaryView: (Int) -> Unit) : BaseLayoutHelper {
     internal constructor(root: RootLayoutHelper, x: Int, y: Int, width: Int, paddingTop: Int, paddingBottom: Int,
                          viewsBefore: Int, layoutState: LayoutState, tellParentViewsChanged: (Int) -> Unit,
-                         tellParentAboutDisappearedView: (Int) -> Unit) :
-            this(root, tellParentViewsChanged, tellParentAboutDisappearedView) {
+                         tellParentAboutTemporaryView: (Int) -> Unit) :
+            this(root, tellParentViewsChanged, tellParentAboutTemporaryView) {
         offset.x = x
         offset.y = y
         this.width = width
@@ -100,7 +100,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         this.viewsBefore = viewsBefore
         this.layoutState = layoutState
         this.tellParentViewsChangedBy = tellParentViewsChangedBy
-        this.tellParentAboutDisappearedView = tellParentAboutDisappearedView
+        this.tellParentAboutTemporaryView = tellParentAboutDisappearedView
         return this
     }
 
@@ -108,7 +108,7 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
                                         viewsBefore: Int, layoutState: LayoutState): LayoutHelper
             = root.acquireSubsectionHelper(offset.y + y, offset.x + left, offset.x + right,
                                            paddingTop, paddingBottom, viewsBefore, layoutState,
-                                           this::viewsChangedBy, this::disappearedViewsChangedBy)
+                                           this::viewsChangedBy, this::temporaryViewsChangedBy)
 
     internal fun release() {
         root.releaseSubsectionHelper(this)
@@ -145,9 +145,9 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
             viewsChangedBy(value - layoutState.numViews)
         }
 
-    var numDisappearedViews get() = layoutState.numDisappearedViews
+    var numTemporaryViews get() = layoutState.numTemporaryViews
         private set(value) {
-            disappearedViewsChangedBy(value - layoutState.numDisappearedViews)
+            temporaryViewsChangedBy(value - layoutState.numTemporaryViews)
         }
 
     internal fun viewsChangedBy(delta: Int) {
@@ -155,10 +155,10 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
         tellParentViewsChangedBy(delta)
     }
 
-    private fun disappearedViewsChangedBy(delta: Int) {
+    private fun temporaryViewsChangedBy(delta: Int) {
         layoutState.numViews += delta
-        layoutState.numDisappearedViews += delta
-        tellParentAboutDisappearedView(delta)
+        layoutState.numTemporaryViews += delta
+        tellParentAboutTemporaryView(delta)
     }
 
     override val layoutWidth get() = width
@@ -238,25 +238,33 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     }
 
     override fun addView(child: View) {
-        addView(child, numViews)
+        addView(child, -1)
     }
 
     override fun addView(child: View, index: Int) {
-        if (index == -1) return addView(child, numViews)
-        require(numViews in 0..numViews)
-        root.addView(child, viewsBefore + index)
+        val dest = if (index == -1) numViews else index
+        root.addView(child, viewsBefore + dest)
         numViews += 1
     }
 
     override fun addDisappearingView(child: View) {
-        root.addDisappearingView(child)
-        numDisappearedViews += 1
+        addDisappearingView(child, -1)
     }
 
     override fun addDisappearingView(child: View, index: Int) {
-        if (index == -1) return addDisappearingView(child)
-        root.addDisappearingView(child, viewsBefore + index)
-        numDisappearedViews += 1
+        val dest = if (index == -1) numViews else index
+        root.addDisappearingView(child, viewsBefore + dest)
+        numTemporaryViews += 1
+    }
+
+    override fun addTemporaryView(child: View) {
+        addTemporaryView(child, -1)
+    }
+
+    override fun addTemporaryView(child: View, index: Int) {
+        val dest = if (index == -1) numViews else index
+        root.addTemporaryView(child, viewsBefore + dest)
+        numTemporaryViews += 1
     }
 
     override fun getAttachedRawView(position: Int) = root.getAttachedRawView(viewsBefore + position)
@@ -283,7 +291,10 @@ class LayoutHelper private constructor(private var root: RootLayoutHelper,
     /********************************************************
      * Delegated stuff
      *******************************************************/
-    override fun addIgnoredHeight(ignoredHeight: Int) = root.addIgnoredHeight(ignoredHeight)
+    override fun addIgnoredHeight(ignoredHeight: Int) {
+        root.addIgnoredHeight(ignoredHeight)
+        layoutState.disappearedOrRemovedHeight += ignoredHeight
+    }
 
     override val supportsPredictiveItemAnimations get() = root.supportsPredictiveItemAnimations
     override val isPreLayout: Boolean get() = root.isPreLayout

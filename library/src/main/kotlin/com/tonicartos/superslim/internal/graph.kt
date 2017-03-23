@@ -69,6 +69,11 @@ internal class GraphManager(adapter: AdapterContract<*>) {
         }
         root.logGraph()
         root.layout(helper, 0, 0, helper.layoutWidth)
+        val sectionHeight = root.height
+        if (sectionHeight < helper.layoutLimit) {
+            val overscroll = scrollBy(root.height - helper.layoutLimit, helper)
+            if (overscroll != 0) helper.offsetChildrenVertical(overscroll)
+        }
 
         if (helper.isPreLayout) {
             doSectionRemovals()
@@ -330,9 +335,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         /**
          * Height which will be removed from the section state after this layout pass.
          */
-        var disappearedHeight = 0
+        var disappearedOrRemovedHeight = 0
 
-        var numDisappearedViews = 0
+        var numTemporaryViews = 0
 
         /**
          * Reset layout state.
@@ -371,10 +376,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         open internal fun layout(helper: LayoutHelper, section: SectionState) = section.doLayout(helper, this)
         internal fun postLayout() {
-            bottom -= disappearedHeight
-            disappearedHeight = 0
-            numViews -= numDisappearedViews
-            numDisappearedViews = 0
+            bottom -= disappearedOrRemovedHeight
+            disappearedOrRemovedHeight = 0
+            numViews -= numTemporaryViews
+            numTemporaryViews = 0
             if (numViews == 0) reset()
         }
 
@@ -509,7 +514,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      * a time.
      */
     private val layoutState = Stack<LayoutState>()
-    internal val disappearedHeight get() = layoutState.peek().disappearedHeight
+    internal val disappearedHeight get() = layoutState.peek().disappearedOrRemovedHeight
     internal val height get() = layoutState.peek().bottom
     internal val numViews get() = layoutState.peek().numViews
     internal fun resetLayout() {
@@ -1331,7 +1336,10 @@ private open class ItemChild(var view: View, helper: LayoutHelper, var positionI
     override val disappearedHeight get() = 0
 
     override fun addToRecyclerView(i: Int) {
-        helper.addView(view, i)
+        when {
+            isRemoved -> helper.addTemporaryView(view, i)
+            else      -> helper.addView(view, i)
+        }
     }
 }
 
