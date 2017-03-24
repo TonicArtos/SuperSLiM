@@ -1,5 +1,6 @@
 package com.tonicartos.superslim.adapter
 
+import android.util.Log
 import com.tonicartos.superslim.AdapterContract
 import com.tonicartos.superslim.SectionConfig
 import com.tonicartos.superslim.layout.LinearSectionConfig
@@ -204,16 +205,21 @@ class Section internal constructor(contract: SectionContract? = null) : Node.Sec
             id = contract?.notifySectionInserted(this) ?: -1
         }
 
-        header?.let {
-            itemManager?.insert(positionInAdapter, it)
+        header?.let { header ->
+            itemManager?.insert(positionInAdapter, header)
         }
 
         if (!collapsed) {
-            for (child in children) {
+            children.forEachIndexed { i, child ->
                 child.itemManager = itemManager
+                initChild(i, child)
                 child.insertItemsToAdapter()
             }
-            footer?.insertItemsToAdapter()
+            footer?.let { footer ->
+                footer.itemManager = itemManager
+                initChild(childCount, footer)
+                footer.insertItemsToAdapter()
+            }
         }
 
     }
