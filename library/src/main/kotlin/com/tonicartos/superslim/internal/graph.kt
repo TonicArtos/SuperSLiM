@@ -258,251 +258,7 @@ private class SectionManager {
  */
 abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionState? = null) {
     private companion object {
-        const val UNSET_OR_BEFORE_CHILDREN: Int = -1
-
         const val ENABLE_LAYOUT_LOGGING = false
-    }
-
-    internal inline fun <R> LayoutState.withPadding(helper: LayoutHelper, block: (Int, Int) -> R): R {
-        val paddingTop: Int
-        val paddingBottom: Int
-
-        if (this is PaddingLayoutState) {
-            paddingTop = helper.getTransformedPaddingTop(baseConfig)
-            paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
-        } else {
-            paddingTop = 0
-            paddingBottom = 0
-        }
-        return block(paddingTop, paddingBottom)
-    }
-
-    internal inline fun <R> LayoutState.withPadding(helper: LayoutHelper, block: (Int, Int, Int, Int) -> R): R {
-        val paddingLeft: Int
-        val paddingTop: Int
-        val paddingRight: Int
-        val paddingBottom: Int
-
-        if (this is PaddingLayoutState) {
-            paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
-            paddingTop = helper.getTransformedPaddingTop(baseConfig)
-            paddingRight = helper.getTransformedPaddingRight(baseConfig)
-            paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
-        } else {
-            paddingLeft = 0
-            paddingTop = 0
-            paddingRight = 0
-            paddingBottom = 0
-        }
-        return block(paddingLeft, paddingTop, paddingRight, paddingBottom)
-    }
-
-    open class LayoutState {
-        /**
-         * Number of views.
-         */
-        var numViews = 0
-            internal set(value) {
-                field = value
-            }
-
-        /**
-         * The height of the section for this layout pass. Only valid after section is laid out.
-         */
-        open var bottom = 0
-
-        /**
-         * Position that is the head of the displayed section content. -1 is the unset default value.
-         */
-        var headPosition = UNSET_OR_BEFORE_CHILDREN
-            set(value) {
-                field = value
-            }
-        /**
-         * Position that is the tail of the displayed section content. -1 is the unset and default value.
-         */
-        var tailPosition = UNSET_OR_BEFORE_CHILDREN
-
-        var left = 0
-        var right = 0
-
-        /**
-         * Area drawn past y0 and dy.
-         */
-        var overdraw = 0
-
-        /**
-         * Height which will be removed from the section state after this layout pass.
-         */
-        var disappearedOrRemovedHeight = 0
-
-        var numTemporaryViews = 0
-
-        /**
-         * Reset layout state.
-         */
-        internal open fun reset() {
-            bottom = 0
-            headPosition = UNSET_OR_BEFORE_CHILDREN
-            tailPosition = UNSET_OR_BEFORE_CHILDREN
-            left = 0
-            right = 0
-            overdraw = 0
-            numViews = 0
-        }
-
-        internal fun copy(old: LayoutState) {
-            bottom = old.bottom
-            headPosition = old.headPosition
-            tailPosition = old.tailPosition
-        }
-
-        override fun toString() = "($string)"
-
-        protected open val string get() = "headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw"
-
-        open internal fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
-                = section.doFillBottom(dy, helper, this)
-
-        open internal fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
-                = section.doFillTop(dy, helper, this)
-
-        open internal fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else section.doTrimTop(scrolled, helper, this)
-
-        open internal fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else section.doTrimBottom(scrolled, helper, this)
-
-        open internal fun layout(helper: LayoutHelper, section: SectionState) = section.doLayout(helper, this)
-        internal fun postLayout() {
-            bottom -= disappearedOrRemovedHeight
-            disappearedOrRemovedHeight = 0
-            numViews -= numTemporaryViews
-            numTemporaryViews = 0
-            if (numViews == 0) reset()
-        }
-
-        open fun atTop(section: SectionState) = section.isAtTop(this)
-    }
-
-    internal abstract class InternalLayoutState : LayoutState() {
-        /**
-         * The current layout state mode.
-         */
-        var mode = 0
-
-        override fun reset() {
-            super.reset()
-            mode = 0
-        }
-
-        override val string get() = "mode = $mode, ${super.string}"
-        abstract fun anchor(section: SectionState): Pair<Int, Int>
-
-        infix fun set(flag: Int) {
-            mode = mode or flag
-        }
-
-        infix fun unset(flag: Int) {
-            mode = mode and flag.inv()
-        }
-
-        infix fun flagSet(flag: Int) = mode and flag != 0
-        infix fun flagUnset(flag: Int) = mode and flag == 0
-    }
-
-    internal class PaddingLayoutState : InternalLayoutState() {
-        var paddingTop = 0
-        var paddingBottom = 0
-
-        override val string get() = "paddingTop = $paddingTop, paddingBottom = $paddingBottom, ${super.string}"
-
-        override fun anchor(section: SectionState) = if (overdraw > 0) {
-            section.positionInAdapter to overdraw
-        } else {
-            section.anchor
-        }
-
-        override fun atTop(section: SectionState) = PaddingLayoutManager.isAtTop(section, this)
-
-        override fun layout(helper: LayoutHelper, section: SectionState) {
-            PaddingLayoutManager.onLayout(helper, section, this)
-        }
-
-        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onFillBottom(dy, helper, section, this)
-
-        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onFillTop(dy, helper, section, this)
-
-        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
-
-        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
-
-        override fun toString() = "Padding ${super.toString()}"
-
-        var onScreen get() = headPosition == 0
-            set(value) {
-                headPosition = if (value) 0 else -1
-            }
-    }
-
-    internal class HeaderLayoutState : InternalLayoutState() {
-        override fun anchor(section: SectionState) = if (section.hasHeader && headPosition == 0) {
-            section.positionInAdapter to overdraw
-        } else {
-            section.anchor
-        }
-
-        override fun atTop(section: SectionState) = HeaderLayoutManager.isAtTop(section, this)
-
-        override fun layout(helper: LayoutHelper, section: SectionState) {
-            HeaderLayoutManager.onLayout(helper, section, this)
-        }
-
-        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
-                = HeaderLayoutManager.onFillBottom(dy, helper, section, this)
-
-        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
-                = HeaderLayoutManager.onFillTop(dy, helper, section, this)
-
-        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimTop(scrolled, helper, section, this)
-
-        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimBottom(scrolled, helper, section, this)
-
-        override fun toString() = "Header ${super.toString()}"
-    }
-
-    internal class FooterLayoutState : InternalLayoutState() {
-        override fun anchor(section: SectionState) = if (section.hasFooter && headPosition == 1) {
-            section.positionInAdapter + section.totalItems to overdraw
-        } else {
-            section.anchor
-        }
-
-        override fun atTop(section: SectionState) = FooterLayoutManager.isAtTop(section, this)
-
-        override fun layout(helper: LayoutHelper, section: SectionState) {
-            FooterLayoutManager.onLayout(helper, section, this)
-        }
-
-        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
-                = FooterLayoutManager.onFillBottom(dy, helper, section, this)
-
-        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
-                = FooterLayoutManager.onFillTop(dy, helper, section, this)
-
-        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else FooterLayoutManager.onTrimTop(scrolled, helper, section, this)
-
-        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else FooterLayoutManager.onTrimBottom(scrolled, helper, section, this)
-
-        override fun toString() = "Footer ${super.toString()}"
     }
 
     internal val anchor: Pair<Int, Int> get() = layoutState.babushka { state ->
@@ -512,14 +268,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     override fun toString() = "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
-
-//    override fun toString() = subsections.foldIndexed(
-//            "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}, states = ${layoutState.asReversed().foldIndexed(
-//                    "") { i, s, it ->
-//                "$s\n$i $it".replace("\n", "\n\t")
-//            }}") { i, s, it ->
-//        "$s\n$i $it".replace("\n", "\n\t")
-//    }
 
     /**
      * A stack of states. Plm, hlm, flm, slm. Except in special circumstances only the top one should be accessed at
@@ -978,50 +726,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     internal fun removeItems(fromAdapterPosition: Int, count: Int) {
         removeItemsInt(fromAdapterPosition, count)
     }
-//        var currentRemoveFrom = fromAdapterPosition
-//        var countInRange = count
-//
-//        // Constrain removal to range of items within the section.
-//        if (currentRemoveFrom < positionInAdapter) {
-//            val delta = positionInAdapter - currentRemoveFrom
-//            countInRange -= delta
-//            currentRemoveFrom += delta
-//        }
-//
-//        if (currentRemoveFrom + countInRange > positionInAdapter + totalItems) {
-//            val delta = (currentRemoveFrom + countInRange) - (positionInAdapter + totalItems)
-//            countInRange -= delta
-//        }
-//
-//        if (countInRange <= 0) return
-//
-//        var itemsRemaining = countInRange
-//        var itemsThatAreChildren = 0
-//
-//        var itemsRemoved = 0
-//
-//        if (hasHeader && currentRemoveFrom == positionInAdapter) {
-//            itemsRemoved += 1
-//            itemsRemaining -= 1
-//            currentRemoveFrom += 1
-//            hasHeader = false
-//        }
-//
-//        blockTotalItemChanges {
-//            for (it in subsections) {
-//                var (skipped, removed) = it.removeItemsInt(currentRemoveFrom, itemsRemaining)
-//                it.positionInAdapter -= skipped + itemsRemoved
-//                itemsRemoved += removed
-//                itemsThatAreChildren += skipped
-//                currentRemoveFrom += skipped
-//                itemsRemaining -= removed + skipped
-//            }
-//        }
-//
-//        itemsThatAreChildren += itemsRemaining
-//        totalItems -= countInRange
-//        numChildren -= itemsThatAreChildren
-//    }
 
     private fun removeItemsInt(removeFromAdapterPosition: Int, count: Int): Pair<Int, Int> {
         if (count == 0) return 0 to 0
@@ -1182,6 +886,252 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         Log.d("GRAPH", "$this")
         layoutState.asReversed().forEach { Log.d("GRAPH", "$it") }
         subsections.forEach { it.logGraph() }
+    }
+
+    internal inline fun <R> LayoutState.withPadding(helper: LayoutHelper, block: (Int, Int) -> R): R {
+        val paddingTop: Int
+        val paddingBottom: Int
+
+        if (this is PaddingLayoutState) {
+            paddingTop = helper.getTransformedPaddingTop(baseConfig)
+            paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
+        } else {
+            paddingTop = 0
+            paddingBottom = 0
+        }
+        return block(paddingTop, paddingBottom)
+    }
+
+    internal inline fun <R> LayoutState.withPadding(helper: LayoutHelper, block: (Int, Int, Int, Int) -> R): R {
+        val paddingLeft: Int
+        val paddingTop: Int
+        val paddingRight: Int
+        val paddingBottom: Int
+
+        if (this is PaddingLayoutState) {
+            paddingLeft = helper.getTransformedPaddingLeft(baseConfig)
+            paddingTop = helper.getTransformedPaddingTop(baseConfig)
+            paddingRight = helper.getTransformedPaddingRight(baseConfig)
+            paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
+            Log.d("ASDFASDF", "left = $paddingLeft, top = $paddingTop, right = $paddingRight, bottom = $paddingBottom")
+        } else {
+            paddingLeft = 0
+            paddingTop = 0
+            paddingRight = 0
+            paddingBottom = 0
+        }
+        return block(paddingLeft, paddingTop, paddingRight, paddingBottom)
+    }
+
+    open class LayoutState {
+        companion object {
+            const val UNSET_OR_BEFORE_CHILDREN: Int = -1
+        }
+        /**
+         * Number of views.
+         */
+        var numViews = 0
+            internal set(value) {
+                field = value
+            }
+
+        /**
+         * The height of the section for this layout pass. Only valid after section is laid out.
+         */
+        open var bottom = 0
+
+        /**
+         * Position that is the head of the displayed section content. -1 is the unset default value.
+         */
+        var headPosition = UNSET_OR_BEFORE_CHILDREN
+            set(value) {
+                field = value
+            }
+        /**
+         * Position that is the tail of the displayed section content. -1 is the unset and default value.
+         */
+        var tailPosition = UNSET_OR_BEFORE_CHILDREN
+
+        var left = 0
+        var right = 0
+
+        /**
+         * Area drawn past y0 and dy.
+         */
+        var overdraw = 0
+
+        /**
+         * Height which will be removed from the section state after this layout pass.
+         */
+        var disappearedOrRemovedHeight = 0
+
+        var numTemporaryViews = 0
+
+        /**
+         * Reset layout state.
+         */
+        internal open fun reset() {
+            bottom = 0
+            headPosition = UNSET_OR_BEFORE_CHILDREN
+            tailPosition = UNSET_OR_BEFORE_CHILDREN
+            left = 0
+            right = 0
+            overdraw = 0
+            numViews = 0
+        }
+
+        internal fun copy(old: LayoutState) {
+            bottom = old.bottom
+            headPosition = old.headPosition
+            tailPosition = old.tailPosition
+        }
+
+        override fun toString() = "($string)"
+
+        protected open val string get() = "headPosition = $headPosition, tailPosition = $tailPosition, numViews = $numViews, left = $left, right = $right, height = $bottom, overdraw = $overdraw"
+
+        open internal fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
+                = section.doFillBottom(dy, helper, this)
+
+        open internal fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
+                = section.doFillTop(dy, helper, this)
+
+        open internal fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else section.doTrimTop(scrolled, helper, this)
+
+        open internal fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else section.doTrimBottom(scrolled, helper, this)
+
+        open internal fun layout(helper: LayoutHelper, section: SectionState) = section.doLayout(helper, this)
+        internal fun postLayout() {
+            bottom -= disappearedOrRemovedHeight
+            disappearedOrRemovedHeight = 0
+            numViews -= numTemporaryViews
+            numTemporaryViews = 0
+            if (numViews == 0) reset()
+        }
+
+        open fun atTop(section: SectionState) = section.isAtTop(this)
+    }
+
+    internal abstract class InternalLayoutState : LayoutState() {
+        /**
+         * The current layout state mode.
+         */
+        var mode = 0
+
+        override fun reset() {
+            super.reset()
+            mode = 0
+        }
+
+        override val string get() = "mode = $mode, ${super.string}"
+        abstract fun anchor(section: SectionState): Pair<Int, Int>
+
+        infix fun set(flag: Int) {
+            mode = mode or flag
+        }
+
+        infix fun unset(flag: Int) {
+            mode = mode and flag.inv()
+        }
+
+        infix fun flagSet(flag: Int) = mode and flag != 0
+        infix fun flagUnset(flag: Int) = mode and flag == 0
+    }
+
+    internal class PaddingLayoutState : InternalLayoutState() {
+        var paddingTop = 0
+        var paddingBottom = 0
+
+        override val string get() = "paddingTop = $paddingTop, paddingBottom = $paddingBottom, ${super.string}"
+
+        override fun anchor(section: SectionState) = if (overdraw > 0) {
+            section.positionInAdapter to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun atTop(section: SectionState) = PaddingLayoutManager.isAtTop(section, this)
+
+        override fun layout(helper: LayoutHelper, section: SectionState) {
+            PaddingLayoutManager.onLayout(helper, section, this)
+        }
+
+        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
+                = PaddingLayoutManager.onFillBottom(dy, helper, section, this)
+
+        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
+                = PaddingLayoutManager.onFillTop(dy, helper, section, this)
+
+        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
+
+        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
+
+        override fun toString() = "Padding ${super.toString()}"
+
+        var onScreen get() = headPosition == 0
+            set(value) {
+                headPosition = if (value) 0 else -1
+            }
+    }
+
+    internal class HeaderLayoutState : InternalLayoutState() {
+        override fun anchor(section: SectionState) = if (section.hasHeader && headPosition == 0) {
+            section.positionInAdapter to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun atTop(section: SectionState) = HeaderLayoutManager.isAtTop(section, this)
+
+        override fun layout(helper: LayoutHelper, section: SectionState) {
+            HeaderLayoutManager.onLayout(helper, section, this)
+        }
+
+        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
+                = HeaderLayoutManager.onFillBottom(dy, helper, section, this)
+
+        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
+                = HeaderLayoutManager.onFillTop(dy, helper, section, this)
+
+        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimTop(scrolled, helper, section, this)
+
+        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else HeaderLayoutManager.onTrimBottom(scrolled, helper, section, this)
+
+        override fun toString() = "Header ${super.toString()}"
+    }
+
+    internal class FooterLayoutState : InternalLayoutState() {
+        override fun anchor(section: SectionState) = if (section.hasFooter && headPosition == 1) {
+            section.positionInAdapter + section.totalItems to overdraw
+        } else {
+            section.anchor
+        }
+
+        override fun atTop(section: SectionState) = FooterLayoutManager.isAtTop(section, this)
+
+        override fun layout(helper: LayoutHelper, section: SectionState) {
+            FooterLayoutManager.onLayout(helper, section, this)
+        }
+
+        override fun fillBottom(dy: Int, helper: LayoutHelper, section: SectionState)
+                = FooterLayoutManager.onFillBottom(dy, helper, section, this)
+
+        override fun fillTop(dy: Int, helper: LayoutHelper, section: SectionState)
+                = FooterLayoutManager.onFillTop(dy, helper, section, this)
+
+        override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else FooterLayoutManager.onTrimTop(scrolled, helper, section, this)
+
+        override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
+                = if (numViews == 0) 0 else FooterLayoutManager.onTrimBottom(scrolled, helper, section, this)
+
+        override fun toString() = "Footer ${super.toString()}"
     }
 }
 
