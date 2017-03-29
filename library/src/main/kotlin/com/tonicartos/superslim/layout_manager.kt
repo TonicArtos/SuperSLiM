@@ -90,7 +90,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         const val HORIZONTAL: Int = RecyclerView.HORIZONTAL
 
         private const val ENABLE_NOTIFICATION_LOGGING = false
-        private const val ENABLE_ITEM_CHANGE_LOGGING = true
+        private const val ENABLE_ITEM_CHANGE_LOGGING = false
         private const val ENABLE_LAYOUT_LOGGING = false
     }
 
