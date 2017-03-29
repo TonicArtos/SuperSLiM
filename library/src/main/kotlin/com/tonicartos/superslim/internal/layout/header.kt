@@ -59,17 +59,17 @@ private object InlineHlm : BaseHlm {
                 state.disappearedOrRemovedHeight += header.disappearedHeight
                 y += header.height
                 helper.filledArea += header.height
-                state.state = ADDED
+                state.mode = ADDED
                 state.headPosition = 0
                 state.tailPosition = 0
             }
         } else {
-            state.state = ABSENT
+            state.mode = ABSENT
             state.headPosition = 1
         }
 
         section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 },
-                       if (state.state == ADDED) 1 else 0)
+                       if (state.mode == ADDED) 1 else 0)
         state.disappearedOrRemovedHeight += section.disappearedHeight
         y += section.height
         helper.filledArea += section.height
@@ -97,7 +97,7 @@ private object InlineHlm : BaseHlm {
                                                      -state.overdraw - header.measuredHeight,
                                                      header.measuredWidth,
                                                      -state.overdraw)
-                    state.state = ADDED
+                    state.mode = ADDED
                     state.headPosition = 0
                 }
             }
@@ -119,7 +119,7 @@ private object InlineHlm : BaseHlm {
                 filled += header.fillBottom(dy, 0, -state.overdraw, header.measuredWidth,
                                             -state.overdraw + header.measuredHeight)
                 state.bottom += header.height
-                state.state = ADDED
+                state.mode = ADDED
                 state.headPosition = 0
             }
         }
@@ -127,7 +127,7 @@ private object InlineHlm : BaseHlm {
         val before = section.height
         filled += section.fillBottom(dy - filled, section.leftGutter { 0 }, state.bottom - section.height,
                                      helper.layoutWidth - section.rightGutter { 0 }, helper,
-                                     if (state.state == ADDED) 1 else 0)
+                                     if (state.mode == ADDED) 1 else 0)
         state.bottom += section.height - before
         state.tailPosition = 1
         return Math.min(dy, filled)
@@ -137,14 +137,14 @@ private object InlineHlm : BaseHlm {
         val state = layoutState as HeaderLayoutState
         var removedHeight = 0
         var contentTop = 0
-        if (state.state == ADDED) {
+        if (state.mode == ADDED) {
             helper.getAttachedViewAt(0) { header ->
                 if (header.bottom < 0) {
                     header.remove()
                     removedHeight += Math.max(0, header.height - state.overdraw)
                     state.overdraw = Math.max(0, state.overdraw - header.height)
                     state.headPosition = 1
-                    state.state = ABSENT
+                    state.mode = ABSENT
                 } else if (header.top < 0) {
                     val before = state.overdraw
                     state.overdraw = -header.top
@@ -153,7 +153,7 @@ private object InlineHlm : BaseHlm {
                 }
             }
         }
-        removedHeight += section.trimTop(scrolled, contentTop, helper, if (state.state == ADDED) 1 else 0)
+        removedHeight += section.trimTop(scrolled, contentTop, helper, if (state.mode == ADDED) 1 else 0)
         if (helper.numViews == 0) {
             state.headPosition = -1
             state.headPosition = -1
@@ -167,16 +167,16 @@ private object InlineHlm : BaseHlm {
         val state = layoutState as HeaderLayoutState
         var removed = 0
         removed += section.trimBottom(scrolled, state.bottom - section.height, helper,
-                                      if (state.state == ADDED) 1 else 0)
+                                      if (state.mode == ADDED) 1 else 0)
         if (section.numViews == 0) {
             state.tailPosition = 0
         }
-        if (state.state == ADDED) {
+        if (state.mode == ADDED) {
             helper.getAttachedViewAt(0) { header ->
                 if (header.top >= helper.layoutLimit) {
                     removed += header.height
                     header.remove()
-                    state.state = ABSENT
+                    state.mode = ABSENT
                 }
             }
         }
@@ -205,7 +205,7 @@ private object StickyHlm : BaseHlm {
                 state.disappearedOrRemovedHeight += header.disappearedHeight
                 y += header.height
                 helper.filledArea += header.height
-                state.state = ADDED
+                state.mode = ADDED
                 state.headPosition = 0
                 state.tailPosition = 0
             }
@@ -220,7 +220,7 @@ private object StickyHlm : BaseHlm {
                 state.tailPosition = 0
             }
 
-            if (state.state == ABSENT) {
+            if (state.mode == ABSENT) {
 
             }
 
@@ -236,12 +236,12 @@ private object StickyHlm : BaseHlm {
 //            val floatAdjustedHeight = Math.max(0, header.height + floatOffset)
             if (helper.isPreLayout && header.isRemoved) helper.addIgnoredHeight(header.height)
             helper.filledArea += header.height
-            state.state = FLOATING
+            state.mode = FLOATING
             if (state.headPosition < 0) state.headPosition = 1
             state.tailPosition = 1
             y += header.height
             if (y < helper.layoutLimit) {
-                state.state = ADDED
+                state.mode = ADDED
             }
         }
 

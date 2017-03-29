@@ -14,7 +14,7 @@ import java.util.*
 
 private const val ENABLE_FOOTER = true
 private const val ENABLE_HEADER = true
-private const val ENABLE_PADDING = false
+private const val ENABLE_PADDING = true
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
 
 internal class GraphManager(adapter: AdapterContract<*>) {
@@ -386,27 +386,36 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     internal abstract class InternalLayoutState : LayoutState() {
-        abstract fun anchor(section: SectionState): Pair<Int, Int>
-    }
-
-    internal abstract class HfCommonLayoutState : InternalLayoutState() {
         /**
-         * The current state of the header or footer. Values are HLM/FLM implementation dependent.
+         * The current layout state mode.
          */
-        var state = 0
+        var mode = 0
 
         override fun reset() {
             super.reset()
-            state = 0
+            mode = 0
         }
 
-        override val string get() = "state = $state, ${super.string}"
+        override val string get() = "mode = $mode, ${super.string}"
+        abstract fun anchor(section: SectionState): Pair<Int, Int>
+
+        infix fun set(flag: Int) {
+            mode = mode or flag
+        }
+
+        infix fun unset(flag: Int) {
+            mode = mode and flag.inv()
+        }
+
+        infix fun flagSet(flag: Int) = mode and flag != 0
+        infix fun flagUnset(flag: Int) = mode and flag == 0
     }
 
     internal class PaddingLayoutState : InternalLayoutState() {
         var paddingTop = 0
+        var paddingBottom = 0
 
-        override val string get() = "paddingTop = $paddingTop, ${super.string}"
+        override val string get() = "paddingTop = $paddingTop, paddingBottom = $paddingBottom, ${super.string}"
 
         override fun anchor(section: SectionState) = if (overdraw > 0) {
             section.positionInAdapter to overdraw
@@ -427,15 +436,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 = PaddingLayoutManager.onFillTop(dy, helper, section, this)
 
         override fun trimTop(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
+                = PaddingLayoutManager.onTrimTop(scrolled, helper, section, this)
 
         override fun trimBottom(scrolled: Int, helper: LayoutHelper, section: SectionState)
-                = if (numViews == 0) 0 else PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
+                = PaddingLayoutManager.onTrimBottom(scrolled, helper, section, this)
 
         override fun toString() = "Padding ${super.toString()}"
+
+        var onScreen get() = headPosition == 0
+            set(value) {
+                headPosition = if (value) 0 else -1
+            }
     }
 
-    internal class HeaderLayoutState : HfCommonLayoutState() {
+    internal class HeaderLayoutState : InternalLayoutState() {
         override fun anchor(section: SectionState) = if (section.hasHeader && headPosition == 0) {
             section.positionInAdapter to overdraw
         } else {
@@ -463,7 +477,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         override fun toString() = "Header ${super.toString()}"
     }
 
-    internal class FooterLayoutState : HfCommonLayoutState() {
+    internal class FooterLayoutState : InternalLayoutState() {
         override fun anchor(section: SectionState) = if (section.hasFooter && headPosition == 1) {
             section.positionInAdapter + section.totalItems to overdraw
         } else {
@@ -491,8 +505,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         override fun toString() = "Footer ${super.toString()}"
     }
 
-    internal val anchor: Pair<Int, Int> get() =
-    layoutState.babushka { state ->
+    internal val anchor: Pair<Int, Int> get() = layoutState.babushka { state ->
         (state as? InternalLayoutState)
                 ?.anchor(this@SectionState)
                 ?: let { findAndWrap(state.headPosition, { it.anchor }, { it to state.overdraw }) }
@@ -722,7 +735,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             state.right = right - paddingRight
             state.numViews = 0
 
-            if (state.headPosition == UNSET_OR_BEFORE_CHILDREN) state.headPosition = 0
             rootHelper.useSubsectionHelper(top, state.left, state.right, paddingTop, paddingBottom, 0,
                                            state) { helper ->
                 state.layout(helper, this@SectionState)
@@ -847,7 +859,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
 
-            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0, state) { helper ->
+            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0,
+                                           state) { helper ->
                 state.trimTop(scrolled, helper, this@SectionState)
             }
         }
@@ -858,7 +871,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             val paddingTop = rootHelper.basePaddingTop
             val paddingBottom = rootHelper.basePaddingBottom
 
-            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0, state) { helper ->
+            rootHelper.useSubsectionHelper(0, state.left, state.right, paddingTop, paddingBottom, 0,
+                                           state) { helper ->
                 state.trimBottom(scrolled, helper, this@SectionState)
             }
         }
@@ -880,7 +894,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 }
             }
 
-    internal fun fillBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper, numViewsBefore: Int = 0) =
+    internal fun fillBottom(dy: Int, left: Int, top: Int, right: Int, helper: LayoutHelper,
+                            numViewsBefore: Int = 0) =
             layoutState.babushka { state ->
                 state.withPadding(helper) { paddingLeft, paddingTop, paddingRight, paddingBottom ->
                     state.left = left + paddingLeft
@@ -1244,7 +1259,8 @@ private open class SectionChild(var section: SectionState, helper: LayoutHelper)
     }
 }
 
-private open class ItemChild(var view: View, helper: LayoutHelper, var positionInAdapter: Int) : ChildInternal(helper) {
+private open class ItemChild(var view: View, helper: LayoutHelper, var positionInAdapter: Int) : ChildInternal(
+        helper) {
     companion object {
         val pool = arrayListOf<ItemChild>()
 
