@@ -751,26 +751,24 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
                 positionInAdapter + totalItems <= requestedAdapterPosition) {
             return false
         }
-        layoutState.babushka { it.headPosition = 0 }
+        val pls = layoutState[3]
+        pls.headPosition = 0
 
         // Check if position is header.
+        val hls = layoutState[2]
         if (hasHeader && requestedAdapterPosition == positionInAdapter) {
-            layoutState.babushka {
-                babushka { it.headPosition = 0 }
-            }
+            hls.headPosition = 0
             return true
         }
+        hls.headPosition = 1
 
         // Check if position is footer.
+        val fls = layoutState[1]
         if (hasFooter && requestedAdapterPosition == positionInAdapter + totalItems - 1) {
-            layoutState.babushka {
-                babushka {
-                    it.headPosition = 1
-                    babushka { it.headPosition = 1 }
-                }
-            }
+            fls.headPosition = 1
             return true
         }
+        fls.headPosition = 0
 
         /*
          * Position is within content. It may be in a subsection or an item of this section. Calculating the child
@@ -780,20 +778,11 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         var offset = positionInAdapter + headerCount
         var childrenAccountedFor = 0 + headerCount
 
-        for ((_, section) in subsections.withIndex()) {
+        val sls = layoutState[0]
+        for (section in subsections) {
             if (requestedAdapterPosition < section.positionInAdapter) {
                 // Position is before this subsection, so it must be a child item not a member of a subsection.
-                layoutState.babushka {
-                    babushka {
-                        it.headPosition = 1
-                        babushka {
-                            it.headPosition = 0
-                            babushka {
-                                it.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
-                            }
-                        }
-                    }
-                }
+                sls.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
                 return true
             }
 
@@ -802,17 +791,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
             if (section.setLayoutPositionFromAdapter(requestedAdapterPosition)) {
                 // Requested position was within the subsection so store it as the layout position of this section.
-                layoutState.babushka {
-                    babushka {
-                        it.headPosition = 1
-                        babushka {
-                            it.headPosition = 0
-                            babushka {
-                                it.headPosition = childrenAccountedFor - headerCount
-                            }
-                        }
-                    }
-                }
+                sls.headPosition = childrenAccountedFor - headerCount
                 return true
             }
 
@@ -822,19 +801,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             childrenAccountedFor += 1
         }
 
-
         // Position must be a child item after the last subsection.
-        layoutState.babushka {
-            babushka {
-                it.headPosition = 1
-                babushka {
-                    it.headPosition = 0
-                    babushka {
-                        it.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
-                    }
-                }
-            }
-        }
+        sls.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
         return true
     }
 
