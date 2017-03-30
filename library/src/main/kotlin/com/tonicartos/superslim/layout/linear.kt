@@ -12,10 +12,8 @@ import com.tonicartos.superslim.use
 class LinearSectionConfig(gutterStart: Int = SectionConfig.DEFAULT_GUTTER,
                           gutterEnd: Int = SectionConfig.DEFAULT_GUTTER,
                           @HeaderStyle headerStyle: Int = SectionConfig.DEFAULT_HEADER_STYLE,
-                          @FooterStyle footerStyle: Int = SectionConfig.DEFAULT_FOOTER_STYLE,
-                          paddingStart: Int = 0, paddingTop: Int = 0, paddingEnd: Int = 0, paddingBottom: Int = 0) :
-        SectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle, paddingStart, paddingTop, paddingEnd,
-                      paddingBottom) {
+                          @FooterStyle footerStyle: Int = SectionConfig.DEFAULT_FOOTER_STYLE) :
+        SectionConfig(gutterStart, gutterEnd, headerStyle, footerStyle, 0, 0, 0, 0) {
     override fun onMakeSection(oldState: SectionState?): SectionState = LinearSectionState(this, oldState)
 
     override fun onCopy(): LinearSectionConfig {

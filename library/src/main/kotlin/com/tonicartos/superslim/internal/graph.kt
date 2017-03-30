@@ -913,7 +913,6 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
             paddingTop = helper.getTransformedPaddingTop(baseConfig)
             paddingRight = helper.getTransformedPaddingRight(baseConfig)
             paddingBottom = helper.getTransformedPaddingBottom(baseConfig)
-            Log.d("ASDFASDF", "left = $paddingLeft, top = $paddingTop, right = $paddingRight, bottom = $paddingBottom")
         } else {
             paddingLeft = 0
             paddingTop = 0
