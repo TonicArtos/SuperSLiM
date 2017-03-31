@@ -115,7 +115,7 @@ private object inlineFlm : BaseFlm {
 
         state.overdraw += section.fillTop(Math.max(0, toFill), section.leftGutter { 0 }, -state.overdraw,
                                           helper.layoutWidth - section.rightGutter { 0 }, helper)
-        state.headPosition = 0
+        if (state.mode == ADDED &&helper.numViews > 1) state.headPosition = 0
         val filled = Math.min(dy, state.overdraw)
         state.overdraw -= filled
         state.bottom += filled
@@ -155,6 +155,7 @@ private object inlineFlm : BaseFlm {
         var removedHeight = if (state.headPosition == 0) section.trimTop(scrolled, 0, helper, 0) else 0
         if (helper.numViews == 1 && state.mode == ADDED) {
             helper.getAttachedViewAt(helper.numViews - 1) { footer ->
+                state.headPosition = 1
                 if (footer.bottom < 0) {
                     footer.remove()
                     val height = footer.height

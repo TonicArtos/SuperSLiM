@@ -1,5 +1,7 @@
 package com.tonicartos.superslim.internal
 
+import android.os.Parcel
+import android.os.Parcelable
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.NO_POSITION
 import android.util.Log
@@ -15,6 +17,9 @@ import java.util.*
 private const val ENABLE_FOOTER = true
 private const val ENABLE_HEADER = true
 private const val ENABLE_PADDING = true
+private val FOOTER_LAYER = 1
+private val HEADER_LAYER = 1 + (if (ENABLE_FOOTER) 1 else 0)
+private val PADDING_LAYER = 1 + (if (ENABLE_FOOTER) 1 else 0) + (if (ENABLE_HEADER) 1 else 0)
 private const val ENABLE_ITEM_CHANGE_LOGGING = false
 
 internal class GraphManager(adapter: AdapterContract<*>) {
@@ -47,14 +52,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
      *************************/
     internal val anchor get() = root.anchor
 
-    internal var requestedPositionOffset = 0
-    internal var requestedPosition = 0
-        get() = field
-        set(value) {
-            field = value
-            hasRequestedPosition = true
-        }
-    private var hasRequestedPosition = false
+    internal var requestedAnchor: Anchor? = null
 
     fun layout(helper: RootLayoutHelper) {
         if (!helper.isPreLayout) {
@@ -62,10 +60,10 @@ internal class GraphManager(adapter: AdapterContract<*>) {
             doSectionUpdates()
         }
 
-        if (hasRequestedPosition) {
-            // A little extra work to do it this way, but it is clearer and easier for now.
+        requestedAnchor?.let {
             root.resetLayout()
-            root.setLayoutPositionFromAdapter(requestedPosition)
+            root.setLayoutPositionFromAnchor(it)
+            requestedAnchor = null
         }
         root.layout(helper, 0, 0, helper.layoutWidth)
         val sectionHeight = root.height
@@ -84,7 +82,7 @@ internal class GraphManager(adapter: AdapterContract<*>) {
     }
 
     fun scrollBy(d: Int, helper: RootLayoutHelper): Int {
-        hasRequestedPosition = false
+        requestedAnchor = null
 //        Log.d("Graph", "scrollBy($d)")
         if (d == 0) return 0
         // If d is +ve, then scrolling to end.
@@ -261,10 +259,10 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         const val ENABLE_LAYOUT_LOGGING = false
     }
 
-    internal val anchor: Pair<Int, Int> get() = layoutState.babushka { state ->
+    internal val anchor: Anchor get() = layoutState.babushka { state ->
         (state as? InternalLayoutState)
                 ?.anchor(this@SectionState)
-                ?: let { findAndWrap(state.headPosition, { it.anchor }, { it to state.overdraw }) }
+                ?: let { findAndWrap(state.headPosition, { it.anchor }, { Anchor(it, state.overdraw) }) }
     }
 
     override fun toString() = "Section: start=$positionInAdapter, totalItems=$totalItems, numChildren=$numChildren, numSections=${subsections.size}"
@@ -333,9 +331,9 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         if (ENABLE_PADDING) layoutState.push(PaddingLayoutState())
         if (oldState != null) {
             layoutState[0].copy(oldState.layoutState[0])
-            if (ENABLE_FOOTER) layoutState[1].copy(oldState.layoutState[1])
-            if (ENABLE_HEADER) layoutState[2].copy(oldState.layoutState[2])
-            if (ENABLE_PADDING) layoutState[3].copy(oldState.layoutState[3])
+            if (ENABLE_FOOTER) layoutState[FOOTER_LAYER].copy(oldState.layoutState[FOOTER_LAYER])
+            if (ENABLE_HEADER) layoutState[HEADER_LAYER].copy(oldState.layoutState[HEADER_LAYER])
+            if (ENABLE_PADDING) layoutState[PADDING_LAYER].copy(oldState.layoutState[PADDING_LAYER])
             totalItems = oldState.totalItems
             numChildren = oldState.numChildren
             subsections = oldState.subsections
@@ -504,31 +502,56 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
      *
      * @return False if the position is not within this section.
      */
-    internal fun setLayoutPositionFromAdapter(requestedAdapterPosition: Int): Boolean {
-        // WARNING: Will crash if any disable Slms are true.
+    internal fun setLayoutPositionFromAnchor(anchor: Anchor): Boolean {
         // Check requested position is in this section.
-        if (requestedAdapterPosition < positionInAdapter ||
-                positionInAdapter + totalItems <= requestedAdapterPosition) {
+        if (anchor.position < positionInAdapter ||
+                positionInAdapter + totalItems <= anchor.position) {
             return false
         }
-        val pls = layoutState[3]
-        pls.headPosition = 0
+
+        // Check if position needs special padding handling.
+        if (ENABLE_PADDING) {
+            val pls = layoutState[PADDING_LAYER] as PaddingLayoutState
+            pls.headPosition = 0
+            when (anchor.special) {
+                Anchor.Special.IN_PADDING_TOP    -> {
+                    pls.overdraw = anchor.overdraw
+                    pls.set(PaddingLayoutState.TOP_ADDED)
+                    return true
+                }
+                Anchor.Special.IN_PADDING_BOTTOM -> {
+                    pls.overdraw = anchor.overdraw
+                    pls.set(PaddingLayoutState.BOTTOM_ADDED)
+                    return true
+                }
+                Anchor.Special.NOTHING           -> {
+                    pls.unset(PaddingLayoutState.BOTTOM_ADDED or PaddingLayoutState.TOP_ADDED)
+                    pls.onScreen = true
+                }
+            }
+        }
 
         // Check if position is header.
-        val hls = layoutState[2]
-        if (hasHeader && requestedAdapterPosition == positionInAdapter) {
-            hls.headPosition = 0
-            return true
+        if (ENABLE_HEADER) {
+            val hls = layoutState[HEADER_LAYER] as HeaderLayoutState
+            if (hasHeader && anchor.position == positionInAdapter) {
+                hls.headPosition = 0
+                hls.overdraw = anchor.overdraw
+                return true
+            }
+            hls.headPosition = 1
         }
-        hls.headPosition = 1
 
         // Check if position is footer.
-        val fls = layoutState[1]
-        if (hasFooter && requestedAdapterPosition == positionInAdapter + totalItems - 1) {
-            fls.headPosition = 1
-            return true
+        if (ENABLE_FOOTER) {
+            val fls = layoutState[FOOTER_LAYER] as FooterLayoutState
+            if (hasFooter && anchor.position == positionInAdapter + totalItems - 1) {
+                fls.headPosition = 1
+                fls.overdraw = anchor.overdraw
+                return true
+            }
+            fls.headPosition = 0
         }
-        fls.headPosition = 0
 
         /*
          * Position is within content. It may be in a subsection or an item of this section. Calculating the child
@@ -540,16 +563,17 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
         val sls = layoutState[0]
         for (section in subsections) {
-            if (requestedAdapterPosition < section.positionInAdapter) {
+            if (anchor.position < section.positionInAdapter) {
                 // Position is before this subsection, so it must be a child item not a member of a subsection.
-                sls.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
+                sls.headPosition = childrenAccountedFor + anchor.position - offset - headerCount
+                sls.overdraw = anchor.overdraw
                 return true
             }
 
             // Add items before this subsection (but after the last subsection) to children count.
             childrenAccountedFor += section.positionInAdapter - offset
 
-            if (section.setLayoutPositionFromAdapter(requestedAdapterPosition)) {
+            if (section.setLayoutPositionFromAnchor(anchor)) {
                 // Requested position was within the subsection so store it as the layout position of this section.
                 sls.headPosition = childrenAccountedFor - headerCount
                 return true
@@ -562,7 +586,8 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         // Position must be a child item after the last subsection.
-        sls.headPosition = childrenAccountedFor + requestedAdapterPosition - offset - headerCount
+        sls.headPosition = childrenAccountedFor + anchor.position - offset - headerCount
+        sls.overdraw = anchor.overdraw
         return true
     }
 
@@ -926,6 +951,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         companion object {
             const val UNSET_OR_BEFORE_CHILDREN: Int = -1
         }
+
         /**
          * Number of views.
          */
@@ -1025,7 +1051,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
         }
 
         override val string get() = "mode = $mode, ${super.string}"
-        abstract fun anchor(section: SectionState): Pair<Int, Int>
+        abstract fun anchor(section: SectionState): Anchor
 
         infix fun set(flag: Int) {
             mode = mode or flag
@@ -1040,13 +1066,20 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
     }
 
     internal class PaddingLayoutState : InternalLayoutState() {
+        companion object {
+            internal const val TOP_ADDED = 1 shl 0
+            internal const val BOTTOM_ADDED = 1 shl 1
+        }
+
         var paddingTop = 0
         var paddingBottom = 0
 
         override val string get() = "paddingTop = $paddingTop, paddingBottom = $paddingBottom, ${super.string}"
 
-        override fun anchor(section: SectionState) = if (overdraw > 0) {
-            section.positionInAdapter to overdraw
+        override fun anchor(section: SectionState) = if (flagSet(TOP_ADDED)) {
+            Anchor(section.positionInAdapter, overdraw, Anchor.Special.IN_PADDING_TOP)
+        } else if (flagUnset(TOP_ADDED) && flagSet(BOTTOM_ADDED) && bottom + overdraw == paddingBottom) {
+            Anchor(section.positionInAdapter, overdraw, Anchor.Special.IN_PADDING_BOTTOM)
         } else {
             section.anchor
         }
@@ -1079,7 +1112,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal class HeaderLayoutState : InternalLayoutState() {
         override fun anchor(section: SectionState) = if (section.hasHeader && headPosition == 0) {
-            section.positionInAdapter to overdraw
+            Anchor(section.positionInAdapter, overdraw)
         } else {
             section.anchor
         }
@@ -1107,7 +1140,7 @@ abstract class SectionState(val baseConfig: SectionConfig, oldState: SectionStat
 
     internal class FooterLayoutState : InternalLayoutState() {
         override fun anchor(section: SectionState) = if (section.hasFooter && headPosition == 1) {
-            section.positionInAdapter + section.totalItems to overdraw
+            Anchor(section.positionInAdapter + section.totalItems - 1, overdraw)
         } else {
             section.anchor
         }
@@ -1381,4 +1414,27 @@ private class DummyChild(helper: LayoutHelper) : ChildInternal(helper) {
 
     override fun addToRecyclerView(i: Int) {
     }
+}
+
+internal data class Anchor(val position: Int, val overdraw: Int = 0,
+                           val special: Special = Anchor.Special.NOTHING) : Parcelable {
+    companion object {
+        @JvmField val CREATOR: Parcelable.Creator<Anchor> = object : Parcelable.Creator<Anchor> {
+            override fun createFromParcel(source: Parcel): Anchor = Anchor(source)
+            override fun newArray(size: Int): Array<Anchor?> = arrayOfNulls(size)
+        }
+    }
+
+    constructor(source: Parcel) : this(source.readInt(), source.readInt(), Special.values()[source.readInt()])
+
+    override fun describeContents() = 0
+
+    override fun writeToParcel(dest: Parcel?, flags: Int) {
+        dest ?: return
+        dest.writeInt(position)
+        dest.writeInt(special.ordinal)
+        dest.writeInt(overdraw)
+    }
+
+    enum class Special { IN_PADDING_TOP, IN_PADDING_BOTTOM, NOTHING }
 }

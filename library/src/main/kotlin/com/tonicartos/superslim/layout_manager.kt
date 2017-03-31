@@ -1,7 +1,6 @@
 package com.tonicartos.superslim
 
 import android.content.Context
-import android.os.Parcel
 import android.os.Parcelable
 import android.support.annotation.IntDef
 import android.support.v4.view.ViewCompat
@@ -124,11 +123,10 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
                 return
             }
 
-            if (it.position > 0) {
-                Log.d("SavedState", "position = ${it.position}, offset = ${it.offset}")
-                graph.requestedPosition = it.position
-                graph.requestedPositionOffset = it.offset
+            if (it.position >= 0) {
+                graph.requestedAnchor = it
             }
+            pendingSavedState = null
 //        } ?: let {
 //            Log.d("SavedSate", "Forced position to 5.")
 //            graph?.requestedPosition = 5
@@ -173,8 +171,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
 
     override fun scrollToPosition(position: Int) {
         graph?.apply {
-            requestedPosition = position
-            requestedPositionOffset = 0
+            requestedAnchor = Anchor(position)
             requestLayout()
         }
     }
@@ -183,7 +180,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
 //    fun scrollToPositionWithOffset(position: Int, offset: Int) {
 //        graph?.apply {
 //            requestedPosition = position
-//            requestedPositionOffset = offset
+//            requestedOffset = offset // Offsets layout and forces fill top.
 //            requestLayout()
 //        }
 //    }
@@ -443,25 +440,7 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
     /*************************
      * State management
      *************************/
-
-    class SavedState(val position: Int, val offset: Int) : Parcelable {
-        constructor(anchor: Pair<Int, Int>) : this(anchor.first, anchor.second)
-        constructor(source: Parcel) : this(position = source.readInt(), offset = source.readInt())
-        constructor(other: SavedState) : this(other.position, other.offset)
-
-        companion object {
-            @JvmField @Suppress("unused")
-            val CREATOR = createParcel(::SavedState)
-        }
-
-        override fun describeContents() = 0
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeInt(position)
-            dest.writeInt(offset)
-        }
-    }
-
-    var pendingSavedState: SavedState? = null
+    private var pendingSavedState: Anchor? = null
     override val supportsPredictiveItemAnimations get() = pendingSavedState == null
     override fun supportsPredictiveItemAnimations() = pendingSavedState == null
 
@@ -469,10 +448,10 @@ class SuperSlimLayoutManager() : RecyclerView.LayoutManager(), ManagerHelper, Co
         if (pendingSavedState == null) super.assertNotInLayoutOrScroll(message)
     }
 
-    override fun onSaveInstanceState(): Parcelable? = graph?.let { SavedState(it.anchor) }
+    override fun onSaveInstanceState(): Parcelable? = graph?.anchor
 
     override fun onRestoreInstanceState(state: Parcelable?) {
-        pendingSavedState = state as? SavedState
+        pendingSavedState = state as? Anchor
         pendingSavedState?.let { requestLayout() }
 
         if (DEBUG) {

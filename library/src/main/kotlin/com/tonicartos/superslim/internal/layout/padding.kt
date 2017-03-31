@@ -5,9 +5,8 @@ import com.tonicartos.superslim.SectionLayoutManager
 import com.tonicartos.superslim.internal.SectionState
 import com.tonicartos.superslim.internal.SectionState.LayoutState
 import com.tonicartos.superslim.internal.SectionState.PaddingLayoutState
-
-private const val TOP_ADDED = 1 shl 0
-private const val BOTTOM_ADDED = 1 shl 1
+import com.tonicartos.superslim.internal.SectionState.PaddingLayoutState.Companion.BOTTOM_ADDED
+import com.tonicartos.superslim.internal.SectionState.PaddingLayoutState.Companion.TOP_ADDED
 
 internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
     override fun isAtTop(section: SectionState, layoutState: LayoutState): Boolean {
@@ -21,9 +20,8 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
         state.paddingBottom = helper.paddingBottom
 
         if (state.paddingTop > 0) {
-            if (state.onScreen && state flagUnset TOP_ADDED) {
+            if (state.onScreen && state flagUnset TOP_ADDED && state.overdraw > 0) {
                 // Must be in a layout pass with requested position.
-                state.overdraw = state.paddingTop
                 state set TOP_ADDED
             } else if (!state.onScreen) {
                 state.overdraw = 0
@@ -32,7 +30,7 @@ internal object PaddingLayoutManager : SectionLayoutManager<SectionState> {
         }
         state.onScreen = true
 
-        var y = state.paddingTop - state.overdraw
+        var y = if (state flagSet TOP_ADDED) state.paddingTop - state.overdraw else 0
 
         section.layout(helper, section.leftGutter { 0 }, y, helper.layoutWidth - section.rightGutter { 0 })
         state.disappearedOrRemovedHeight += section.disappearedHeight
