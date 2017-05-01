@@ -357,8 +357,8 @@ public class GridSLM extends SectionLayoutManager {
             }
 
             LayoutState.View view = state.getView(position);
+            state.cacheView(position, view.view);
             if (view.getLayoutParams().getTestedFirstPosition() != sd.firstPosition) {
-                state.cacheView(position, view.view);
                 break;
             }
 
